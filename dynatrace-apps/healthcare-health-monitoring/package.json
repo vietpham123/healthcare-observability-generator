@@ -1,6 +1,6 @@
 {
   "name": "healthcare-health-monitoring",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Healthcare operational health monitoring — Epic EHR + Network infrastructure correlation",
   "scripts": {
     "build": "dt-app build",

@@ -3,8 +3,8 @@
   "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
   "app": {
     "name": "Healthcare Health Monitoring",
-    "version": "1.0.0",
-    "description": "KCRMC health monitoring — Epic EHR + network infrastructure",
+    "version": "1.0.2",
+    "description": "Healthcare IT observability for Epic EHR and network infra",
     "id": "my.healthcare.health.monitoring",
     "scopes": [
       { "name": "storage:logs:read", "comment": "Query Epic SIEM and network health logs from Grail" },

@@ -6,7 +6,7 @@ import {
   PieChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
+import { DataTable } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -27,26 +27,23 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 export const NetworkHealth = () => {
-  const cpuTimeline = useDql({ query: queries.snmpCpuOverTime });
-  const memTimeline = useDql({ query: queries.snmpMemOverTime });
-  const sessionsTimeline = useDql({ query: queries.snmpSessionsOverTime });
-  const deviceSnapshot = useDql({ query: queries.snmpDeviceSnapshot });
-  const ifTrafficIn = useDql({ query: queries.snmpIfTrafficIn });
-  const ifTrafficOut = useDql({ query: queries.snmpIfTrafficOut });
-  const interfaceChanges = useDql({ query: queries.interfaceStateChanges });
-  const linkFlaps = useDql({ query: queries.linkFlapDetection });
-  const routingTimeline = useDql({ query: queries.routingEventsTimeline });
-  const routingNeighbors = useDql({ query: queries.routingNeighborTable });
-  const connRate = useDql({ query: queries.connectionRateOverTime });
-  const netflowVolume = useDql({ query: queries.netflowVolumeOverTime });
-  const netflowProto = useDql({ query: queries.netflowProtocolDist });
+  const cpuTimeline = useDql({ query: queries.deviceCpuOverTime });
+  const memTimeline = useDql({ query: queries.deviceMemOverTime });
+  const trafficIn = useDql({ query: queries.trafficInOverTime });
+  const trafficOut = useDql({ query: queries.trafficOutOverTime });
+  const deviceSnap = useDql({ query: queries.deviceSnapshot });
+  const deviceList = useDql({ query: queries.networkDeviceList });
+  const logTimeline = useDql({ query: queries.networkLogTimeline });
+  const vendorDist = useDql({ query: queries.networkVendorDistribution });
+  const siteDist = useDql({ query: queries.networkSiteDistribution });
+  const cpuBySite = useDql({ query: queries.deviceCpuBySite });
 
   return (
     <Flex flexDirection="column" gap={24} padding={24}>
       <Heading level={1}>Network Infrastructure Health</Heading>
       <Text>
-        SNMP device health, interface utilization, routing protocol stability,
-        firewall connections, and traffic volume across all KCRMC sites.
+        Device health metrics, traffic volume, and log event monitoring across all KCRMC sites.
+        Metrics sourced from healthcare.network.* MINT ingest; logs from OpenPipeline-tagged network events.
       </Text>
 
       {/* KPI Row */}
@@ -66,11 +63,11 @@ export const NetworkHealth = () => {
         />
       </Flex>
 
-      {/* Device Health (SNMP) */}
-      <Section title="Device Health (SNMP)" subtitle="CPU, memory, and session utilization per device">
+      {/* Device Health (Metrics) */}
+      <Section title="Device Health Metrics" subtitle="CPU, memory utilization per device from healthcare.network.* metrics">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>CPU Over Time</Heading>
+            <Heading level={3}>CPU Utilization</Heading>
             <div style={{ height: 250 }}>
               {cpuTimeline.isLoading ? <ProgressCircle /> :
                 cpuTimeline.data?.records ? (
@@ -83,7 +80,7 @@ export const NetworkHealth = () => {
             </div>
           </Flex>
           <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Memory Over Time</Heading>
+            <Heading level={3}>Memory Utilization</Heading>
             <div style={{ height: 250 }}>
               {memTimeline.isLoading ? <ProgressCircle /> :
                 memTimeline.data?.records ? (
@@ -96,34 +93,42 @@ export const NetworkHealth = () => {
             </div>
           </Flex>
         </Flex>
-        <Heading level={3}>Sessions Over Time</Heading>
+
+        <Heading level={3}>CPU by Site</Heading>
         <div style={{ height: 250 }}>
-          {sessionsTimeline.isLoading ? <ProgressCircle /> :
-            sessionsTimeline.data?.records ? (
+          {cpuBySite.isLoading ? <ProgressCircle /> :
+            cpuBySite.data?.records ? (
               <TimeseriesChart
-                data={convertToTimeseries(sessionsTimeline.data.records, sessionsTimeline.data.types)}
+                data={convertToTimeseries(cpuBySite.data.records, cpuBySite.data.types)}
                 variant="line"
                 gapPolicy="connect"
               />
             ) : <Text>No data</Text>}
         </div>
+
         <Heading level={3}>Device Snapshot</Heading>
-        {deviceSnapshot.isLoading ? <ProgressCircle /> :
-          deviceSnapshot.data?.records?.length ? (
-            <DataTable data={deviceSnapshot.data.records} columns={convertToColumns(deviceSnapshot.data.types)} />
+        {deviceSnap.isLoading ? <ProgressCircle /> :
+          deviceSnap.data?.records?.length ? (
+            <DataTable data={deviceSnap.data.records} columns={[
+              { id: "device", accessor: "device", header: "Device" },
+              { id: "vendor", accessor: "vendor", header: "Vendor" },
+              { id: "site", accessor: "site", header: "Site" },
+              { id: "avg_cpu", accessor: "avg_cpu", header: "CPU %" },
+              { id: "avg_mem", accessor: "avg_mem", header: "Memory %" },
+            ]} />
           ) : <Text>No data</Text>}
       </Section>
 
-      {/* Interface Health */}
-      <Section title="Interface Health" subtitle="Traffic volume and state changes">
+      {/* Traffic Volume */}
+      <Section title="Interface Traffic" subtitle="Bytes in/out per device">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 1 }}>
             <Heading level={3}>Traffic In (bytes)</Heading>
             <div style={{ height: 250 }}>
-              {ifTrafficIn.isLoading ? <ProgressCircle /> :
-                ifTrafficIn.data?.records ? (
+              {trafficIn.isLoading ? <ProgressCircle /> :
+                trafficIn.data?.records ? (
                   <TimeseriesChart
-                    data={convertToTimeseries(ifTrafficIn.data.records, ifTrafficIn.data.types)}
+                    data={convertToTimeseries(trafficIn.data.records, trafficIn.data.types)}
                     variant="area"
                     gapPolicy="connect"
                   />
@@ -133,10 +138,10 @@ export const NetworkHealth = () => {
           <Flex flexDirection="column" style={{ flex: 1 }}>
             <Heading level={3}>Traffic Out (bytes)</Heading>
             <div style={{ height: 250 }}>
-              {ifTrafficOut.isLoading ? <ProgressCircle /> :
-                ifTrafficOut.data?.records ? (
+              {trafficOut.isLoading ? <ProgressCircle /> :
+                trafficOut.data?.records ? (
                   <TimeseriesChart
-                    data={convertToTimeseries(ifTrafficOut.data.records, ifTrafficOut.data.types)}
+                    data={convertToTimeseries(trafficOut.data.records, trafficOut.data.types)}
                     variant="area"
                     gapPolicy="connect"
                   />
@@ -144,80 +149,62 @@ export const NetworkHealth = () => {
             </div>
           </Flex>
         </Flex>
-        <Heading level={3}>Interface State Changes</Heading>
-        {interfaceChanges.isLoading ? <ProgressCircle /> :
-          interfaceChanges.data?.records?.length ? (
-            <DataTable data={interfaceChanges.data.records} columns={convertToColumns(interfaceChanges.data.types)} />
-          ) : <Text>No recent state changes</Text>}
-        {linkFlaps.data?.records?.length ? (
-          <>
-            <Heading level={3} style={{ color: "var(--dt-colors-charts-status-critical)" }}>
-              Link Flap Alerts
-            </Heading>
-            <DataTable data={linkFlaps.data.records} columns={convertToColumns(linkFlaps.data.types)} />
-          </>
-        ) : null}
       </Section>
 
-      {/* Routing Protocol Health */}
-      <Section title="Routing Protocol Health" subtitle="OSPF/BGP neighbor stability">
-        <div style={{ height: 250 }}>
-          {routingTimeline.isLoading ? <ProgressCircle /> :
-            routingTimeline.data?.records ? (
-              <TimeseriesChart
-                data={convertToTimeseries(routingTimeline.data.records, routingTimeline.data.types)}
-                variant="bar"
-                gapPolicy="connect"
-              />
-            ) : <Text>No data</Text>}
-        </div>
-        <Heading level={3}>Routing Neighbors</Heading>
-        {routingNeighbors.isLoading ? <ProgressCircle /> :
-          routingNeighbors.data?.records?.length ? (
-            <DataTable data={routingNeighbors.data.records} columns={convertToColumns(routingNeighbors.data.types)} />
-          ) : <Text>No routing events</Text>}
-      </Section>
-
-      {/* Firewall Connection Health */}
-      <Section title="Firewall Connection Health" subtitle="Connection build/teardown rates">
-        <div style={{ height: 250 }}>
-          {connRate.isLoading ? <ProgressCircle /> :
-            connRate.data?.records ? (
-              <TimeseriesChart
-                data={convertToTimeseries(connRate.data.records, connRate.data.types)}
-                variant="bar"
-                gapPolicy="connect"
-              />
-            ) : <Text>No data</Text>}
-        </div>
-      </Section>
-
-      {/* Network Traffic (NetFlow) */}
-      <Section title="Network Traffic Volume" subtitle="NetFlow bytes and packets over time">
+      {/* Log Events */}
+      <Section title="Network Log Events" subtitle="Log volume and device inventory from OpenPipeline-tagged events">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 2 }}>
+            <Heading level={3}>Log Event Timeline</Heading>
             <div style={{ height: 250 }}>
-              {netflowVolume.isLoading ? <ProgressCircle /> :
-                netflowVolume.data?.records?.length ? (
-                  <DataTable data={netflowVolume.data.records} columns={convertToColumns(netflowVolume.data.types)} />
-                ) : <Text>No NetFlow data</Text>}
-            </div>
-          </Flex>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Protocol Distribution</Heading>
-            <div style={{ height: 250 }}>
-              {netflowProto.isLoading ? <ProgressCircle /> :
-                netflowProto.data?.records?.length ? (
-                  <PieChart
-                    data={{
-                      slices: netflowProto.data.records.map((r: any) => ({
-                        category: String(r["network.flow.protocol"] ?? "Unknown"),
-                        value: Number(r.total_bytes ?? 0),
-                      }))
-                    }}
+              {logTimeline.isLoading ? <ProgressCircle /> :
+                logTimeline.data?.records ? (
+                  <TimeseriesChart
+                    data={convertToTimeseries(logTimeline.data.records, logTimeline.data.types)}
+                    variant="bar"
+                    gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
             </div>
+          </Flex>
+          <Flex flexDirection="column" style={{ flex: 1 }}>
+            <Heading level={3}>Vendor Distribution</Heading>
+            <div style={{ height: 250 }}>
+              {vendorDist.isLoading ? <ProgressCircle /> :
+                vendorDist.data?.records?.length ? (
+                  <PieChart
+                    data={{ slices: vendorDist.data.records.map((r: any) => ({ category: r.vendor || "Unknown", value: r.cnt || 0 })) }}
+                  />
+                ) : <Text>No data</Text>}
+            </div>
+          </Flex>
+        </Flex>
+
+        <Flex gap={16}>
+          <Flex flexDirection="column" style={{ flex: 1 }}>
+            <Heading level={3}>Site Distribution</Heading>
+            <div style={{ height: 250 }}>
+              {siteDist.isLoading ? <ProgressCircle /> :
+                siteDist.data?.records?.length ? (
+                  <PieChart
+                    data={{ slices: siteDist.data.records.map((r: any) => ({ category: r.site || "Unknown", value: r.cnt || 0 })) }}
+                  />
+                ) : <Text>No data</Text>}
+            </div>
+          </Flex>
+          <Flex flexDirection="column" style={{ flex: 2 }}>
+            <Heading level={3}>Device Inventory</Heading>
+            {deviceList.isLoading ? <ProgressCircle /> :
+              deviceList.data?.records?.length ? (
+                <DataTable data={deviceList.data.records} columns={[
+                  { id: "hostname", accessor: "hostname", header: "Hostname" },
+                  { id: "vendor", accessor: "vendor", header: "Vendor" },
+                  { id: "role", accessor: "role", header: "Role" },
+                  { id: "model", accessor: "model", header: "Model" },
+                  { id: "site", accessor: "site", header: "Site" },
+                  { id: "events", accessor: "events", header: "Events" },
+                ]} />
+              ) : <Text>No devices</Text>}
           </Flex>
         </Flex>
       </Section>

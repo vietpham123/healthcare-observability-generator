@@ -6,25 +6,38 @@ import {
   TimeseriesChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
+import { DataTable } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <Flex flexDirection="column" gap={12} style={{
+      background: "var(--dt-colors-surface-default)",
+      borderRadius: 12,
+      padding: 20,
+    }}>
+      <Heading level={2}>{title}</Heading>
+      {subtitle && <Text style={{ opacity: 0.7 }}>{subtitle}</Text>}
+      {children}
+    </Flex>
+  );
+}
+
 export const Overview = () => {
   const activityTimeline = useDql({ query: queries.systemActivityTimeline });
   const epicDist = useDql({ query: queries.epicEventDistribution });
   const networkDist = useDql({ query: queries.networkEventDistribution });
-  const deviceSnapshot = useDql({ query: queries.snmpDeviceSnapshot });
+  const deviceSnap = useDql({ query: queries.deviceSnapshot });
 
   return (
     <Flex flexDirection="column" gap={24} padding={24}>
       <Heading level={1}>Healthcare Environment Health</Heading>
       <Text>
         Kansas City Regional Medical Center — real-time operational health
-        combining Epic EHR telemetry and network infrastructure monitoring across
-        4 sites.
+        combining Epic EHR telemetry and network infrastructure monitoring across 4 sites.
       </Text>
 
       {/* KPI Row */}
@@ -71,24 +84,13 @@ export const Overview = () => {
       </Flex>
 
       {/* System Activity Timeline */}
-      <Flex flexDirection="column" style={{
-        background: "var(--dt-colors-surface-default)",
-        borderRadius: 12,
-        padding: 20,
-      }}>
-        <Heading level={2}>System Activity Timeline</Heading>
-        <Text style={{ opacity: 0.7, marginBottom: 12 }}>
-          Epic EHR events vs. network infrastructure events — 5-minute intervals
-        </Text>
+      <Section title="System Activity Timeline" subtitle="Epic EHR events vs. network infrastructure events — 5-minute intervals">
         <div style={{ height: 300 }}>
           {activityTimeline.isLoading ? (
             <ProgressCircle />
           ) : activityTimeline.data?.records ? (
             <TimeseriesChart
-              data={convertToTimeseries(
-                activityTimeline.data.records,
-                activityTimeline.data.types
-              )}
+              data={convertToTimeseries(activityTimeline.data.records, activityTimeline.data.types)}
               variant="area"
               gapPolicy="connect"
             />
@@ -96,52 +98,32 @@ export const Overview = () => {
             <Text>No data available</Text>
           )}
         </div>
-      </Flex>
+      </Section>
 
       {/* Distribution Row */}
       <Flex gap={16}>
-        <Flex flexDirection="column" style={{
-          flex: 1,
-          background: "var(--dt-colors-surface-default)",
-          borderRadius: 12,
-          padding: 20,
-        }}>
+        <Flex flexDirection="column" style={{ flex: 1, background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 20 }}>
           <Heading level={3}>Epic Event Types</Heading>
           <div style={{ height: 280 }}>
             {epicDist.isLoading ? (
               <ProgressCircle />
             ) : epicDist.data?.records?.length ? (
               <PieChart
-                data={{
-                  slices: epicDist.data.records.map((r: any) => ({
-                    category: String(r.event_category ?? "Unknown"),
-                    value: Number(r.cnt ?? 0),
-                  }))
-                }}
+                data={{ slices: epicDist.data.records.map((r: any) => ({ category: r.event_category || "Unknown", value: r.cnt || 0 })) }}
               />
             ) : (
               <Text>No data</Text>
             )}
           </div>
         </Flex>
-        <Flex flexDirection="column" style={{
-          flex: 1,
-          background: "var(--dt-colors-surface-default)",
-          borderRadius: 12,
-          padding: 20,
-        }}>
+        <Flex flexDirection="column" style={{ flex: 1, background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 20 }}>
           <Heading level={3}>Network Event Sources</Heading>
           <div style={{ height: 280 }}>
             {networkDist.isLoading ? (
               <ProgressCircle />
             ) : networkDist.data?.records?.length ? (
               <PieChart
-                data={{
-                  slices: networkDist.data.records.map((r: any) => ({
-                    category: String(r["log.source"] ?? "Unknown"),
-                    value: Number(r.cnt ?? 0),
-                  }))
-                }}
+                data={{ slices: networkDist.data.records.map((r: any) => ({ category: r["log.source"] || "Unknown", value: r.cnt || 0 })) }}
               />
             ) : (
               <Text>No data</Text>
@@ -150,21 +132,22 @@ export const Overview = () => {
         </Flex>
       </Flex>
 
-      {/* SNMP Device Health Table */}
-      <Flex flexDirection="column" style={{
-        background: "var(--dt-colors-surface-default)",
-        borderRadius: 12,
-        padding: 20,
-      }}>
-        <Heading level={2}>Network Device Health</Heading>
-        {deviceSnapshot.isLoading ? (
+      {/* Network Device Health Table */}
+      <Section title="Network Device Health" subtitle="Real-time CPU and memory from healthcare.network.* metrics">
+        {deviceSnap.isLoading ? (
           <ProgressCircle />
-        ) : deviceSnapshot.data?.records?.length ? (
-          <DataTable data={deviceSnapshot.data.records} columns={convertToColumns(deviceSnapshot.data.types)} />
+        ) : deviceSnap.data?.records?.length ? (
+          <DataTable data={deviceSnap.data.records} columns={[
+            { id: "device", accessor: "device", header: "Device" },
+            { id: "vendor", accessor: "vendor", header: "Vendor" },
+            { id: "site", accessor: "site", header: "Site" },
+            { id: "avg_cpu", accessor: "avg_cpu", header: "CPU %" },
+            { id: "avg_mem", accessor: "avg_mem", header: "Memory %" },
+          ]} />
         ) : (
           <Text>No device data</Text>
         )}
-      </Flex>
+      </Section>
     </Flex>
   );
 };

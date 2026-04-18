@@ -20,3 +20,6 @@ output/
 *.swo
 *~
 node_modules/
+
+.dt-app/
+*.bak
