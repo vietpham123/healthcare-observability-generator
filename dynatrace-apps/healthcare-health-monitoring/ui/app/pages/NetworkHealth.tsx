@@ -6,7 +6,7 @@ import {
   PieChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -110,16 +110,7 @@ export const NetworkHealth = () => {
         <Heading level={3}>Device Snapshot</Heading>
         {deviceSnapshot.isLoading ? <ProgressCircle /> :
           deviceSnapshot.data?.records?.length ? (
-            <DataTable data={deviceSnapshot.data.records} columns={[
-              { accessor: "hostname", header: "Hostname" },
-              { accessor: "vendor", header: "Vendor" },
-              { accessor: "site", header: "Site" },
-              { accessor: "cpu", header: "CPU %" },
-              { accessor: "memory", header: "Memory %" },
-              { accessor: "sessions", header: "Sessions" },
-              { accessor: "interfaces_up", header: "Intf Up" },
-              { accessor: "interfaces_total", header: "Intf Total" },
-            ]} />
+            <DataTable data={deviceSnapshot.data.records} columns={convertToColumns(deviceSnapshot.data.types)} />
           ) : <Text>No data</Text>}
       </Section>
 
@@ -156,24 +147,14 @@ export const NetworkHealth = () => {
         <Heading level={3}>Interface State Changes</Heading>
         {interfaceChanges.isLoading ? <ProgressCircle /> :
           interfaceChanges.data?.records?.length ? (
-            <DataTable data={interfaceChanges.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "hostname", header: "Device" },
-              { accessor: "network.interface.name", header: "Interface" },
-              { accessor: "network.interface.state", header: "State" },
-              { accessor: "mnemonic", header: "Mnemonic" },
-            ]} />
+            <DataTable data={interfaceChanges.data.records} columns={convertToColumns(interfaceChanges.data.types)} />
           ) : <Text>No recent state changes</Text>}
         {linkFlaps.data?.records?.length ? (
           <>
             <Heading level={3} style={{ color: "var(--dt-colors-charts-status-critical)" }}>
               Link Flap Alerts
             </Heading>
-            <DataTable data={linkFlaps.data.records} columns={[
-              { accessor: "hostname", header: "Device" },
-              { accessor: "interface", header: "Interface" },
-              { accessor: "flaps", header: "Flaps (30min)" },
-            ]} />
+            <DataTable data={linkFlaps.data.records} columns={convertToColumns(linkFlaps.data.types)} />
           </>
         ) : null}
       </Section>
@@ -193,13 +174,7 @@ export const NetworkHealth = () => {
         <Heading level={3}>Routing Neighbors</Heading>
         {routingNeighbors.isLoading ? <ProgressCircle /> :
           routingNeighbors.data?.records?.length ? (
-            <DataTable data={routingNeighbors.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "hostname", header: "Device" },
-              { accessor: "network.routing.protocol", header: "Protocol" },
-              { accessor: "network.routing.state", header: "State" },
-              { accessor: "network.routing.neighbor_ip", header: "Neighbor IP" },
-            ]} />
+            <DataTable data={routingNeighbors.data.records} columns={convertToColumns(routingNeighbors.data.types)} />
           ) : <Text>No routing events</Text>}
       </Section>
 
@@ -210,7 +185,7 @@ export const NetworkHealth = () => {
             connRate.data?.records ? (
               <TimeseriesChart
                 data={convertToTimeseries(connRate.data.records, connRate.data.types)}
-                variant="stacked-bar"
+                variant="bar"
                 gapPolicy="connect"
               />
             ) : <Text>No data</Text>}
@@ -224,11 +199,7 @@ export const NetworkHealth = () => {
             <div style={{ height: 250 }}>
               {netflowVolume.isLoading ? <ProgressCircle /> :
                 netflowVolume.data?.records?.length ? (
-                  <DataTable data={netflowVolume.data.records} columns={[
-                    { accessor: "interval", header: "Time" },
-                    { accessor: "total_bytes", header: "Bytes" },
-                    { accessor: "total_packets", header: "Packets" },
-                  ]} />
+                  <DataTable data={netflowVolume.data.records} columns={convertToColumns(netflowVolume.data.types)} />
                 ) : <Text>No NetFlow data</Text>}
             </div>
           </Flex>
@@ -238,10 +209,12 @@ export const NetworkHealth = () => {
               {netflowProto.isLoading ? <ProgressCircle /> :
                 netflowProto.data?.records?.length ? (
                   <PieChart
-                    data={netflowProto.data.records.map((r: any) => ({
-                      name: r["network.flow.protocol"] || "Unknown",
-                      value: r.total_bytes || 0,
-                    }))}
+                    data={{
+                      slices: netflowProto.data.records.map((r: any) => ({
+                        category: String(r["network.flow.protocol"] ?? "Unknown"),
+                        value: Number(r.total_bytes ?? 0),
+                      }))
+                    }}
                   />
                 ) : <Text>No data</Text>}
             </div>

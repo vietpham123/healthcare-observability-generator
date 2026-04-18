@@ -5,7 +5,7 @@ import {
   TimeseriesChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries, EPIC_FILTER, SNMP_FILTER } from "../queries";
@@ -45,7 +45,7 @@ function SiteDetail({ siteCode, siteName }: { siteCode: string; siteName: string
             loginTimeline.data?.records ? (
               <TimeseriesChart
                 data={convertToTimeseries(loginTimeline.data.records, loginTimeline.data.types)}
-                variant="stacked-bar"
+                variant="bar"
                 gapPolicy="connect"
               />
             ) : <Text>No data for this site</Text>}
@@ -60,12 +60,7 @@ function SiteDetail({ siteCode, siteName }: { siteCode: string; siteName: string
         <Heading level={3}>Network Devices</Heading>
         {deviceTable.isLoading ? <ProgressCircle /> :
           deviceTable.data?.records?.length ? (
-            <DataTable data={deviceTable.data.records} columns={[
-              { accessor: "hostname", header: "Hostname" },
-              { accessor: "vendor", header: "Vendor" },
-              { accessor: "cpu", header: "CPU %" },
-              { accessor: "memory", header: "Memory %" },
-            ]} />
+            <DataTable data={deviceTable.data.records} columns={convertToColumns(deviceTable.data.types)} />
           ) : <Text>No devices at this site</Text>}
       </Flex>
     </Flex>

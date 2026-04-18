@@ -6,7 +6,7 @@ import {
   TimeseriesChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -112,10 +112,12 @@ export const Overview = () => {
               <ProgressCircle />
             ) : epicDist.data?.records?.length ? (
               <PieChart
-                data={epicDist.data.records.map((r: any) => ({
-                  name: r.event_category || "Unknown",
-                  value: r.cnt || 0,
-                }))}
+                data={{
+                  slices: epicDist.data.records.map((r: any) => ({
+                    category: String(r.event_category ?? "Unknown"),
+                    value: Number(r.cnt ?? 0),
+                  }))
+                }}
               />
             ) : (
               <Text>No data</Text>
@@ -134,10 +136,12 @@ export const Overview = () => {
               <ProgressCircle />
             ) : networkDist.data?.records?.length ? (
               <PieChart
-                data={networkDist.data.records.map((r: any) => ({
-                  name: r["log.source"] || "Unknown",
-                  value: r.cnt || 0,
-                }))}
+                data={{
+                  slices: networkDist.data.records.map((r: any) => ({
+                    category: String(r["log.source"] ?? "Unknown"),
+                    value: Number(r.cnt ?? 0),
+                  }))
+                }}
               />
             ) : (
               <Text>No data</Text>
@@ -156,16 +160,7 @@ export const Overview = () => {
         {deviceSnapshot.isLoading ? (
           <ProgressCircle />
         ) : deviceSnapshot.data?.records?.length ? (
-          <DataTable data={deviceSnapshot.data.records} columns={[
-            { accessor: "hostname", header: "Hostname" },
-            { accessor: "vendor", header: "Vendor" },
-            { accessor: "site", header: "Site" },
-            { accessor: "cpu", header: "CPU %" },
-            { accessor: "memory", header: "Memory %" },
-            { accessor: "sessions", header: "Sessions" },
-            { accessor: "interfaces_up", header: "Intf Up" },
-            { accessor: "interfaces_total", header: "Intf Total" },
-          ]} />
+          <DataTable data={deviceSnapshot.data.records} columns={convertToColumns(deviceSnapshot.data.types)} />
         ) : (
           <Text>No device data</Text>
         )}

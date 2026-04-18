@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Flex } from "@dynatrace/strato-components/layouts";
 import { Heading, Text } from "@dynatrace/strato-components/typography";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -34,12 +34,7 @@ function QueryResult({ queryKey }: { queryKey: keyof typeof queries }) {
   if (error) return <Text style={{ color: "var(--dt-colors-charts-status-critical)" }}>Error: {String(error)}</Text>;
   if (!data?.records?.length) return <Text>No results</Text>;
 
-  const columns = Object.keys(data.records[0] as object).map(key => ({
-    accessor: key,
-    header: key,
-  }));
-
-  return <DataTable data={data.records} columns={columns} />;
+  return <DataTable data={data.records} columns={convertToColumns(data.types)} />;
 }
 
 export const Explore = () => {

@@ -4,7 +4,7 @@
   "app": {
     "name": "Healthcare Health Monitoring",
     "version": "1.0.0",
-    "description": "Operational health monitoring for Kansas City Regional Medical Center — correlates Epic EHR telemetry with network infrastructure data for proactive healthcare IT observability",
+    "description": "KCRMC health monitoring — Epic EHR + network infrastructure",
     "id": "my.healthcare.health.monitoring",
     "scopes": [
       { "name": "storage:logs:read", "comment": "Query Epic SIEM and network health logs from Grail" },

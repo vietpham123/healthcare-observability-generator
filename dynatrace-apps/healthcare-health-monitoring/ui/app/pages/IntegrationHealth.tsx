@@ -6,7 +6,7 @@ import {
   PieChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -84,7 +84,7 @@ export const IntegrationHealth = () => {
                 hl7Volume.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(hl7Volume.data.records, hl7Volume.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -96,10 +96,12 @@ export const IntegrationHealth = () => {
               {hl7Types.isLoading ? <ProgressCircle /> :
                 hl7Types.data?.records?.length ? (
                   <PieChart
-                    data={hl7Types.data.records.map((r: any) => ({
-                      name: r.message_type || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{
+                      slices: hl7Types.data.records.map((r: any) => ({
+                        category: String(r.message_type ?? "Unknown"),
+                        value: Number(r.cnt ?? 0),
+                      }))
+                    }}
                   />
                 ) : <Text>No data</Text>}
             </div>
@@ -108,13 +110,7 @@ export const IntegrationHealth = () => {
         <Heading level={3}>HL7 Errors / NAKs</Heading>
         {hl7Errors.isLoading ? <ProgressCircle /> :
           hl7Errors.data?.records?.length ? (
-            <DataTable data={hl7Errors.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "MSH.9", header: "Msg Type" },
-              { accessor: "MSH.10", header: "Control ID" },
-              { accessor: "healthcare.site", header: "Site" },
-              { accessor: "content", header: "Content" },
-            ]} />
+            <DataTable data={hl7Errors.data.records} columns={convertToColumns(hl7Errors.data.types)} />
           ) : <Text>No HL7 errors</Text>}
       </Section>
 
@@ -128,7 +124,7 @@ export const IntegrationHealth = () => {
                 fhirRate.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(fhirRate.data.records, fhirRate.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -140,10 +136,12 @@ export const IntegrationHealth = () => {
               {fhirStatus.isLoading ? <ProgressCircle /> :
                 fhirStatus.data?.records?.length ? (
                   <PieChart
-                    data={fhirStatus.data.records.map((r: any) => ({
-                      name: r.status_group || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{
+                      slices: fhirStatus.data.records.map((r: any) => ({
+                        category: String(r.status_group ?? "Unknown"),
+                        value: Number(r.cnt ?? 0),
+                      }))
+                    }}
                   />
                 ) : <Text>No data</Text>}
             </div>
@@ -165,23 +163,14 @@ export const IntegrationHealth = () => {
             <Heading level={3}>Slow Requests ({">"}2s)</Heading>
             {fhirSlow.isLoading ? <ProgressCircle /> :
               fhirSlow.data?.records?.length ? (
-                <DataTable data={fhirSlow.data.records} columns={[
-                  { accessor: "timestamp", header: "Time" },
-                  { accessor: "method", header: "Method" },
-                  { accessor: "path", header: "Path" },
-                  { accessor: "status", header: "Status" },
-                  { accessor: "response_time_ms", header: "ms" },
-                ]} />
+                <DataTable data={fhirSlow.data.records} columns={convertToColumns(fhirSlow.data.types)} />
               ) : <Text>No slow requests</Text>}
           </Flex>
           <Flex flexDirection="column" style={{ flex: 1 }}>
             <Heading level={3}>Client Usage</Heading>
             {fhirClients.isLoading ? <ProgressCircle /> :
               fhirClients.data?.records?.length ? (
-                <DataTable data={fhirClients.data.records} columns={[
-                  { accessor: "client_id", header: "Client" },
-                  { accessor: "requests", header: "Requests" },
-                ]} />
+                <DataTable data={fhirClients.data.records} columns={convertToColumns(fhirClients.data.types)} />
               ) : <Text>No data</Text>}
           </Flex>
         </Flex>
@@ -197,7 +186,7 @@ export const IntegrationHealth = () => {
                 etlStatus.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(etlStatus.data.records, etlStatus.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -220,13 +209,7 @@ export const IntegrationHealth = () => {
         <Heading level={3}>Failed Jobs</Heading>
         {etlFailed.isLoading ? <ProgressCircle /> :
           etlFailed.data?.records?.length ? (
-            <DataTable data={etlFailed.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "job_name", header: "Job" },
-              { accessor: "source_system", header: "Source" },
-              { accessor: "duration_seconds", header: "Duration (s)" },
-              { accessor: "content", header: "Details" },
-            ]} />
+            <DataTable data={etlFailed.data.records} columns={convertToColumns(etlFailed.data.types)} />
           ) : <Text>No failed ETL jobs</Text>}
       </Section>
     </Flex>

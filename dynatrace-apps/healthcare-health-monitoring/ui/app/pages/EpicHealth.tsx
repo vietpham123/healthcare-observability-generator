@@ -6,7 +6,7 @@ import {
   PieChart,
   convertToTimeseries,
 } from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { DataTable, convertToColumns } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
@@ -74,7 +74,7 @@ export const EpicHealth = () => {
                 loginTimeline.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(loginTimeline.data.records, loginTimeline.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -84,10 +84,7 @@ export const EpicHealth = () => {
             <Heading level={3}>Logins by Site</Heading>
             {loginBySite.isLoading ? <ProgressCircle /> :
               loginBySite.data?.records?.length ? (
-                <DataTable data={loginBySite.data.records} columns={[
-                  { accessor: "site", header: "Site" },
-                  { accessor: "logins", header: "Count" },
-                ]} />
+                <DataTable data={loginBySite.data.records} columns={convertToColumns(loginBySite.data.types)} />
               ) : <Text>No data</Text>}
           </Flex>
         </Flex>
@@ -103,7 +100,7 @@ export const EpicHealth = () => {
                 orderVolume.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(orderVolume.data.records, orderVolume.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -115,10 +112,12 @@ export const EpicHealth = () => {
               {clinicalTypes.isLoading ? <ProgressCircle /> :
                 clinicalTypes.data?.records?.length ? (
                   <PieChart
-                    data={clinicalTypes.data.records.map((r: any) => ({
-                      name: r.clinical_type || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{
+                      slices: clinicalTypes.data.records.map((r: any) => ({
+                        category: String(r.clinical_type ?? "Unknown"),
+                        value: Number(r.cnt ?? 0),
+                      }))
+                    }}
                   />
                 ) : <Text>No data</Text>}
             </div>
@@ -127,10 +126,7 @@ export const EpicHealth = () => {
         <Heading level={3}>Department Activity</Heading>
         {deptActivity.isLoading ? <ProgressCircle /> :
           deptActivity.data?.records?.length ? (
-            <DataTable data={deptActivity.data.records} columns={[
-              { accessor: "DEPARTMENT", header: "Department" },
-              { accessor: "events", header: "Events" },
-            ]} />
+            <DataTable data={deptActivity.data.records} columns={convertToColumns(deptActivity.data.types)} />
           ) : <Text>No data</Text>}
       </Section>
 
@@ -156,10 +152,12 @@ export const EpicHealth = () => {
               {myChartDevices.isLoading ? <ProgressCircle /> :
                 myChartDevices.data?.records?.length ? (
                   <PieChart
-                    data={myChartDevices.data.records.map((r: any) => ({
-                      name: r.device_type || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{
+                      slices: myChartDevices.data.records.map((r: any) => ({
+                        category: String(r.device_type ?? "Unknown"),
+                        value: Number(r.cnt ?? 0),
+                      }))
+                    }}
                   />
                 ) : <Text>No data</Text>}
             </div>
