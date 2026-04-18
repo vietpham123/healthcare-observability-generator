@@ -328,6 +328,9 @@ class Orchestrator:
                 self._maybe_generate_etl_event()
 
                 tick += 1
+                # Flush DT output buffer after each tick
+                if hasattr(self.output, 'flush'):
+                    self.output.flush()
                 time.sleep(frequency)
 
         except KeyboardInterrupt:
@@ -367,8 +370,14 @@ class MultiOutput:
     def write(self, data):
         for o in self.outputs:
             o.write(data)
+    def flush(self):
+        for o in self.outputs:
+            if hasattr(o, "flush"):
+                o.flush()
     def close(self):
         for o in self.outputs:
+            if hasattr(o, "flush"):
+                o.flush()
             o.close()
 
 
@@ -398,7 +407,7 @@ if __name__ == "__main__":
                 endpoint=f"{dt_endpoint}/api/v2/logs/ingest",
                 api_token=dt_token,
                 mode="dynatrace",
-                batch_size=50,
+                batch_size=5,
                 default_attributes={
                     "dt.source.generator": "healthcare-obs-gen-v2",
                     "generator.type": "epic-siem",
