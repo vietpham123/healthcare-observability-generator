@@ -1,16 +1,13 @@
 import React from "react";
-import { Flex, Surface, Container, TitleBar } from "@dynatrace/strato-components/layouts";
-import { Heading, Text } from "@dynatrace/strato-components/typography";
+import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
-import { TimeseriesChart } from "@dynatrace/strato-components-preview/charts";
-import { DonutChart } from "@dynatrace/strato-components-preview/charts";
-import { CategoricalBarChart } from "@dynatrace/strato-components-preview/charts";
+import { TimeseriesChart, DonutChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 import { CampusMap } from "../components/CampusMap";
+import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
-// Campus site positions (Kansas geography: Topeka NE, KC East, Lawrence N-central, Wichita S)
 const SITE_META: Record<string, { name: string; label: string; x: number; y: number }> = {
   "kcrmc-main": { name: "KC Regional Medical Center", label: "KC Main Campus", x: 450, y: 130 },
   "tpk-clinic": { name: "Topeka Specialty Clinic", label: "Topeka Clinic", x: 320, y: 90 },
@@ -20,14 +17,10 @@ const SITE_META: Record<string, { name: string; label: string; x: number; y: num
 
 export const Overview = () => {
   const siteHealth = useDql({ query: queries.siteHealthSummary });
-  const netSiteHealth = useDql({ query: queries.networkSiteHealth });
   const netDevices = useDql({ query: queries.networkDevicesBySite });
-
   const siteRecords = siteHealth.data?.records ?? [];
-  const netRecords = netSiteHealth.data?.records ?? [];
   const devRecords = netDevices.data?.records ?? [];
 
-  // Build campus map data
   const campusSites = siteRecords.map((r: any) => {
     const code = r.site ?? "";
     const meta = SITE_META[code] ?? { name: code, label: code, x: 300, y: 160 };
@@ -35,11 +28,7 @@ export const Overview = () => {
     const loginOk = Number(r.login_ok) || 0;
     const devRec = devRecords.find((d: any) => d.site === code);
     return {
-      code,
-      name: meta.name,
-      label: meta.label,
-      x: meta.x,
-      y: meta.y,
+      code, name: meta.name, label: meta.label, x: meta.x, y: meta.y,
       events: Number(r.events) || 0,
       loginRate: logins > 0 ? (loginOk / logins) * 100 : 100,
       users: Number(r.users) || 0,
@@ -49,133 +38,67 @@ export const Overview = () => {
 
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
-      {/* Row 1: KPI Gauges */}
       <Flex gap={12} flexWrap="wrap">
-        <KpiCard
-          query={queries.epicLoginSuccessRate}
-          label="Epic Login Success"
-          field="success_rate"
-          format="percent"
-          thresholds={{ green: 90, amber: 70 }}
-          icon="🔐"
-        />
-        <KpiCard
-          query={queries.hl7DeliveryRate}
-          label="HL7 Delivery"
-          field="delivery_rate"
-          format="percent"
-          thresholds={{ green: 95, amber: 80 }}
-          icon="📡"
-        />
-        <KpiCard
-          query={queries.fhirHealthRate}
-          label="FHIR API Health"
-          field="success_rate"
-          format="percent"
-          thresholds={{ green: 95, amber: 85 }}
-          icon="🔗"
-        />
-        <KpiCard
-          query={queries.etlSuccessRate}
-          label="ETL Success"
-          field="success_rate"
-          format="percent"
-          thresholds={{ green: 95, amber: 80 }}
-          icon="⚙️"
-        />
-        <KpiCard
-          query={queries.avgDeviceCpu}
-          label="Avg Device CPU"
-          field="avg_cpu"
-          format="percent"
-          thresholds={{ green: 80, amber: 60 }}
-          icon="💻"
-        />
-        <KpiCard
-          query={queries.activeUsers}
-          label="Active Users"
-          field="unique_users"
-          format="number"
-          icon="👥"
-        />
+        <KpiCard query={queries.epicLoginSuccessRate} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 90, amber: 70 }} icon="🔐" />
+        <KpiCard query={queries.hl7DeliveryRate} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
+        <KpiCard query={queries.fhirHealthRate} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
+        <KpiCard query={queries.etlSuccessRate} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
+        <KpiCard query={queries.avgDeviceCpu} label="Avg Device CPU" field="avg_cpu" format="percent" thresholds={{ green: 80, amber: 60 }} icon="💻" />
+        <KpiCard query={queries.activeUsers} label="Active Users" field="unique_users" format="number" icon="👥" />
       </Flex>
 
-      {/* Row 2: Campus Map + Event Distribution */}
       <Flex gap={16}>
         <Surface style={{ flex: 2, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Campus Health Map</TitleBar.Title>
-            <TitleBar.Subtitle>Kansas Healthcare Network</TitleBar.Subtitle>
-          </TitleBar>
-          {siteHealth.isLoading ? (
-            <Flex alignItems="center" justifyContent="center" style={{ height: 300 }}>
-              <ProgressCircle />
-            </Flex>
-          ) : (
-            <CampusMap sites={campusSites} />
-          )}
+          <TitleBar><TitleBar.Title>Campus Health Map</TitleBar.Title><TitleBar.Subtitle>Kansas Healthcare Network</TitleBar.Subtitle></TitleBar>
+          {siteHealth.isLoading
+            ? <Flex alignItems="center" justifyContent="center" style={{ height: 300 }}><ProgressCircle /></Flex>
+            : <CampusMap sites={campusSites} />}
         </Surface>
-
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Epic Event Distribution</TitleBar.Title>
-          </TitleBar>
+          <TitleBar><TitleBar.Title>Epic Event Distribution</TitleBar.Title></TitleBar>
           <EventDistChart />
         </Surface>
       </Flex>
 
-      {/* Row 3: Activity Timeline + Site Comparison */}
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>System Activity</TitleBar.Title>
-            <TitleBar.Subtitle>Epic vs Network event volume</TitleBar.Subtitle>
-          </TitleBar>
+          <TitleBar><TitleBar.Title>System Activity</TitleBar.Title><TitleBar.Subtitle>Epic vs Network event volume</TitleBar.Subtitle></TitleBar>
           <ActivityTimelineChart />
         </Surface>
-
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Events by Site & Pipeline</TitleBar.Title>
-          </TitleBar>
+          <TitleBar><TitleBar.Title>Events by Site & Pipeline</TitleBar.Title></TitleBar>
           <EventsBySiteChart />
         </Surface>
       </Flex>
 
-      {/* Row 4: Correlation card */}
       <Surface style={{ padding: 16, borderRadius: 12 }}>
-        <TitleBar>
-          <TitleBar.Title>Epic ↔ Network Correlation</TitleBar.Title>
-          <TitleBar.Subtitle>Overlay of Epic workflow events with network infrastructure events</TitleBar.Subtitle>
-        </TitleBar>
+        <TitleBar><TitleBar.Title>Epic ↔ Network Correlation</TitleBar.Title><TitleBar.Subtitle>Overlay of Epic workflow events with network infrastructure events</TitleBar.Subtitle></TitleBar>
         <CorrelationChart />
       </Surface>
     </Flex>
   );
 };
 
-// ─── Sub-charts ─────────────────────────────────────────────────────
-
 const EventDistChart = () => {
   const { data, isLoading } = useDql({ query: queries.epicEventDistribution });
   if (isLoading) return <ProgressCircle />;
-  return <DonutChart data={data?.records as any ?? []} />;
+  return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
 
 const ActivityTimelineChart = () => {
-  const { data, isLoading } = useDql({ query: queries.systemActivityTimeline });
-  if (isLoading) return <ProgressCircle />;
-  return <TimeseriesChart data={data?.records as any ?? []} />;
+  const result = useDql({ query: queries.systemActivityTimeline });
+  if (result.isLoading) return <ProgressCircle />;
+  return <TimeseriesChart data={toTimeseries(result.data)} />;
 };
 
 const EventsBySiteChart = () => {
   const { data, isLoading } = useDql({ query: queries.eventsBySite });
   if (isLoading) return <ProgressCircle />;
-  return <CategoricalBarChart data={data?.records as any ?? []} />;
+  return <CategoricalBarChart data={toBarData(data?.records ?? [])} />;
 };
 
 const CorrelationChart = () => {
-  const { data, isLoading } = useDql({ query: queries.epicNetworkCorrelation });
-  if (isLoading) return <ProgressCircle />;
-  return <TimeseriesChart data={data?.records as any ?? []} variant="area" />;
+  const result = useDql({ query: queries.epicNetworkCorrelation });
+  if (result.isLoading) return <ProgressCircle />;
+  return <TimeseriesChart data={toTimeseries(result.data)} variant="area" />;
 };

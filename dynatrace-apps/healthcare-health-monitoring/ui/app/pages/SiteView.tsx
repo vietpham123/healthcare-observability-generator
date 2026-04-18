@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Heading, Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
-import { TimeseriesChart, CategoricalBarChart } from "@dynatrace/strato-components-preview/charts";
+import { TimeseriesChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries, EPIC_FILTER, NETWORK_FILTER } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 import { SiteCard } from "../components/SiteCard";
 import { computeHealthStatus, statusColor } from "../components/HealthBadge";
+import { toTimeseries, toBarData } from "../utils/chartHelpers";
 
 const SITES = [
   { code: "kcrmc-main", name: "KC Regional Medical Center", beds: 500, profile: "Level I Trauma" },
@@ -40,16 +41,12 @@ export const SiteView = () => {
     return { ...s, events, users, loginRate, avgCpu, devices };
   });
 
-  if (siteHealth.isLoading) {
-    return <Flex justifyContent="center" style={{ padding: 60 }}><ProgressCircle /></Flex>;
-  }
+  if (siteHealth.isLoading) return <Flex justifyContent="center" style={{ padding: 60 }}><ProgressCircle /></Flex>;
 
   if (selectedSite) {
     const site = enrichedSites.find((s) => s.code === selectedSite);
     if (!site) return null;
-    return (
-      <SiteDrillDown site={site} onBack={() => setSelectedSite(null)} />
-    );
+    return <SiteDrillDown site={site} onBack={() => setSelectedSite(null)} />;
   }
 
   return (
@@ -57,55 +54,26 @@ export const SiteView = () => {
       <Heading level={3}>Hospital Sites</Heading>
       <Flex gap={16} flexWrap="wrap">
         {enrichedSites.map((site) => (
-          <SiteCard
-            key={site.code}
-            name={site.name}
-            code={site.code}
-            events={site.events}
-            users={site.users}
-            loginRate={site.loginRate}
-            avgCpu={site.avgCpu}
-            devices={site.devices}
-            onClick={() => setSelectedSite(site.code)}
-          />
+          <SiteCard key={site.code} name={site.name} code={site.code} events={site.events} users={site.users} loginRate={site.loginRate} avgCpu={site.avgCpu} devices={site.devices} onClick={() => setSelectedSite(site.code)} />
         ))}
       </Flex>
-
-      {/* Site comparison charts */}
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>CPU by Site</TitleBar.Title>
-          </TitleBar>
-          <ChartW query={queries.deviceCpuBySite} type="timeseries" />
+          <TitleBar><TitleBar.Title>CPU by Site</TitleBar.Title></TitleBar>
+          <TsChart query={queries.deviceCpuBySite} />
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Events by Site & Pipeline</TitleBar.Title>
-          </TitleBar>
-          <ChartW query={queries.eventsBySite} type="bar" />
+          <TitleBar><TitleBar.Title>Events by Site & Pipeline</TitleBar.Title></TitleBar>
+          <BarChart query={queries.eventsBySite} />
         </Surface>
       </Flex>
     </Flex>
   );
 };
 
-interface SiteDrillDownProps {
-  site: {
-    code: string;
-    name: string;
-    profile: string;
-    beds: number;
-    events: number;
-    users: number;
-    loginRate: number;
-    avgCpu: number;
-    devices: number;
-  };
-  onBack: () => void;
-}
+interface DrillSite { code: string; name: string; profile: string; beds: number; events: number; users: number; loginRate: number; avgCpu: number; devices: number; }
 
-const SiteDrillDown = ({ site, onBack }: SiteDrillDownProps) => {
+const SiteDrillDown = ({ site, onBack }: { site: DrillSite; onBack: () => void }) => {
   const siteEpicQuery = `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter healthcare.site == "${site.code}"
@@ -113,8 +81,6 @@ const SiteDrillDown = ({ site, onBack }: SiteDrillDownProps) => {
     | filter isNotNull(e1mid)
     | summarize cnt = count(), by: { e1mid }
     | sort cnt desc`;
-
-  const siteCpuQuery = `timeseries cpu = avg(healthcare.network.device.cpu.utilization), by: {device}, filter: site == "${site.code}", from: now()-2h`;
 
   const siteNetLogsQuery = `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
@@ -126,79 +92,49 @@ const SiteDrillDown = ({ site, onBack }: SiteDrillDownProps) => {
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Flex alignItems="center" gap={12}>
-        <button
-          onClick={onBack}
-          style={{
-            background: "var(--dt-colors-surface-default)",
-            border: "1px solid var(--dt-colors-border-neutral-default)",
-            borderRadius: 6,
-            padding: "6px 14px",
-            cursor: "pointer",
-            fontSize: 13,
-            color: "var(--dt-colors-text-primary-default)",
-          }}
-        >
-          ← Back to Sites
-        </button>
+        <button onClick={onBack} style={{ background: "var(--dt-colors-surface-default)", border: "1px solid var(--dt-colors-border-neutral-default)", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, color: "var(--dt-colors-text-primary-default)" }}>← Back</button>
         <Heading level={3}>{site.name}</Heading>
-        <span style={{
-          display: "inline-block",
-          width: 10,
-          height: 10,
-          borderRadius: "50%",
-          background: statusColor(status),
-        }} />
+        <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: statusColor(status) }} />
       </Flex>
-
       <Text style={{ opacity: 0.6 }}>{site.profile} · {site.beds} beds · {site.code}</Text>
 
-      {/* Site KPIs */}
       <Flex gap={12} flexWrap="wrap">
-        <Flex flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
-          <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>Events</Text>
-          <Text style={{ fontSize: 28, fontWeight: 700 }}>{site.events}</Text>
-        </Flex>
-        <Flex flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
-          <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>Users</Text>
-          <Text style={{ fontSize: 28, fontWeight: 700 }}>{site.users}</Text>
-        </Flex>
-        <Flex flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
-          <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>Login Rate</Text>
-          <Text style={{ fontSize: 28, fontWeight: 700, color: statusColor(status) }}>{site.loginRate.toFixed(0)}%</Text>
-        </Flex>
-        <Flex flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
-          <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>Devices</Text>
-          <Text style={{ fontSize: 28, fontWeight: 700 }}>{site.devices}</Text>
-        </Flex>
-        <Flex flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
-          <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>Avg CPU</Text>
-          <Text style={{ fontSize: 28, fontWeight: 700 }}>{site.avgCpu.toFixed(1)}%</Text>
-        </Flex>
+        {[
+          { label: "Events", value: site.events },
+          { label: "Users", value: site.users },
+          { label: "Login Rate", value: `${site.loginRate.toFixed(0)}%`, color: statusColor(status) },
+          { label: "Devices", value: site.devices },
+          { label: "Avg CPU", value: `${site.avgCpu.toFixed(1)}%` },
+        ].map((m) => (
+          <Flex key={m.label} flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
+            <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>{m.label}</Text>
+            <Text style={{ fontSize: 28, fontWeight: 700, color: (m as any).color }}>{m.value}</Text>
+          </Flex>
+        ))}
       </Flex>
 
-      {/* Site detail charts */}
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Epic Event Types at {site.name}</TitleBar.Title>
-          </TitleBar>
-          <ChartW query={siteEpicQuery} type="bar" />
+          <TitleBar><TitleBar.Title>Epic Event Types</TitleBar.Title></TitleBar>
+          <BarChart query={siteEpicQuery} />
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar>
-            <TitleBar.Title>Network Events at {site.name}</TitleBar.Title>
-          </TitleBar>
-          <ChartW query={siteNetLogsQuery} type="timeseries" />
+          <TitleBar><TitleBar.Title>Network Events</TitleBar.Title></TitleBar>
+          <TsChart query={siteNetLogsQuery} />
         </Surface>
       </Flex>
     </Flex>
   );
 };
 
-const ChartW = ({ query, type }: { query: string; type: "timeseries" | "bar" }) => {
+const TsChart = ({ query }: { query: string }) => {
+  const result = useDql({ query });
+  if (result.isLoading) return <ProgressCircle />;
+  return <TimeseriesChart data={toTimeseries(result.data)} />;
+};
+
+const BarChart = ({ query }: { query: string }) => {
   const { data, isLoading } = useDql({ query });
   if (isLoading) return <ProgressCircle />;
-  const records = data?.records ?? [];
-  if (type === "timeseries") return <TimeseriesChart data={records as any} />;
-  return <CategoricalBarChart data={records as any} />;
+  return <CategoricalBarChart data={toBarData(data?.records ?? [])} />;
 };

@@ -21,34 +21,15 @@ export const Explore = () => {
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Heading level={3}>Explore Data</Heading>
-
       <Flex gap={8}>
         {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
-          <button
-            key={key}
-            onClick={() => setActive(key)}
-            style={{
-              padding: "8px 18px",
-              borderRadius: 8,
-              border: active === key ? "2px solid var(--dt-colors-charts-categorical-color-01)" : "1px solid var(--dt-colors-border-neutral-default)",
-              background: active === key ? "var(--dt-colors-surface-default)" : "transparent",
-              fontWeight: active === key ? 600 : 400,
-              fontSize: 13,
-              cursor: "pointer",
-              color: "var(--dt-colors-text-primary-default)",
-            }}
-          >
+          <button key={key} onClick={() => setActive(key)} style={{ padding: "8px 18px", borderRadius: 8, border: active === key ? "2px solid var(--dt-colors-charts-categorical-color-01)" : "1px solid var(--dt-colors-border-neutral-default)", background: active === key ? "var(--dt-colors-surface-default)" : "transparent", fontWeight: active === key ? 600 : 400, fontSize: 13, cursor: "pointer", color: "var(--dt-colors-text-primary-default)" }}>
             {PRESETS[key].label}
           </button>
         ))}
       </Flex>
-
       <Surface style={{ padding: 16, borderRadius: 12 }}>
-        <TitleBar>
-          <TitleBar.Title>{PRESETS[active].label}</TitleBar.Title>
-          <TitleBar.Subtitle>{records.length} records</TitleBar.Subtitle>
-        </TitleBar>
-
+        <TitleBar><TitleBar.Title>{PRESETS[active].label}</TitleBar.Title><TitleBar.Subtitle>{records.length} records</TitleBar.Subtitle></TitleBar>
         {isLoading ? (
           <Flex justifyContent="center" style={{ padding: 40 }}><ProgressCircle /></Flex>
         ) : records.length === 0 ? (
@@ -56,19 +37,13 @@ export const Explore = () => {
         ) : (
           <div style={{ maxHeight: 600, overflow: "auto", fontSize: 12 }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  {Object.keys(records[0]).map((key) => (
-                    <th key={key} style={TH}>{key}</th>
-                  ))}
-                </tr>
-              </thead>
+              <thead><tr>{Object.keys(records[0]).map((key) => <th key={key} style={TH}>{key}</th>)}</tr></thead>
               <tbody>
                 {records.map((r: any, i: number) => (
                   <tr key={i}>
                     {Object.keys(records[0]).map((key) => (
                       <td key={key} style={TD}>
-                        {r[key] instanceof Date || (typeof r[key] === "string" && r[key].match(/^\d{4}-\d{2}-\d{2}T/))
+                        {r[key] instanceof Date || (typeof r[key] === "string" && /^\d{4}-\d{2}-\d{2}T/.test(r[key]))
                           ? new Date(r[key]).toLocaleString()
                           : String(r[key] ?? "—")}
                       </td>
