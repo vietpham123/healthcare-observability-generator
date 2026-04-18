@@ -1,14 +1,15 @@
 // ============================================================================
-// Healthcare Health Monitoring — Shared DQL Queries  (v1.1.0)
+// Healthcare Health Monitoring — Shared DQL Queries  (v1.3.0)
 // ============================================================================
 // All queries target the dedicated healthcare bucket.
-// FIXED: Login detection uses E1Mid (not Action), HL7 uses delivery count,
-//        ETL uses uppercase SUCCESS, site CPU filter corrected.
+// Sites: kcrmc-main (KC), oak-clinic (Oakley), wel-clinic (Wellington),
+//        bel-clinic (Belleville)
 // ============================================================================
 
 const BUCKET = 'dt.system.bucket == "observe_and_troubleshoot_apps_95_days"';
 export const EPIC_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-epic"`;
 export const NETWORK_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-network"`;
+export const NETFLOW_FILTER = `${BUCKET} AND log.source == "netflow"`;
 
 export const queries = {
 
@@ -71,8 +72,9 @@ export const queries = {
   // ─── Overview Charts ──────────────────────────────────────────────
   systemActivityTimeline: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${BUCKET}
-    | filter isNotNull(healthcare.pipeline)
-    | makeTimeseries events = count(), by: { healthcare.pipeline }, interval: 5m`,
+    | filter isNotNull(healthcare.pipeline) OR log.source == "netflow"
+    | fieldsAdd pipeline = if(log.source == "netflow", "netflow", else: healthcare.pipeline)
+    | makeTimeseries events = count(), by: { pipeline }, interval: 5m`,
 
   epicEventDistribution: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
@@ -198,6 +200,44 @@ export const queries = {
     | summarize cnt = count(), by: { vendor = network.device.vendor }
     | sort cnt desc`,
 
+  // ─── NetFlow Queries ──────────────────────────────────────────────
+  netflowTotalFlows: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | summarize total = count()`,
+
+  netflowTimeline: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | makeTimeseries flows = count(), by: { site = network.device.site }, interval: 5m`,
+
+  netflowProtocolDist: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | summarize cnt = count(), by: { protocol = network.flow.protocol }
+    | sort cnt desc`,
+
+  netflowTopDstPorts: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | summarize cnt = count(), by: { dst_port = network.flow.dst_port }
+    | sort cnt desc
+    | limit 10`,
+
+  netflowTopSrcCountries: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | filter network.flow.src.country != "United States"
+    | summarize cnt = count(), by: { country = network.flow.src.country }
+    | sort cnt desc
+    | limit 10`,
+
+  netflowBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | summarize flows = count(), by: { site = network.device.site }
+    | sort flows desc`,
+
+  netflowRecentFlows: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | fields timestamp, network.flow.src_ip, network.flow.dst_ip, network.flow.dst_port, network.flow.protocol, network.flow.bytes, network.device.hostname, network.device.site
+    | sort timestamp desc
+    | limit 30`,
+
   // ─── Integration Health — HL7 ─────────────────────────────────────
   hl7VolumeOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
@@ -293,8 +333,9 @@ export const queries = {
 
   // ─── Correlation ──────────────────────────────────────────────────
   epicNetworkCorrelation: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${BUCKET} AND isNotNull(healthcare.pipeline)
-    | makeTimeseries events = count(), by: { healthcare.pipeline }, interval: 5m`,
+    | filter ${BUCKET} AND (isNotNull(healthcare.pipeline) OR log.source == "netflow")
+    | fieldsAdd pipeline = if(log.source == "netflow", "netflow", else: healthcare.pipeline)
+    | makeTimeseries events = count(), by: { pipeline }, interval: 5m`,
 
   eventsBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${BUCKET} AND isNotNull(healthcare.pipeline)
@@ -312,6 +353,12 @@ export const queries = {
   allNetworkEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
     | fields timestamp, network.device.hostname, network.device.vendor, network.device.role, healthcare.site, network.log_type
+    | sort timestamp desc
+    | limit 50`,
+
+  allNetflowEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | fields timestamp, network.flow.src_ip, network.flow.dst_ip, network.flow.dst_port, network.flow.protocol, network.flow.bytes, network.device.hostname, network.device.site
     | sort timestamp desc
     | limit 50`,
 

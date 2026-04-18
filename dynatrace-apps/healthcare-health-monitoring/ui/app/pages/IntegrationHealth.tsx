@@ -10,6 +10,9 @@ import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
 export const IntegrationHealth = () => (
   <Flex flexDirection="column" gap={16} padding={16}>
+    <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+      Integration pipeline health — HL7 message delivery and ORC action types, FHIR REST API request rates with response time percentiles, and ETL batch job status with failure tracking.
+    </Text>
     <Flex gap={12} flexWrap="wrap">
       <KpiCard query={queries.hl7DeliveryRate} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
       <KpiCard query={queries.fhirHealthRate} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />

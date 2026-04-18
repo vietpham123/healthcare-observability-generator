@@ -1,5 +1,6 @@
 import React from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
+import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { TimeseriesChart, CategoricalBarChart, DonutChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
@@ -9,6 +10,9 @@ import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
 export const EpicHealth = () => (
   <Flex flexDirection="column" gap={16} padding={16}>
+    <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+      Epic EHR system health — authentication success rates, SIEM audit events (E1Mid), clinical order volume, department activity, and security events including break-the-glass access.
+    </Text>
     <Flex gap={12} flexWrap="wrap">
       <KpiCard query={queries.epicLoginSuccessRate} label="Login Success Rate" field="success_rate" format="percent" thresholds={{ green: 90, amber: 70 }} icon="🔐" />
       <KpiCard query={queries.totalEpicEvents} label="Total Epic Events" field="total" format="number" icon="📊" />

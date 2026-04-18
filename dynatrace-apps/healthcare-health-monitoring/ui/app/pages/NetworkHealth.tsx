@@ -10,11 +10,15 @@ import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
 export const NetworkHealth = () => (
   <Flex flexDirection="column" gap={16} padding={16}>
+    <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+      Network infrastructure monitoring — device fleet health (CPU, memory, traffic), vendor distribution, and NetFlow traffic analysis including protocol breakdown, top destination ports, and geographic traffic sources.
+    </Text>
     <Flex gap={12} flexWrap="wrap">
       <KpiCard query={queries.networkDeviceUpRatio} label="Devices Up" field="up_ratio" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
       <KpiCard query={queries.avgDeviceCpu} label="Avg CPU" field="avg_cpu" format="percent" thresholds={{ green: 80, amber: 60 }} icon="💻" />
       <KpiCard query={queries.avgDeviceMem} label="Avg Memory" field="avg_mem" format="percent" thresholds={{ green: 85, amber: 70 }} icon="🧠" />
       <KpiCard query={queries.totalNetworkEvents} label="Network Events" field="total" format="number" icon="📋" />
+      <KpiCard query={queries.netflowTotalFlows} label="NetFlow Records" field="total" format="number" icon="🌐" />
     </Flex>
 
     <Surface style={{ padding: 16, borderRadius: 12 }}>
@@ -44,6 +48,29 @@ export const NetworkHealth = () => (
       </Surface>
     </Flex>
 
+    <Surface style={{ padding: 16, borderRadius: 12 }}>
+      <TitleBar><TitleBar.Title>NetFlow Traffic Analysis</TitleBar.Title><TitleBar.Subtitle>Per-flow records showing source/destination IPs, protocols, and traffic volume across all sites</TitleBar.Subtitle></TitleBar>
+      <Flex gap={16} style={{ marginTop: 12 }}>
+        <div style={{ flex: 2 }}><TsChart query={queries.netflowTimeline} /></div>
+        <div style={{ flex: 1 }}><ProtocolDonut /></div>
+      </Flex>
+      <Flex gap={16} style={{ marginTop: 12 }}>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Top Destination Ports</Text>
+          <BarChart query={queries.netflowTopDstPorts} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Flows by Site</Text>
+          <BarChart query={queries.netflowBySite} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>External Source Countries</Text>
+          <BarChart query={queries.netflowTopSrcCountries} />
+        </div>
+      </Flex>
+      <FlowTable />
+    </Surface>
+
     <Flex gap={16}>
       <Surface style={{ flex: 2, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Network Log Timeline</TitleBar.Title></TitleBar>
@@ -68,8 +95,20 @@ const TsChart = ({ query }: { query: string }) => {
   return <TimeseriesChart data={toTimeseries(result.data)} />;
 };
 
+const BarChart = ({ query }: { query: string }) => {
+  const { data, isLoading } = useDql({ query });
+  if (isLoading) return <ProgressCircle />;
+  return <CategoricalBarChart data={toBarData(data?.records ?? [])} />;
+};
+
 const VendorDonut = () => {
   const { data, isLoading } = useDql({ query: queries.networkVendorDistribution });
+  if (isLoading) return <ProgressCircle />;
+  return <DonutChart data={toDonutData(data?.records ?? [])} />;
+};
+
+const ProtocolDonut = () => {
+  const { data, isLoading } = useDql({ query: queries.netflowProtocolDist });
   if (isLoading) return <ProgressCircle />;
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
@@ -101,6 +140,34 @@ const DeviceTable = () => {
               <td style={TD}>{r.hostname}</td><td style={TD}>{r.vendor}</td><td style={TD}>{r.role}</td>
               <td style={TD}>{r.site}</td><td style={TD}>{r.events}</td>
               <td style={TD}>{r.last_seen ? new Date(r.last_seen).toLocaleString() : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const FlowTable = () => {
+  const { data, isLoading } = useDql({ query: queries.netflowRecentFlows });
+  if (isLoading) return <ProgressCircle />;
+  const records = data?.records ?? [];
+  if (records.length === 0) return <Text style={{ padding: 16, opacity: 0.5 }}>No flow records yet — data may take a few minutes to appear</Text>;
+  return (
+    <div style={{ maxHeight: 300, overflow: "auto", fontSize: 12, marginTop: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead><tr><th style={TH}>Time</th><th style={TH}>Src IP</th><th style={TH}>Dst IP</th><th style={TH}>Port</th><th style={TH}>Proto</th><th style={TH}>Bytes</th><th style={TH}>Device</th><th style={TH}>Site</th></tr></thead>
+        <tbody>
+          {records.map((r: any, i: number) => (
+            <tr key={i}>
+              <td style={TD}>{new Date(r.timestamp).toLocaleTimeString()}</td>
+              <td style={TD}>{r["network.flow.src_ip"]}</td>
+              <td style={TD}>{r["network.flow.dst_ip"]}</td>
+              <td style={TD}>{r["network.flow.dst_port"]}</td>
+              <td style={TD}>{r["network.flow.protocol"]}</td>
+              <td style={TD}>{Number(r["network.flow.bytes"]).toLocaleString()}</td>
+              <td style={TD}>{r["network.device.hostname"]}</td>
+              <td style={TD}>{r["network.device.site"]}</td>
             </tr>
           ))}
         </tbody>

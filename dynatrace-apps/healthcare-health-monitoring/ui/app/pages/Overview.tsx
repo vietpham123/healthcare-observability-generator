@@ -1,5 +1,6 @@
 import React from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
+import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { TimeseriesChart, DonutChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
@@ -10,9 +11,9 @@ import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
 const SITE_META: Record<string, { name: string; label: string; x: number; y: number }> = {
   "kcrmc-main": { name: "KC Regional Medical Center", label: "KC Main Campus", x: 450, y: 130 },
-  "tpk-clinic": { name: "Topeka Specialty Clinic", label: "Topeka Clinic", x: 320, y: 90 },
-  "wch-clinic": { name: "Wichita Care Center", label: "Wichita Clinic", x: 280, y: 230 },
-  "lwr-clinic": { name: "Lawrence Family Medicine", label: "Lawrence Clinic", x: 380, y: 60 },
+  "oak-clinic": { name: "Oakley Rural Health", label: "Oakley Clinic", x: 100, y: 130 },
+  "wel-clinic": { name: "Wellington Care Center", label: "Wellington Clinic", x: 280, y: 260 },
+  "bel-clinic": { name: "Belleville Family Medicine", label: "Belleville Clinic", x: 300, y: 60 },
 };
 
 export const Overview = () => {
@@ -38,6 +39,9 @@ export const Overview = () => {
 
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
+      <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+        System-wide view of Kansas City Regional Medical Center and satellite clinics — login health, device status, event distribution, and cross-system correlation.
+      </Text>
       <Flex gap={12} flexWrap="wrap">
         <KpiCard query={queries.epicLoginSuccessRate} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 90, amber: 70 }} icon="🔐" />
         <KpiCard query={queries.hl7DeliveryRate} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />

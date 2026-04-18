@@ -5,11 +5,12 @@ import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 
-type PresetKey = "allEpic" | "allNetwork" | "problems";
+type PresetKey = "allEpic" | "allNetwork" | "allNetflow" | "problems";
 
 const PRESETS: Record<PresetKey, { label: string; query: string }> = {
   allEpic: { label: "Epic Events", query: queries.allEpicEvents },
   allNetwork: { label: "Network Events", query: queries.allNetworkEvents },
+  allNetflow: { label: "NetFlow Records", query: queries.allNetflowEvents },
   problems: { label: "Active Problems", query: queries.activeProblemsList },
 };
 
@@ -20,6 +21,9 @@ export const Explore = () => {
 
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
+      <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+        Raw data explorer — browse Epic SIEM events, network device logs, NetFlow traffic records, and active Dynatrace problems. Use the preset buttons to switch between data sources.
+      </Text>
       <Heading level={3}>Explore Data</Heading>
       <Flex gap={8}>
         {(Object.keys(PRESETS) as PresetKey[]).map((key) => (

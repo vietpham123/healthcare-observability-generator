@@ -34,12 +34,12 @@ const COUNTY_LINES = [
   "M 446 52 L 446 370", "M 542 52 L 542 370",
 ];
 
-// Spread out NE cluster: pushed Topeka left, Lawrence down, KC stays right
+// Kansas sites spread geographically: KC east, Oakley far west, Belleville north, Wellington south
 const SITE_GEO: Record<string, { gx: number; gy: number }> = {
-  "kcrmc-main": { gx: 610, gy: 92 },
-  "tpk-clinic": { gx: 462, gy: 88 },
-  "lwr-clinic": { gx: 538, gy: 175 },
-  "wch-clinic": { gx: 380, gy: 290 },
+  "kcrmc-main": { gx: 610, gy: 112 },
+  "oak-clinic": { gx: 155, gy: 108 },
+  "bel-clinic": { gx: 410, gy: 72 },
+  "wel-clinic": { gx: 390, gy: 310 },
 };
 
 const REF_CITIES = [

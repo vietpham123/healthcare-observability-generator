@@ -11,10 +11,10 @@ import { computeHealthStatus, statusColor } from "../components/HealthBadge";
 import { toTimeseries, toBarData } from "../utils/chartHelpers";
 
 const SITES = [
-  { code: "kcrmc-main", name: "KC Regional Medical Center", beds: 500, profile: "Level I Trauma" },
-  { code: "tpk-clinic", name: "Topeka Specialty Clinic", beds: 50, profile: "Cardiology / Oncology" },
-  { code: "wch-clinic", name: "Wichita Care Center", beds: 75, profile: "Urgent Care + Family Med" },
-  { code: "lwr-clinic", name: "Lawrence Family Medicine", beds: 30, profile: "Primary Care + Pediatrics" },
+  { code: "kcrmc-main", name: "KC Regional Medical Center", beds: 500, profile: "Level I Trauma Center" },
+  { code: "oak-clinic", name: "Oakley Rural Health", beds: 25, profile: "Rural Health & Specialty Outreach" },
+  { code: "wel-clinic", name: "Wellington Care Center", beds: 40, profile: "Urgent Care + Family Medicine" },
+  { code: "bel-clinic", name: "Belleville Family Medicine", beds: 20, profile: "Primary Care + Pediatrics" },
 ];
 
 export const SiteView = () => {
@@ -49,14 +49,33 @@ export const SiteView = () => {
     return <SiteDrillDown site={site} onBack={() => setSelectedSite(null)} />;
   }
 
+  const mainSite = enrichedSites.find((s) => s.code === "kcrmc-main");
+  const satellites = enrichedSites.filter((s) => s.code !== "kcrmc-main");
+
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
-      <Heading level={3}>Hospital Sites</Heading>
+      <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+        Per-site breakdown of all hospital locations — KC Regional Medical Center (main campus) and three satellite clinics across Kansas. Click a site card to drill down into its Epic events and network activity.
+      </Text>
+
+      {/* Main campus — full width on top */}
+      {mainSite && (
+        <Flex>
+          <div style={{ width: "100%" }}>
+            <SiteCard key={mainSite.code} name={mainSite.name} code={mainSite.code} events={mainSite.events} users={mainSite.users} loginRate={mainSite.loginRate} avgCpu={mainSite.avgCpu} devices={mainSite.devices} onClick={() => setSelectedSite(mainSite.code)} />
+          </div>
+        </Flex>
+      )}
+
+      {/* Satellite clinics — three across */}
       <Flex gap={16} flexWrap="wrap">
-        {enrichedSites.map((site) => (
-          <SiteCard key={site.code} name={site.name} code={site.code} events={site.events} users={site.users} loginRate={site.loginRate} avgCpu={site.avgCpu} devices={site.devices} onClick={() => setSelectedSite(site.code)} />
+        {satellites.map((site) => (
+          <div key={site.code} style={{ flex: "1 1 280px", minWidth: 280 }}>
+            <SiteCard name={site.name} code={site.code} events={site.events} users={site.users} loginRate={site.loginRate} avgCpu={site.avgCpu} devices={site.devices} onClick={() => setSelectedSite(site.code)} />
+          </div>
         ))}
       </Flex>
+
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
           <TitleBar><TitleBar.Title>CPU by Site</TitleBar.Title></TitleBar>
