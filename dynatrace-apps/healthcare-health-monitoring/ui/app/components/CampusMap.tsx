@@ -138,8 +138,10 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
-    const sx = rect.width / VB_W;
-    const sy = rect.height / VB_H;
+    // Match SVG's preserveAspectRatio="xMidYMid meet" — uniform scale + centering
+    const uniformScale = Math.min(rect.width / VB_W, rect.height / VB_H);
+    const offsetX = (rect.width - VB_W * uniformScale) / 2;
+    const offsetY = (rect.height - VB_H * uniformScale) / 2;
     canvas.width = rect.width * 2;
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
@@ -160,8 +162,8 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
         const a = geoSites.find((s) => s.code === fl.from);
         const b = geoSites.find((s) => s.code === fl.to);
         if (!a || !b) continue;
-        const x1 = a.gx * sx, y1 = a.gy * sy;
-        const x2 = b.gx * sx, y2 = b.gy * sy;
+        const x1 = a.gx * uniformScale + offsetX, y1 = a.gy * uniformScale + offsetY;
+        const x2 = b.gx * uniformScale + offsetX, y2 = b.gy * uniformScale + offsetY;
         const px = x1 + (x2 - x1) * p.t;
         const py = y1 + (y2 - y1) * p.t;
         ctx.beginPath();

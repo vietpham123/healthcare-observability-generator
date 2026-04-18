@@ -8,7 +8,8 @@ export function withSiteFilter(query: string, siteCode: string | null, kind: "ep
 
   // Handle timeseries queries — metric dimension filtering
   const trimmed = query.trimStart();
-  if (trimmed.startsWith("timeseries ")) {
+  const isTimeseries = trimmed.startsWith("timeseries ") || trimmed.startsWith("timeseries\n");
+  if (isTimeseries) {
     const aliases = Object.entries(SITE_ALIAS).filter(([, v]) => v === siteCode).map(([k]) => k);
     const codes = [siteCode, ...aliases];
     // For a single code use ==, for multiple use in()
