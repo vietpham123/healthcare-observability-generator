@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
         - name: epic
-          image: healthcare-gen/epic:latest
+          image: vietregistry.azurecr.io/healthcare-gen/epic:v1.0.0
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: generator-config

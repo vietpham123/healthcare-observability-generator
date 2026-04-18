@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
         - name: network
-          image: healthcare-gen/network:latest
+          image: vietregistry.azurecr.io/healthcare-gen/network:v1.0.0
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: generator-config

@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
         - name: webui
-          image: healthcare-gen/webui:latest
+          image: vietregistry.azurecr.io/healthcare-gen/webui:v1.0.0
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           envFrom:
