@@ -666,3 +666,52 @@ fetch logs
 - Cross-app intent links (to Network Insights, Security Monitoring, Infrastructure & Operations)
 - ED surge detection workflow
 - Capacity planning views (utilization trends + forecasting)
+
+---
+
+## Appendix A: Scenario Coverage Matrix (Updated April 17, 2026)
+
+Based on analysis of all 8 centralized scenarios in `config/scenarios/`, this section maps each toggleable scenario to the app pages that detect its signals.
+
+### A.1 Toggle Mechanism
+
+| Layer | Mechanism | Runtime Toggle | Simultaneous |
+|-------|-----------|----------------|-------------|
+| **Centralized** (8 scenarios in `config/scenarios/`) | WebUI API: `POST /api/scenarios/{key}/activate` | **YES** — no redeployment needed | **YES** — multiple scenarios can be active |
+| **Epic-only** (8 in `src/epic_generator/config/scenarios/`) | `EPIC_SCENARIO` env var | NO — requires pod restart | NO — one at a time |
+| **Network-only** (10 in `src/network_generator/scenarios/`) | CLI `--scenario` flag | NO — requires pod restart | YES — multiple flags |
+
+### A.2 Scenario → Page Detection Matrix
+
+| Scenario | Toggle Key | Overview | Epic Health | Network Health | Integrations | Site View | Problems |
+|----------|-----------|----------|------------|---------------|-------------|-----------|----------|
+| Normal Day Shift | `normal-day-shift` | Baseline (all green) | Login + clinical baseline | SNMP baseline | HL7/FHIR/ETL baseline | All sites green | No problems |
+| ED Surge / MCI | `ed-surge` | Epic KPI amber, volume spike | Order 5-10x, ED department spike | ED switch CPU spike | HL7 ADT surge | `kcrmc-main` amber | Seasonal deviation alert |
+| Epic Outage (Network Root Cause) | `epic-outage-network-root-cause` | Epic RED, Network RED | Login crash → recovery wave | Core switch interface flap, Citrix/F5 down | FHIR 503 errors | `kcrmc-main` RED | **Davis problem** — cascade chain |
+| HL7 Interface Failure | `hl7-interface-failure` | Integration KPI RED | — | Switch port err-disable (VLAN 30) | HL7 ACK rate crash, volume drop | Affected site amber | Interface + HL7 problem |
+| Ransomware Attack | `ransomware-attack` | Wichita RED, login spike | Brute force → mass BTG access | FortiGate IPS + Palo Alto threat | API exfiltration 20x | `wch-clinic` → `kcrmc-main` cascade | Multi-signal critical |
+| IoMT Device Compromise | `iomt-device-compromise` | Network KPI amber | Clinical data gap | IoMT VLAN anomaly, ARP spoofing | Device telemetry loss | Affected site amber | IoMT security event |
+| MyChart Credential Stuffing | `mychart-credential-stuffing` | MyChart KPI RED | Portal response time spike | DMZ firewall saturation | — | `kcrmc-main` amber (DMZ) | Portal degradation |
+| Insider Threat | `insider-threat-snooping` | After-hours login anomaly | BTG access pattern | — | — | User's site highlighted | Seasonal deviation (minimal) |
+
+### A.3 Cross-Correlation Opportunities
+
+| Scenario Pair (simultaneous) | Cross-Signal | App Detection |
+|------------------------------|-------------|---------------|
+| `ransomware-attack` active | Wichita IPS alerts + Epic login failures from same IP range (10.20.20.x) | IP-based join on Site View shows network threat → clinical impact |
+| `epic-outage-network-root-cause` active | Interface down timestamp (T+0) → Citrix down (T+10s) → Epic logins fail (T+20s) | Temporal chain on Overview cascade timeline |
+| `ed-surge` + baseline | ED order volume 5x + network ED subnet utilization 2x | Department-subnet join shows capacity correlation |
+| `hl7-interface-failure` active | Switch port err-disable → HL7 NAK spike within 60s | Network → Integration temporal correlation |
+
+### A.4 Topology Alignment (Verified)
+
+The hospital topology (`config/hospital/topology.yaml`) is **already aligned** with Epic generator sites:
+
+| Site Code | Epic `users.json` | Network `topology.yaml` | IP Range | Status |
+|-----------|-------------------|------------------------|----------|--------|
+| `kcrmc-main` | ✅ | ✅ | `10.10.x.x` | **Aligned** |
+| `tpk-clinic` | ✅ | ✅ | `10.20.x.x` | **Aligned** |
+| `wch-clinic` | ✅ | ✅ | `10.30.x.x` | **Aligned** |
+| `lwr-clinic` | ✅ | ✅ | `10.40.x.x` | **Aligned** |
+
+Cross-correlation joins on `healthcare.site` and IP subnet are fully operational.

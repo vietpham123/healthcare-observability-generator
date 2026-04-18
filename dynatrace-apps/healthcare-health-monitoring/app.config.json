@@ -1,0 +1,18 @@
+{
+  "$schema": "./.dt-app/app.config.schema.json",
+  "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
+  "app": {
+    "name": "Healthcare Health Monitoring",
+    "version": "1.0.0",
+    "description": "Operational health monitoring for Kansas City Regional Medical Center — correlates Epic EHR telemetry with network infrastructure data for proactive healthcare IT observability",
+    "id": "my.healthcare.health.monitoring",
+    "scopes": [
+      { "name": "storage:logs:read", "comment": "Query Epic SIEM and network health logs from Grail" },
+      { "name": "storage:buckets:read", "comment": "Read log buckets" },
+      { "name": "storage:metrics:read", "comment": "Read SNMP device metrics and extracted health metrics" },
+      { "name": "storage:bizevents:read", "comment": "Query SNMP device inventory bizevents" },
+      { "name": "storage:events:read", "comment": "Read Davis problems and events" },
+      { "name": "davis:problems:read", "comment": "Display auto-detected health problems" }
+    ]
+  }
+}
