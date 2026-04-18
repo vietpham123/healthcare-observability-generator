@@ -145,7 +145,7 @@ const EventDistChart = ({ site }: { site: string | null }) => {
 const ActivityTimelineChart = ({ site }: { site: string | null }) => {
   const result = useDql({ query: withSiteFilter(queries.systemActivityTimeline, site, "epic") });
   if (result.isLoading) return <ProgressCircle />;
-  return <TimeseriesChart data={toTimeseries(result.data)} />;
+  return <TimeseriesChart data={toTimeseries(result.data)} gapPolicy="connect" />;
 };
 
 const EventsBySiteChart = ({ site }: { site: string | null }) => {
@@ -157,5 +157,5 @@ const EventsBySiteChart = ({ site }: { site: string | null }) => {
 const CorrelationChart = ({ site }: { site: string | null }) => {
   const result = useDql({ query: withSiteFilter(queries.epicNetworkCorrelation, site, "epic") });
   if (result.isLoading) return <ProgressCircle />;
-  return <TimeseriesChart data={toTimeseries(result.data)} variant="area" />;
+  return <TimeseriesChart data={toTimeseries(result.data)} variant="area" gapPolicy="connect" />;
 };

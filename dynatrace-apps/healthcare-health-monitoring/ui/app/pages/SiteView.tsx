@@ -194,7 +194,7 @@ const SiteDrillDown = ({ site, onBack }: { site: DrillSite; onBack: () => void }
 const TsChart = ({ query }: { query: string }) => {
   const result = useDql({ query });
   if (result.isLoading) return <ProgressCircle />;
-  return <TimeseriesChart data={toTimeseries(result.data)} />;
+  return <TimeseriesChart data={toTimeseries(result.data)} gapPolicy="connect" />;
 };
 
 const BarChart = ({ query }: { query: string }) => {
