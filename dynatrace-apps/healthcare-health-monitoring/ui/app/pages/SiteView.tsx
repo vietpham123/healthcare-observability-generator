@@ -10,6 +10,27 @@ import { SiteCard } from "../components/SiteCard";
 import { computeHealthStatus, statusColor } from "../components/HealthBadge";
 import { toTimeseries, toBarData } from "../utils/chartHelpers";
 
+// Alias old site codes to new ones so historical Grail data merges correctly
+const SITE_ALIAS: Record<string, string> = {
+  "tpk-clinic": "oak-clinic",
+  "wch-clinic": "wel-clinic",
+  "lwr-clinic": "bel-clinic",
+};
+
+function mergeRecords(records: any[], aliasMap: Record<string, string>, siteField: string, numericFields: string[]): any[] {
+  const merged: Record<string, any> = {};
+  for (const r of records) {
+    const raw = r[siteField] ?? "";
+    const code = aliasMap[raw] ?? raw;
+    if (!merged[code]) {
+      merged[code] = { [siteField]: code };
+      for (const f of numericFields) merged[code][f] = 0;
+    }
+    for (const f of numericFields) merged[code][f] += Number(r[f]) || 0;
+  }
+  return Object.values(merged);
+}
+
 const SITES = [
   { code: "kcrmc-main", name: "KC Regional Medical Center", beds: 500, profile: "Level I Trauma Center" },
   { code: "oak-clinic", name: "Oakley Rural Health", beds: 25, profile: "Rural Health & Specialty Outreach" },
@@ -23,13 +44,13 @@ export const SiteView = () => {
   const netHealth = useDql({ query: queries.networkSiteHealth });
   const netDevices = useDql({ query: queries.networkDevicesBySite });
 
-  const siteRecords = siteHealth.data?.records ?? [];
-  const netRecords = netHealth.data?.records ?? [];
-  const devRecords = netDevices.data?.records ?? [];
+  const siteRecords = mergeRecords(siteHealth.data?.records ?? [], SITE_ALIAS, "site", ["events", "logins", "login_ok", "users"]);
+  const netRecords = netHealth.data?.records ?? []; // timeseries — alias handled by site dimension
+  const devRecords = mergeRecords(netDevices.data?.records ?? [], SITE_ALIAS, "site", ["devices"]);
 
   const enrichedSites = SITES.map((s) => {
     const epicRec = siteRecords.find((r: any) => r.site === s.code);
-    const netRec = netRecords.find((r: any) => r.site === s.code);
+    const netRec = netRecords.find((r: any) => (SITE_ALIAS[r.site] ?? r.site) === s.code);
     const devRec = devRecords.find((r: any) => r.site === s.code);
     const events = Number(epicRec?.events) || 0;
     const users = Number(epicRec?.users) || 0;

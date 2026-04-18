@@ -9,6 +9,13 @@ import { KpiCard } from "../components/KpiCard";
 import { CampusMap } from "../components/CampusMap";
 import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
 
+// Alias old site codes to new ones so historical Grail data merges correctly
+const SITE_ALIAS: Record<string, string> = {
+  "tpk-clinic": "oak-clinic",
+  "wch-clinic": "wel-clinic",
+  "lwr-clinic": "bel-clinic",
+};
+
 const SITE_META: Record<string, { name: string; label: string; x: number; y: number }> = {
   "kcrmc-main": { name: "KC Regional Medical Center", label: "KC Main Campus", x: 450, y: 130 },
   "oak-clinic": { name: "Oakley Rural Health", label: "Oakley Clinic", x: 100, y: 130 },
@@ -16,11 +23,38 @@ const SITE_META: Record<string, { name: string; label: string; x: number; y: num
   "bel-clinic": { name: "Belleville Family Medicine", label: "Belleville Clinic", x: 300, y: 60 },
 };
 
+function mergeSiteRecords(records: any[], aliasMap: Record<string, string>): any[] {
+  const merged: Record<string, any> = {};
+  for (const r of records) {
+    const raw = r.site ?? "";
+    const code = aliasMap[raw] ?? raw;
+    if (!merged[code]) {
+      merged[code] = { site: code, events: 0, logins: 0, login_ok: 0, users: 0 };
+    }
+    merged[code].events += Number(r.events) || 0;
+    merged[code].logins += Number(r.logins) || 0;
+    merged[code].login_ok += Number(r.login_ok) || 0;
+    merged[code].users += Number(r.users) || 0;
+  }
+  return Object.values(merged);
+}
+
+function mergeDeviceRecords(records: any[], aliasMap: Record<string, string>): any[] {
+  const merged: Record<string, any> = {};
+  for (const r of records) {
+    const raw = r.site ?? "";
+    const code = aliasMap[raw] ?? raw;
+    if (!merged[code]) merged[code] = { site: code, devices: 0 };
+    merged[code].devices += Number(r.devices) || 0;
+  }
+  return Object.values(merged);
+}
+
 export const Overview = () => {
   const siteHealth = useDql({ query: queries.siteHealthSummary });
   const netDevices = useDql({ query: queries.networkDevicesBySite });
-  const siteRecords = siteHealth.data?.records ?? [];
-  const devRecords = netDevices.data?.records ?? [];
+  const siteRecords = mergeSiteRecords(siteHealth.data?.records ?? [], SITE_ALIAS);
+  const devRecords = mergeDeviceRecords(netDevices.data?.records ?? [], SITE_ALIAS);
 
   const campusSites = siteRecords.map((r: any) => {
     const code = r.site ?? "";
