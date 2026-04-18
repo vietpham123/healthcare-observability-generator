@@ -50,9 +50,9 @@ function geoToSvg(lat: number, lon: number) {
 }
 
 /* -- Site positions from real lat/lon -- */
-// NOTE: Using Kansas City KANSAS (not Missouri) so the hub stays inside the KS border
+// Hub at Overland Park, KS (Johnson County) — well inside KS border
 const SITE_GEO: Record<string, { gx: number; gy: number }> = {
-  "kcrmc-main": geoToSvg(39.1155, -94.6268),   // Kansas City KS (Wyandotte County)
+  "kcrmc-main": geoToSvg(38.9822, -94.6708),   // Overland Park KS (Johnson County)
   "oak-clinic": geoToSvg(39.1333, -100.8528),   // Oakley KS
   "bel-clinic": geoToSvg(39.8258, -97.6322),    // Belleville KS
   "wel-clinic": geoToSvg(37.2650, -97.3714),    // Wellington KS
