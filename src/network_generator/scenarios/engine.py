@@ -11,9 +11,26 @@ from typing import Any
 
 import yaml
 
-from netloggen.scenarios.baseline import LogEvent, MetricPoint, TrapEvent, FlowRecord
+from netloggen.core.models import (
+    FlowRecord,
+    LogEvent,
+    MetricEvent,
+    Severity,
+    TrapEvent,
+)
 
 logger = logging.getLogger("netloggen.scenarios.engine")
+
+_SEVERITY_MAP = {
+    "emergency": Severity.EMERGENCY,
+    "alert": Severity.ALERT,
+    "critical": Severity.CRITICAL,
+    "error": Severity.ERROR,
+    "warning": Severity.WARNING,
+    "notice": Severity.NOTICE,
+    "info": Severity.INFO,
+    "debug": Severity.DEBUG,
+}
 
 
 @dataclass
@@ -70,7 +87,7 @@ class ScenarioEngine:
     def execute_scenario(self, playbook: ScenarioPlaybook, start_time: datetime) -> dict:
         """Execute all steps in a playbook and return generated events."""
         logs: list[LogEvent] = []
-        metrics: list[MetricPoint] = []
+        metrics: list[MetricEvent] = []
         traps: list[TrapEvent] = []
         flows: list[FlowRecord] = []
 
@@ -85,10 +102,11 @@ class ScenarioEngine:
                     continue
 
                 action = step.action.lower()
-                site = getattr(device, "site", "")
+                site = device.site
+                sev_str = step.params.get("severity", playbook.severity).lower()
+                severity = _SEVERITY_MAP.get(sev_str, Severity.WARNING)
 
                 if action in ("log", "alert", "syslog"):
-                    severity = step.params.get("severity", playbook.severity).upper()
                     msg = step.params.get(
                         "message",
                         f"Scenario [{playbook.name}]: {step.description}",
@@ -96,41 +114,49 @@ class ScenarioEngine:
                     logs.append(LogEvent(
                         timestamp=ts,
                         device=device.hostname,
-                        vendor=getattr(device, "vendor", "generic"),
+                        vendor=device.vendor,
                         severity=severity,
-                        facility=step.params.get("facility", "local0"),
-                        message=msg,
+                        content=msg,
+                        event_type=step.params.get("event_type", "SCENARIO"),
+                        log_source=device.vendor.value,
+                        scenario_id=playbook.name,
                         site=site,
+                        device_role=device.role.value,
+                        device_model=device.model,
                     ))
 
                 elif action in ("metric", "spike", "degrade"):
-                    metrics.append(MetricPoint(
+                    metrics.append(MetricEvent(
                         timestamp=ts,
                         device=device.hostname,
-                        metric=step.params.get("metric", "cpuUtilization"),
+                        metric_key=step.params.get("metric", "device.cpu.utilization"),
                         value=step.params.get("value", 95.0),
-                        labels={"site": site, "scenario": playbook.name},
+                        dimensions={"site": site, "scenario": playbook.name},
+                        site=site,
                     ))
 
                 elif action in ("trap", "snmp_trap"):
                     traps.append(TrapEvent(
                         timestamp=ts,
                         device=device.hostname,
-                        oid=step.params.get("oid", "1.3.6.1.6.3.1.1.5.3"),
-                        value=step.params.get("value", step.description),
+                        trap_oid=step.params.get("oid", "1.3.6.1.6.3.1.1.5.3"),
+                        trap_name=step.params.get("trap_name", step.description),
+                        severity=severity,
+                        site=site,
                     ))
 
                 elif action in ("flow", "traffic"):
                     flows.append(FlowRecord(
                         timestamp=ts,
+                        device=device.hostname,
                         src_ip=step.params.get("src_ip", "0.0.0.0"),
                         dst_ip=step.params.get("dst_ip", "0.0.0.0"),
                         src_port=step.params.get("src_port", 0),
                         dst_port=step.params.get("dst_port", 0),
-                        protocol=step.params.get("protocol", 6),
-                        bytes=step.params.get("bytes", 0),
-                        packets=step.params.get("packets", 0),
-                        device=device.hostname,
+                        protocol=step.params.get("protocol", "tcp"),
+                        bytes_total=step.params.get("bytes", 0),
+                        packets_total=step.params.get("packets", 0),
+                        site=site,
                     ))
 
         logger.info(
