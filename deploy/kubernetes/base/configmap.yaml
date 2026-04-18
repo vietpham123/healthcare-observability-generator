@@ -4,9 +4,11 @@ metadata:
   name: generator-config
   namespace: healthcare-gen
 data:
-  DT_ENDPOINT: ""
+  DT_ENDPOINT: "https://YOUR_ENV_ID.live.dynatrace.com"
   OUTPUT_DIR: "/app/output"
   EPIC_TICK_INTERVAL: "10"
   NETWORK_TICK_INTERVAL: "60"
   NETWORK_MODE: "realtime"
   LOG_LEVEL: "INFO"
+  EPIC_OUTPUT_MODE: "both"
+  NETWORK_OUTPUT: "both"

@@ -22,6 +22,15 @@ spec:
         - name: network
           image: vietregistry.azurecr.io/healthcare-gen/network:latest
           imagePullPolicy: Always
+          args:
+            - "--config"
+            - "/app/config/hospital/topology.yaml"
+            - "--output"
+            - "both"
+            - "--mode"
+            - "realtime"
+            - "--tick-interval"
+            - "60"
           envFrom:
             - configMapRef:
                 name: generator-config

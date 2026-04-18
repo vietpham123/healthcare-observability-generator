@@ -112,6 +112,12 @@ class DynatraceOutput(BaseOutput):
         if event.scenario_id:
             record["network.scenario.id"] = event.scenario_id
 
+        # Segmentation attributes for Dynatrace routing/filtering
+        record["dt.source.generator"] = "healthcare-obs-gen-v2"
+        record["generator.type"] = "network"
+        record["generator.version"] = "2.0.0"
+        record["healthcare.site"] = event.site or "unknown"
+
         # Add structured attributes
         for k, v in event.attributes.items():
             record[k] = str(v)
@@ -150,8 +156,14 @@ class DynatraceOutput(BaseOutput):
         return total_sent
 
     def _metric_to_mint(self, m: MetricEvent) -> str:
+        # Add generator segmentation dimension
+        if "dt.source.generator" not in m.dimensions:
+            m.dimensions["dt.source.generator"] = "healthcare-obs-gen-v2"
         dims = ",".join(f'{k}="{v}"' for k, v in m.dimensions.items() if v)
         key = m.metric_key
+        # Prefix with healthcare.network namespace
+        if not key.startswith("healthcare.network."):
+            key = f"healthcare.network.{key}"
         if dims:
             key = f"{key},{dims}"
 

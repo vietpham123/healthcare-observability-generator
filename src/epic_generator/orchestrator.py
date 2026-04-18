@@ -360,6 +360,18 @@ def load_legacy_config(filename):
     return config
 
 
+class MultiOutput:
+    """Fan-out wrapper that writes to multiple output backends."""
+    def __init__(self, outputs):
+        self.outputs = outputs
+    def write(self, data):
+        for o in self.outputs:
+            o.write(data)
+    def close(self):
+        for o in self.outputs:
+            o.close()
+
+
 if __name__ == "__main__":
     config_dir = os.environ.get(
         "EPIC_CONFIG_DIR",
@@ -368,10 +380,41 @@ if __name__ == "__main__":
     output_dir = os.environ.get("OUTPUT_DIR", "/app/output")
     frequency = float(os.environ.get("TICK_INTERVAL_EPIC", "10"))
     scenario = os.environ.get("EPIC_SCENARIO", None)
+    output_mode = os.environ.get("EPIC_OUTPUT_MODE", "file").lower()
 
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "epic-siem.log")
-    output = FileOutput(filename=output_file)
+    outputs = []
+
+    if output_mode in ("file", "both"):
+        output_file = os.path.join(output_dir, "epic-siem.log")
+        outputs.append(FileOutput(filename=output_file))
+
+    if output_mode in ("dynatrace", "both"):
+        from outputs.otlp_output import OTLPOutput
+        dt_endpoint = os.environ.get("DT_ENDPOINT", "").rstrip("/")
+        dt_token = os.environ.get("DT_API_TOKEN", "")
+        if dt_endpoint and dt_token:
+            dt_output = OTLPOutput(
+                endpoint=f"{dt_endpoint}/api/v2/logs/ingest",
+                api_token=dt_token,
+                mode="dynatrace",
+                batch_size=50,
+                default_attributes={
+                    "dt.source.generator": "healthcare-obs-gen-v2",
+                    "generator.type": "epic-siem",
+                    "generator.version": "2.0.0",
+                },
+            )
+            outputs.append(dt_output)
+            print(f"Dynatrace output enabled: {dt_endpoint}/api/v2/logs/ingest")
+        else:
+            print("WARNING: DT_ENDPOINT or DT_API_TOKEN not set, skipping Dynatrace output")
+
+    if not outputs:
+        output_file = os.path.join(output_dir, "epic-siem.log")
+        outputs.append(FileOutput(filename=output_file))
+
+    output = outputs[0] if len(outputs) == 1 else MultiOutput(outputs)
 
     config_path = os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(config_path):
@@ -384,5 +427,5 @@ if __name__ == "__main__":
         output=output,
         scenario=scenario,
     )
-    print(f"Epic SIEM Generator starting — frequency={frequency}s, output_dir={output_dir}")
+    print(f"Epic SIEM Generator starting - mode={output_mode}, frequency={frequency}s")
     orch.run(frequency=frequency)
