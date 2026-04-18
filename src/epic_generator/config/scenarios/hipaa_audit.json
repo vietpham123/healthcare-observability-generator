@@ -1,0 +1,18 @@
+{
+  "name": "HIPAA Audit — Excessive Patient Lookups",
+  "description": "Single user performing high-volume patient lookups across departments. Potential HIPAA violation indicator.",
+  "volume_multiplier": 1.0,
+  "mychart_multiplier": 1.0,
+  "curve_overrides": {},
+  "max_sessions": 20,
+  "anomaly": {
+    "type": "hipaa_audit",
+    "description": "Excessive patient lookup activity by a single user across unrelated departments",
+    "perpetrator_username": "OTESTADMIN",
+    "events_per_tick": 8,
+    "event_types": ["PUL_SEARCH_AUDIT", "WPSEC_PATIENT_LOOKUP_ATTEMPT", "CHART_ACCESS"],
+    "target_departments": ["PSYCHIATRY", "L&D", "ONCOLOGY", "EMERGENCY", "PEDIATRICS", "ICU-EAST"],
+    "duration_ticks": 40,
+    "note": "User is registered in BILLING department but accessing clinical records across 6+ departments"
+  }
+}

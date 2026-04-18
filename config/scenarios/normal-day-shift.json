@@ -1,6 +1,6 @@
 {
-  "name": "Normal Day Shift — LRMC",
-  "description": "Typical 7AM-7PM day shift at Lakeside Regional. High clinical volume, steady MyChart evening traffic, routine ETL jobs. Baseline for anomaly detection.",
+  "name": "Normal Day Shift — KCRMC",
+  "description": "Typical 7AM-7PM day shift at Kansas City Regional. High clinical volume, steady MyChart evening traffic, routine ETL jobs. Baseline for anomaly detection.",
   "volume_multiplier": 1.0,
   "mychart_multiplier": 1.0,
   "max_sessions": 25,

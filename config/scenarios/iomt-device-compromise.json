@@ -29,42 +29,42 @@
     "events": [
       {
         "offset_seconds": 0,
-        "device": "lrmc-acc-icu-01",
+        "device": "kcrmc-acc-icu-01",
         "event_type": "port_security_violation",
         "params": {"interface": "GigabitEthernet0/12", "mac_address": "00:1A:2B:3C:4D:5E", "violation_type": "restrict"},
         "description": "Port security detects unusual MAC activity on infusion pump port"
       },
       {
         "offset_seconds": 30,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "threat_detect",
         "params": {"threat_type": "spyware", "threat_name": "Suspicious DNS Query", "severity": "medium", "src_ip": "10.10.40.15", "dst_ip": "8.8.8.8"},
         "description": "IoMT device making DNS queries to external resolver — should use internal only"
       },
       {
         "offset_seconds": 60,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "traffic_deny",
         "params": {"src_ip": "10.10.40.15", "dst_ip": "10.10.30.10", "dst_port": 2575, "action": "deny", "rule": "iomt-to-hl7-deny"},
         "description": "Firewall denies MLLP (HL7) connection attempt from IoMT device"
       },
       {
         "offset_seconds": 90,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "traffic_deny",
         "params": {"src_ip": "10.10.40.15", "dst_ip": "10.10.10.30", "dst_port": 443, "action": "deny", "rule": "iomt-to-epic-deny"},
         "description": "Firewall denies HTTPS connection to Interconnect from IoMT device"
       },
       {
         "offset_seconds": 120,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "threat_detect",
         "params": {"threat_type": "vulnerability", "threat_name": "TCP Port Scan Detected", "severity": "high", "src_ip": "10.10.40.15"},
         "description": "Palo Alto detects lateral scanning from IoMT device"
       },
       {
         "offset_seconds": 180,
-        "device": "lrmc-acc-icu-01",
+        "device": "kcrmc-acc-icu-01",
         "event_type": "interface_down",
         "params": {"interface": "GigabitEthernet0/12", "reason": "administratively down"},
         "description": "Security team shuts down the compromised device port"

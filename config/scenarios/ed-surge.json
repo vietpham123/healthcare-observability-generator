@@ -1,6 +1,6 @@
 {
   "name": "ED Surge — Mass Casualty Incident",
-  "description": "Multi-vehicle accident sends 15+ patients to LRMC ED simultaneously. Triggers rapid admissions, high SIEM event volume, HL7 ADT message burst, and network saturation on ED VLAN.",
+  "description": "Multi-vehicle accident sends 15+ patients to KCRMC ED simultaneously. Triggers rapid admissions, high SIEM event volume, HL7 ADT message burst, and network saturation on ED VLAN.",
   "volume_multiplier": 3.0,
   "mychart_multiplier": 0.8,
   "max_sessions": 40,
@@ -22,21 +22,21 @@
     "events": [
       {
         "offset_seconds": 0,
-        "device": "lrmc-acc-ed-01",
+        "device": "kcrmc-acc-ed-01",
         "event_type": "interface_utilization_high",
         "params": {"interface": "GigabitEthernet0/1", "utilization_pct": 85},
         "description": "ED switch uplink nearing saturation"
       },
       {
         "offset_seconds": 120,
-        "device": "lrmc-acc-rad-01",
+        "device": "kcrmc-acc-rad-01",
         "event_type": "interface_utilization_high",
         "params": {"interface": "GigabitEthernet0/2", "utilization_pct": 78},
         "description": "PACS traffic surge — portable chest X-rays from ED"
       },
       {
         "offset_seconds": 60,
-        "device": "lrmc-citrix-01",
+        "device": "kcrmc-citrix-01",
         "event_type": "lb_vserver_connections_high",
         "params": {"vserver": "vs_epic_hyperspace_443", "connections": 450},
         "description": "Citrix ADC connection count spikes — many clinicians logging in"

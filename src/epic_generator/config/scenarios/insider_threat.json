@@ -1,0 +1,46 @@
+{
+  "name": "Insider Threat",
+  "description": "After-hours break-the-glass access by a known employee without clinical justification. Accessing records of co-workers or VIP patients.",
+  "volume_multiplier": 0.2,
+  "mychart_multiplier": 0.3,
+  "curve_overrides": {
+    "23": 0.8,
+    "0": 0.9,
+    "1": 0.9,
+    "2": 0.7,
+    "3": 0.5,
+    "4": 0.3
+  },
+  "max_sessions": 3,
+  "anomaly": {
+    "type": "insider_threat",
+    "description": "Employee accessing records of co-workers and VIP patients after hours via break-the-glass",
+    "perpetrator_username": "SBRYANT",
+    "perpetrator_department": "MED-SURG 4W",
+    "events_per_tick": 2,
+    "event_sequence": [
+      "HKU_LOGIN",
+      "PUL_SEARCH_AUDIT",
+      "AC_BREAK_THE_GLASS_ACCESS",
+      "CHART_ACCESS",
+      "AC_BREAK_THE_GLASS_ACCESS",
+      "CHART_ACCESS",
+      "CONTEXTCHANGE",
+      "PUL_SEARCH_AUDIT",
+      "AC_BREAK_THE_GLASS_ACCESS",
+      "CHART_ACCESS"
+    ],
+    "access_justifications": [
+      "Continuity of Care",
+      "Direct Care",
+      ""
+    ],
+    "duration_ticks": 25,
+    "indicators": [
+      "After-hours access (23:00-04:00)",
+      "Break-the-glass on patients not in employee's department",
+      "No active orders or recent encounters with accessed patients",
+      "Sequential access pattern suggesting browsing rather than clinical need"
+    ]
+  }
+}

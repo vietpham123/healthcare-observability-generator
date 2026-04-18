@@ -1,0 +1,23 @@
+{
+  "name": "ED Surge",
+  "description": "Emergency department surge — high volume 18:00-23:00, elevated trauma and critical care events.",
+  "volume_multiplier": 1.5,
+  "mychart_multiplier": 0.8,
+  "curve_overrides": {
+    "18": 1.8,
+    "19": 2.0,
+    "20": 2.0,
+    "21": 1.8,
+    "22": 1.5,
+    "23": 1.2
+  },
+  "max_sessions": 35,
+  "event_weights": {
+    "siem": 0.30,
+    "clinical": 0.45,
+    "fhir": 0.20,
+    "mychart": 0.05
+  },
+  "department_focus": ["EMERGENCY", "ICU-EAST", "ICU-WEST", "OR-MAIN", "PACU"],
+  "elevated_event_types": ["order_entry", "med_admin", "result_review"]
+}

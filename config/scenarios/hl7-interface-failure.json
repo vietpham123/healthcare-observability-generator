@@ -39,28 +39,28 @@
     "events": [
       {
         "offset_seconds": 0,
-        "device": "lrmc-dist-epic-01",
+        "device": "kcrmc-dist-epic-01",
         "event_type": "interface_errors",
         "params": {"interface": "GigabitEthernet1/0/24", "input_errors": 1500, "crc_errors": 800, "description": "Port connected to Bridges HL7 engine"},
         "description": "CRC errors on Bridges interface engine port"
       },
       {
         "offset_seconds": 30,
-        "device": "lrmc-dist-epic-01",
+        "device": "kcrmc-dist-epic-01",
         "event_type": "interface_errors",
         "params": {"interface": "GigabitEthernet1/0/24", "input_errors": 5000, "crc_errors": 3200},
         "description": "Errors escalating — cable or transceiver degradation"
       },
       {
         "offset_seconds": 60,
-        "device": "lrmc-dist-epic-01",
+        "device": "kcrmc-dist-epic-01",
         "event_type": "err_disable",
         "params": {"interface": "GigabitEthernet1/0/24", "reason": "link-flap"},
         "description": "Switch err-disables the port — HL7 engine completely offline"
       },
       {
         "offset_seconds": 900,
-        "device": "lrmc-dist-epic-01",
+        "device": "kcrmc-dist-epic-01",
         "event_type": "interface_up",
         "params": {"interface": "GigabitEthernet1/0/24"},
         "description": "Port auto-recovered (errdisable recovery timer)"

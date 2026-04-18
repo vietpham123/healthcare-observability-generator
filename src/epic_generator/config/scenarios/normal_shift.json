@@ -1,0 +1,14 @@
+{
+  "name": "Normal Day Shift",
+  "description": "Typical day shift pattern with standard clinical volume.",
+  "volume_multiplier": 1.0,
+  "mychart_multiplier": 1.0,
+  "curve_overrides": {},
+  "max_sessions": 20,
+  "event_weights": {
+    "siem": 0.40,
+    "clinical": 0.30,
+    "fhir": 0.20,
+    "mychart": 0.10
+  }
+}

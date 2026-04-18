@@ -1,6 +1,6 @@
 {
   "name": "Ransomware Attack — Hospital Kill Chain",
-  "description": "Phishing email at Lakeside West satellite compromises a workstation. Attacker pivots through WAN to main campus, attempts credential harvesting against Epic, and begins mass patient record exfiltration. Correlated across FortiGate IPS, Palo Alto threat logs, Epic SIEM break-the-glass, and anomalous NetFlow.",
+  "description": "Phishing email at Wichita satellite clinic compromises a workstation. Attacker pivots through WAN to main campus, attempts credential harvesting against Epic, and begins mass patient record exfiltration. Correlated across FortiGate IPS, Palo Alto threat logs, Epic SIEM break-the-glass, and anomalous NetFlow.",
   "volume_multiplier": 2.0,
   "mychart_multiplier": 0.3,
   "max_sessions": 50,
@@ -13,7 +13,7 @@
         "name": "Credential Harvesting (T+5min)",
         "offset_minutes": 5,
         "events": [
-          {"event_type": "FAILEDLOGIN", "count": 30, "source_ip_prefix": "10.20.20", "description": "Brute force login attempts from compromised LKW workstation"},
+          {"event_type": "FAILEDLOGIN", "count": 30, "source_ip_prefix": "10.20.20", "description": "Brute force login attempts from compromised WCH workstation"},
           {"event_type": "WPSEC_LOGIN_FAIL", "count": 15, "source_ip_prefix": "10.20.20"},
           {"event_type": "LOGIN_BLOCKED", "count": 5, "source_ip_prefix": "10.20.20"}
         ]
@@ -51,49 +51,49 @@
     "events": [
       {
         "offset_seconds": 0,
-        "device": "lkw-fw-01",
+        "device": "wch-fw-01",
         "event_type": "utm_webfilter",
         "params": {"src_ip": "10.20.20.50", "url": "https://updates.micros0ft-patch.com/loader.exe", "category": "Malicious Websites", "action": "warning"},
         "description": "Web filter flags phishing payload download"
       },
       {
         "offset_seconds": 30,
-        "device": "lkw-fw-01",
+        "device": "wch-fw-01",
         "event_type": "traffic_forward",
         "params": {"action": "accept", "src_ip": "10.20.20.50", "dst_ip": "198.51.100.99", "dst_port": 443, "app": "ssl"},
         "description": "C2 callback established from compromised workstation"
       },
       {
         "offset_seconds": 120,
-        "device": "lkw-fw-01",
+        "device": "wch-fw-01",
         "event_type": "utm_ips",
         "params": {"src_ip": "10.20.20.50", "dst_ip": "10.20.20.1", "attack_name": "TCP.Port.Scan", "severity": "medium", "action": "detected"},
         "description": "Internal reconnaissance — port scanning satellite LAN"
       },
       {
         "offset_seconds": 180,
-        "device": "lkw-fw-01",
+        "device": "wch-fw-01",
         "event_type": "utm_ips",
         "params": {"src_ip": "10.20.20.50", "dst_ip": "172.16.0.1", "attack_name": "SMB.Login.Brute.Force", "severity": "high", "action": "detected"},
         "description": "Attempting to traverse WAN link to main campus"
       },
       {
         "offset_seconds": 300,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "threat_detect",
         "params": {"threat_type": "spyware", "threat_name": "Ransomware.Gen C2 Traffic", "severity": "critical", "src_zone": "untrust", "dst_zone": "trust"},
         "description": "Palo Alto detects C2 traffic crossing into main campus"
       },
       {
         "offset_seconds": 600,
-        "device": "lrmc-fw-pa-01",
+        "device": "kcrmc-fw-pa-01",
         "event_type": "threat_detect",
         "params": {"threat_type": "vulnerability", "threat_name": "Epic Interconnect API Abuse - High Volume", "severity": "high", "src_zone": "trust", "dst_zone": "dmz"},
         "description": "Anomalous API traffic volume to Epic Interconnect"
       },
       {
         "offset_seconds": 900,
-        "device": "lkw-fw-01",
+        "device": "wch-fw-01",
         "event_type": "utm_antivirus",
         "params": {"src_ip": "10.20.20.50", "filename": "svchost_update.exe", "virus_name": "W32/Filecoder.Ransomware!tr"},
         "description": "AV finally catches ransomware binary"
@@ -110,7 +110,7 @@
     "Break-the-glass events from admin account (KMOORE) who is not a clinician",
     "Sequential patient lookup pattern (MRN+1, MRN+2, ...) — not clinical behavior",
     "FortiGate IPS + Palo Alto threat alerts correlate temporally with Epic SIEM burst",
-    "WAN traffic from LKW to LRMC spikes 10x during off-hours",
+    "WAN traffic from WCH to KCRMC spikes 10x during off-hours",
     "NetFlow shows high-volume HTTPS to single external IP during C2 phase"
   ]
 }

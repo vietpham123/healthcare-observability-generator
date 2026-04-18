@@ -33,7 +33,7 @@ logger = logging.getLogger("webui")
 
 app = FastAPI(
     title="Healthcare Observability Generator",
-    description="Control panel for Lakeside Regional Medical Center log generators",
+    description="Control panel for Kansas City Regional Medical Center log generators",
     version="1.0.0",
 )
 

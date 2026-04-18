@@ -1,0 +1,352 @@
+# ============================================================================
+# IoMT Device Profiles — Kansas City Regional Medical Center
+# ============================================================================
+# Lightweight profiles for Internet of Medical Things (IoMT) devices.
+# Each profile defines:
+#   - MAC OUI prefix (realistic manufacturer)
+#   - Expected traffic pattern (protocol, ports, bandwidth)
+#   - Baseline metrics for anomaly detection
+#   - Typical deployment locations
+#
+# Deviation from these baselines triggers Dynatrace anomaly detectors:
+#   - Unexpected outbound connections (C2 beaconing)
+#   - Bandwidth spikes (data exfiltration)
+#   - Protocol anomalies (non-standard ports)
+#   - Communication outside device-to-server pairs
+# ============================================================================
+
+device_types:
+
+  # --------------------------------------------------------------------------
+  # Infusion Pumps — BD Alaris System
+  # --------------------------------------------------------------------------
+  - type: infusion_pump
+    manufacturer: "BD (Becton Dickinson)"
+    model: "Alaris PC 8015"
+    mac_oui: "00:09:BF"  # BD Medical
+    firmware_version: "12.1.3"
+    os: "VxWorks 6.9"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, TLS]
+      destination_ports: [443, 8443]
+      typical_destinations:
+        - "10.10.10.50"   # Drug library server (Epic Willow)
+        - "10.10.90.20"   # Syslog collector
+      bandwidth_baseline_kbps: 15
+      bandwidth_max_kbps: 80
+      connection_interval_sec: 300
+      session_duration_sec: 5
+    anomaly_indicators:
+      - "Outbound connection to non-drug-library IP"
+      - "Bandwidth > 200 kbps sustained > 60s"
+      - "DNS query to external domain"
+      - "Any UDP traffic (non-standard for this device)"
+    deployment:
+      sites: [kcrmc-main, tpk-clinic]
+      departments: [ICU, ED, Med-Surg, Oncology Infusion]
+      count_per_site:
+        kcrmc-main: 120
+        tpk-clinic: 15
+
+  # --------------------------------------------------------------------------
+  # Patient Monitors — Philips IntelliVue
+  # --------------------------------------------------------------------------
+  - type: patient_monitor
+    manufacturer: "Philips Healthcare"
+    model: "IntelliVue MX800"
+    mac_oui: "00:09:FB"  # Philips Medical
+    firmware_version: "M.00.03"
+    os: "Windows Embedded Standard 7"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, HL7v2]
+      destination_ports: [2575, 4545, 443]
+      typical_destinations:
+        - "10.10.30.10"   # HL7 interface engine (Rhapsody)
+        - "10.10.10.50"   # Epic Flowsheets
+        - "10.10.90.20"   # Central monitoring station
+      bandwidth_baseline_kbps: 50
+      bandwidth_max_kbps: 250
+      connection_interval_sec: 1
+      session_duration_sec: 0  # Continuous streaming
+    anomaly_indicators:
+      - "Connection to IP outside 10.10.x.x range"
+      - "HL7 message rate > 10x baseline"
+      - "SMB/CIFS traffic (lateral movement indicator)"
+      - "Firmware download from non-Philips source"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [ICU, ED, L&D, OR]
+      count_per_site:
+        kcrmc-main: 85
+
+  # --------------------------------------------------------------------------
+  # Ventilators — GE Healthcare CARESCAPE R860
+  # --------------------------------------------------------------------------
+  - type: ventilator
+    manufacturer: "GE Healthcare"
+    model: "CARESCAPE R860"
+    mac_oui: "00:00:F8"  # GE (assigned)
+    firmware_version: "3.2.1"
+    os: "Proprietary RTOS"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, HL7v2]
+      destination_ports: [2575, 8080]
+      typical_destinations:
+        - "10.10.30.10"   # HL7 interface engine
+        - "10.10.90.20"   # Syslog collector
+      bandwidth_baseline_kbps: 8
+      bandwidth_max_kbps: 30
+      connection_interval_sec: 10
+      session_duration_sec: 2
+    anomaly_indicators:
+      - "Any internet-bound connection"
+      - "SSH/Telnet session initiated from device"
+      - "Bandwidth sustained > 100 kbps"
+      - "ARP scan activity (> 5 unique MACs queried in 60s)"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [ICU, ED, OR]
+      count_per_site:
+        kcrmc-main: 35
+
+  # --------------------------------------------------------------------------
+  # Telemetry Packs — Philips MX40
+  # --------------------------------------------------------------------------
+  - type: telemetry_pack
+    manufacturer: "Philips Healthcare"
+    model: "IntelliVue MX40"
+    mac_oui: "00:09:FB"  # Philips Medical
+    firmware_version: "B.06.18"
+    os: "Proprietary RTOS"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, UDP]
+      destination_ports: [4545, 4546]
+      typical_destinations:
+        - "10.10.90.20"   # Central station receiver
+      bandwidth_baseline_kbps: 5
+      bandwidth_max_kbps: 20
+      connection_interval_sec: 1
+      session_duration_sec: 0  # Continuous
+    anomaly_indicators:
+      - "Connection to any destination other than central station"
+      - "Device offline > 300s (patient safety)"
+      - "Bandwidth spike > 50 kbps"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [Med-Surg, Cardiology, L&D]
+      count_per_site:
+        kcrmc-main: 60
+
+  # --------------------------------------------------------------------------
+  # Nurse Call System — Hill-Rom Voalte
+  # --------------------------------------------------------------------------
+  - type: nurse_call
+    manufacturer: "Baxter (Hill-Rom)"
+    model: "Voalte Platform"
+    mac_oui: "00:17:23"  # Hill-Rom
+    firmware_version: "5.12.0"
+    os: "Linux Embedded"
+    vlan: 70
+    expected_traffic:
+      protocols: [TCP, SIP, HTTPS]
+      destination_ports: [5060, 5061, 443, 8443]
+      typical_destinations:
+        - "10.10.70.10"   # Voalte server
+        - "10.10.90.20"   # Syslog
+      bandwidth_baseline_kbps: 3
+      bandwidth_max_kbps: 100  # During voice call
+      connection_interval_sec: 30
+      session_duration_sec: 1
+    anomaly_indicators:
+      - "SIP registration to external server"
+      - "Connection outside VLAN 70 subnet"
+      - "Firmware update from non-Hill-Rom source"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [ICU, Med-Surg, L&D, ED, Pediatrics]
+      count_per_site:
+        kcrmc-main: 200
+
+  # --------------------------------------------------------------------------
+  # Smart Beds — Hill-Rom Centrella
+  # --------------------------------------------------------------------------
+  - type: smart_bed
+    manufacturer: "Baxter (Hill-Rom)"
+    model: "Centrella Smart+ Bed"
+    mac_oui: "00:17:23"  # Hill-Rom
+    firmware_version: "2.8.1"
+    os: "Proprietary RTOS"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, HTTPS]
+      destination_ports: [443, 8443]
+      typical_destinations:
+        - "10.10.90.25"   # NaviCare server
+        - "10.10.30.10"   # HL7 interface (bed events → ADT)
+      bandwidth_baseline_kbps: 2
+      bandwidth_max_kbps: 10
+      connection_interval_sec: 60
+      session_duration_sec: 1
+    anomaly_indicators:
+      - "Any outbound internet connection"
+      - "Bed reporting data when room marked unoccupied"
+      - "Connection to file share (SMB)"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [ICU, Med-Surg, L&D, Pediatrics, Rehabilitation]
+      count_per_site:
+        kcrmc-main: 350
+
+  # --------------------------------------------------------------------------
+  # PACS / Medical Imaging — GE Revolution CT
+  # --------------------------------------------------------------------------
+  - type: ct_scanner
+    manufacturer: "GE Healthcare"
+    model: "Revolution CT"
+    mac_oui: "00:00:F8"  # GE
+    firmware_version: "RS3.2"
+    os: "Windows 10 IoT Enterprise LTSC"
+    vlan: 60
+    expected_traffic:
+      protocols: [TCP, DICOM]
+      destination_ports: [104, 11112, 4242]
+      typical_destinations:
+        - "10.10.60.10"   # PACS server (primary)
+        - "10.10.60.11"   # PACS archive
+        - "10.10.60.20"   # Radiology worklist broker
+      bandwidth_baseline_kbps: 500
+      bandwidth_max_kbps: 50000  # During image transfer
+      connection_interval_sec: 0  # On-demand
+      session_duration_sec: 120
+    anomaly_indicators:
+      - "DICOM traffic to non-PACS destination"
+      - "Internet-bound connection (PHI exfil risk)"
+      - "RDP session from non-radiology VLAN"
+      - "C-STORE to unregistered AE title"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [Radiology]
+      count_per_site:
+        kcrmc-main: 3
+
+  # --------------------------------------------------------------------------
+  # Portable X-Ray — Carestream DRX-Revolution
+  # --------------------------------------------------------------------------
+  - type: portable_xray
+    manufacturer: "Carestream Health"
+    model: "DRX-Revolution"
+    mac_oui: "00:24:BA"  # Carestream
+    firmware_version: "8.1.0"
+    os: "Windows 10 IoT"
+    vlan: 60
+    expected_traffic:
+      protocols: [TCP, DICOM, HTTPS]
+      destination_ports: [104, 11112, 443]
+      typical_destinations:
+        - "10.10.60.10"   # PACS server
+        - "10.10.60.20"   # Radiology worklist
+      bandwidth_baseline_kbps: 200
+      bandwidth_max_kbps: 25000
+      connection_interval_sec: 0  # On-demand
+      session_duration_sec: 60
+    anomaly_indicators:
+      - "Connection from non-hospital WiFi SSID"
+      - "DICOM to external IP"
+      - "Device active outside normal hours (11pm-5am)"
+    deployment:
+      sites: [kcrmc-main, wch-clinic]
+      departments: [Radiology, ED, ICU]
+      count_per_site:
+        kcrmc-main: 5
+        wch-clinic: 1
+
+  # --------------------------------------------------------------------------
+  # Medication Dispensing — BD Pyxis MedStation ES
+  # --------------------------------------------------------------------------
+  - type: medication_cabinet
+    manufacturer: "BD (Becton Dickinson)"
+    model: "Pyxis MedStation ES"
+    mac_oui: "00:09:BF"  # BD
+    firmware_version: "1.6.1"
+    os: "Windows 10 IoT Enterprise"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, TLS]
+      destination_ports: [443, 1433, 8443]
+      typical_destinations:
+        - "10.10.10.50"   # Epic Willow server
+        - "10.10.90.30"   # Pyxis console server
+      bandwidth_baseline_kbps: 25
+      bandwidth_max_kbps: 150
+      connection_interval_sec: 15
+      session_duration_sec: 3
+    anomaly_indicators:
+      - "Connection to SQL server not in whitelist"
+      - "USB mass storage device inserted"
+      - "Failed biometric auth > 5x in 60s"
+      - "Cabinet access at unusual hour for department"
+    deployment:
+      sites: [kcrmc-main]
+      departments: [ICU, ED, Med-Surg, OR, L&D, Pharmacy]
+      count_per_site:
+        kcrmc-main: 45
+
+  # --------------------------------------------------------------------------
+  # Point-of-Care Testing — Abbott i-STAT Alinity
+  # --------------------------------------------------------------------------
+  - type: poct_analyzer
+    manufacturer: "Abbott"
+    model: "i-STAT Alinity"
+    mac_oui: "BC:EC:23"  # Abbott (assigned)
+    firmware_version: "3.0.0"
+    os: "Proprietary RTOS"
+    vlan: 40
+    expected_traffic:
+      protocols: [TCP, HTTPS]
+      destination_ports: [443, 8443]
+      typical_destinations:
+        - "10.10.30.10"   # HL7 interface (results → Epic)
+        - "10.10.90.20"   # Syslog
+      bandwidth_baseline_kbps: 1
+      bandwidth_max_kbps: 5
+      connection_interval_sec: 600
+      session_duration_sec: 2
+    anomaly_indicators:
+      - "Device reporting from unexpected VLAN"
+      - "Results volume > 3x normal (potential replay attack)"
+      - "Connection to non-lab-system IP"
+    deployment:
+      sites: [kcrmc-main, tpk-clinic, wch-clinic, lwr-clinic]
+      departments: [ED, ICU, Lab Draw Station]
+      count_per_site:
+        kcrmc-main: 20
+        tpk-clinic: 3
+        wch-clinic: 3
+        lwr-clinic: 2
+
+# ============================================================================
+# Aggregate IoMT Fleet Summary
+# ============================================================================
+# Total devices across all sites:
+#   Infusion Pumps:        135 (120 + 15)
+#   Patient Monitors:       85
+#   Ventilators:            35
+#   Telemetry Packs:        60
+#   Nurse Call Stations:   200
+#   Smart Beds:            350
+#   CT Scanners:             3
+#   Portable X-Ray:          6 (5 + 1)
+#   Medication Cabinets:    45
+#   POCT Analyzers:         28 (20 + 3 + 3 + 2)
+#   ──────────────────────────
+#   TOTAL:                 947 IoMT endpoints
+#
+# Primary VLAN Distribution:
+#   VLAN 40 (IoMT):     ~695 devices (pumps, monitors, vents, beds, meds, POCT)
+#   VLAN 60 (Radiology):  ~9 devices (CT, X-Ray)
+#   VLAN 70 (Voice):     ~200 devices (nurse call)
+# ============================================================================

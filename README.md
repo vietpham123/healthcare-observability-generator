@@ -1,6 +1,6 @@
 # Healthcare Observability Generator
 
-Combined Epic SIEM + Network log generator for **Lakeside Regional Medical Center (LRMC)** — a synthetic healthcare observability data platform built for Dynatrace.
+Combined Epic SIEM + Network log generator for **Kansas City Regional Medical Center (KCRMC)** — a synthetic healthcare observability data platform built for Dynatrace.
 
 ## Overview
 
@@ -11,13 +11,13 @@ Generates temporally-correlated logs across two domains:
 | **Epic SIEM** | SIEM audit, Clinical, HL7, FHIR, MyChart, ETL | Epic Hyperspace, Interconnect, Bridges, MyChart |
 | **Network** | Syslog, SNMP, NetFlow, Traps | Cisco IOS/ASA/NX-OS, Palo Alto, FortiGate, F5, Citrix, Aruba |
 
-### Hospital Profile — Lakeside Regional Medical Center
+### Hospital Profile — Kansas City Regional Medical Center
 
-- **Main Campus** (`lrmc-main`, `10.10.x.x`) — 500-bed regional medical center
+- **Main Campus** (`kcrmc-main`, `10.10.x.x`) — 500-bed regional medical center
   - ED, ICU, Med-Surg, OR, L&D, Pediatrics, Cardiology, Oncology, Radiology, Lab, Pharmacy
-- **Satellite West** (`lkw-satellite`, `10.20.x.x`) — Urgent Care + Family Medicine
-- **Satellite North** (`lkn-satellite`, `10.30.x.x`) — Cardiology/Oncology Outpatient + Infusion
-- **Satellite South** (`lks-satellite`, `10.40.x.x`) — Primary Care + Pediatrics Outpatient
+- **Topeka Clinic** (`tpk-clinic`, `10.20.x.x`) — Cardiology/Oncology + Infusion Center
+- **Wichita Clinic** (`wch-clinic`, `10.30.x.x`) — Urgent Care + Family Medicine
+- **Lawrence Clinic** (`lwr-clinic`, `10.40.x.x`) — Primary Care + Pediatrics Outpatient
 - **WAN Transit** (`172.16.0.x`) — MPLS/SD-WAN interconnects
 - **Public-facing** (`203.0.113.x`) — MyChart, Interconnect, VPN
 

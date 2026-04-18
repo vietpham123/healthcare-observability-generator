@@ -2,55 +2,33 @@
   "PRD": {
     "name": "Production",
     "source": "PROD",
-    "lws_id": "LRMCSUP",
+    "lws_id": "KCRMCSUP",
     "ip_range": "10.10.10.0/24",
     "sw_version": "11.2.0",
     "instance_urns": [
-      "urn:LRMC:PRD:FHIR",
-      "urn:LRMC:MyChartMobile",
-      "urn:LRMC:PRD:Hyperspace",
-      "urn:LRMC:PRD:Interconnect",
-      "urn:LRMC:PRD:Bridges",
-      "urn:LRMC:PRD:ClinDoc"
+      "urn:KCRMC:PRD:FHIR",
+      "urn:KCRMC:MyChartMobile",
+      "urn:KCRMC:PRD:Hyperspace",
+      "urn:KCRMC:PRD:Interconnect",
+      "urn:KCRMC:PRD:Bridges",
+      "urn:KCRMC:PRD:ClinDoc"
     ],
     "syslog_facility": 85,
-    "syslog_app_name": "Epic"
+    "syslog_app_name": "Epic",
+    "hostnames": ["EPICPRD-WEB01", "EPICPRD-WEB02", "EPICPRD-IC01", "EPICPRD-IC02"],
+    "volume_multiplier": 1.0
   },
   "TST": {
     "name": "Test",
     "source": "TST",
-    "lws_id": "LRMCTST",
+    "lws_id": "KCRMCTST",
     "ip_range": "10.10.12.0/24",
     "sw_version": "11.2.0",
     "instance_urns": [
-      "urn:LRMC:TST:FHIR",
-      "urn:LRMC:TST:Hyperspace"
-    ]
-  }
-}
-{
-  "PRD": {
-    "source": "PROD",
-    "hostnames": ["EPICPRD-WEB01", "EPICPRD-WEB02", "EPICPRD-IC01", "EPICPRD-IC02"],
-    "ip_range": "10.6.3.0/24",
-    "volume_multiplier": 1.0
-  },
-  "TST": {
-    "source": "TEST",
+      "urn:KCRMC:TST:FHIR",
+      "urn:KCRMC:TST:Hyperspace"
+    ],
     "hostnames": ["EPICTST-WEB01"],
-    "ip_range": "10.6.4.0/24",
     "volume_multiplier": 0.1
-  },
-  "BLD": {
-    "source": "BUILD",
-    "hostnames": ["EPICBLD-WEB01"],
-    "ip_range": "10.6.5.0/24",
-    "volume_multiplier": 0.05
-  },
-  "SUP": {
-    "source": "SUPPORT",
-    "hostnames": ["EPICSUP-WEB01"],
-    "ip_range": "10.6.6.0/24",
-    "volume_multiplier": 0.15
   }
 }

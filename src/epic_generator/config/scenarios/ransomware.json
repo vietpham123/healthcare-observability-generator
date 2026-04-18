@@ -1,0 +1,53 @@
+{
+  "name": "Ransomware Indicator",
+  "description": "Simulates early indicators of a ransomware attack: rapid successive logins from unusual IPs, mass record access, and abnormal service account activity.",
+  "volume_multiplier": 2.0,
+  "mychart_multiplier": 0.5,
+  "curve_overrides": {
+    "0": 2.0,
+    "1": 2.0,
+    "2": 2.0,
+    "3": 2.0,
+    "4": 2.0,
+    "5": 2.0
+  },
+  "max_sessions": 50,
+  "anomaly": {
+    "type": "ransomware",
+    "description": "Rapid automated access patterns typical of ransomware reconnaissance and exfiltration",
+    "attacker_ip_range": "172.16.99.0/24",
+    "events_per_tick": 15,
+    "phases": [
+      {
+        "name": "Reconnaissance",
+        "duration_ticks": 10,
+        "event_types": ["FAILEDLOGIN", "WPSEC_LOGIN_FAIL", "IC_SERVICE_AUDIT"],
+        "target_usernames": ["EPICHYPERSPACE", "EPICINTERCONNECT", "VPHAM", "DCANNON"]
+      },
+      {
+        "name": "Credential Harvesting",
+        "duration_ticks": 5,
+        "event_types": ["CTO_LOGIN", "HKU_LOGIN", "WPSEC_2FACTOR_AUTHENTICATION"],
+        "note": "Successful logins after brute force phase"
+      },
+      {
+        "name": "Lateral Movement",
+        "duration_ticks": 15,
+        "event_types": ["CHART_ACCESS", "PUL_SEARCH_AUDIT", "IC_SERVICE_AUDIT", "SECURE"],
+        "note": "Mass record access across all departments"
+      },
+      {
+        "name": "Exfiltration",
+        "duration_ticks": 10,
+        "event_types": ["IC_SERVICE_AUDIT", "IC_SERVICE_AUDIT", "IC_SERVICE_AUDIT"],
+        "note": "High-volume API calls indicating data exfiltration"
+      }
+    ],
+    "indicators": [
+      "Multiple failed logins followed by success from same unusual IP range",
+      "Service account usage from IPs outside normal range",
+      "Sequential patient chart access across all departments",
+      "API call volume 10x normal rate during off-hours"
+    ]
+  }
+}
