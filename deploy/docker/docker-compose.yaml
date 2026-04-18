@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  webui:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.webui
+    ports:
+      - "8080:8080"
+    volumes:
+      - output-data:/app/output
+    environment:
+      - OUTPUT_DIR=/app/output
+    depends_on:
+      - epic-gen
+      - network-gen
+
+  epic-gen:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.epic
+    volumes:
+      - output-data:/app/output
+    environment:
+      - OUTPUT_DIR=/app/output/epic
+      - DT_ENDPOINT=${DT_ENDPOINT:-}
+      - DT_API_TOKEN=${DT_API_TOKEN:-}
+
+  network-gen:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.network
+    volumes:
+      - output-data:/app/output
+    environment:
+      - OUTPUT_DIR=/app/output/network
+      - DT_ENDPOINT=${DT_ENDPOINT:-}
+      - DT_API_TOKEN=${DT_API_TOKEN:-}
+
+volumes:
+  output-data:

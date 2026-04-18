@@ -1,0 +1,98 @@
+# Scenario: STP Loop / Broadcast Storm
+# Misconfigured switch causes STP loop, leading to broadcast storm
+# and widespread network degradation.
+
+name: STP Broadcast Storm
+description: >
+  A rogue switch connected to an access port without BPDU guard
+  creates a spanning tree loop. Broadcast storm degrades network
+  performance across the distribution and access layers until
+  err-disabled ports isolate the problem.
+duration_seconds: 600
+severity: critical
+tags: [network, stp, layer2, broadcast-storm]
+
+steps:
+  - offset_seconds: 0
+    device: acc-sw-03
+    event_type: stp_topology_change
+    params:
+      vlan: 30
+    description: "Unexpected topology change on VLAN 30"
+
+  - offset_seconds: 2
+    device: acc-sw-03
+    event_type: stp_topology_change
+    params:
+      vlan: 30
+    description: "Rapid repeated TC — loop forming"
+
+  - offset_seconds: 5
+    device: dist-sw-01
+    event_type: stp_topology_change
+    params:
+      vlan: 30
+    description: "Loop propagates to distribution layer"
+    metric_overrides:
+      network.device.cpu.utilization: 75.0
+
+  - offset_seconds: 8
+    device: acc-sw-03
+    event_type: cpu_high
+    params:
+      cpu_percent: 98
+      process: "Memory Arbiter"
+    description: "Access switch CPU pegged from broadcast flood"
+    metric_overrides:
+      network.device.cpu.utilization: 98.0
+
+  - offset_seconds: 10
+    device: dist-sw-01
+    event_type: cpu_high
+    params:
+      cpu_percent: 85
+      process: "HULC Led Process"
+    description: "Distribution CPU elevated from storm"
+    metric_overrides:
+      network.device.cpu.utilization: 85.0
+
+  - offset_seconds: 15
+    device: acc-sw-01
+    event_type: duplex_mismatch
+    params:
+      interface: GigabitEthernet0/2
+    description: "Access switch sees errors — collateral damage"
+
+  - offset_seconds: 20
+    device: acc-sw-03
+    event_type: err_disable
+    params:
+      interface: GigabitEthernet0/2
+      reason: bpduguard
+    description: "BPDU guard finally kicks in (err-disable)"
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+
+  - offset_seconds: 25
+    device: dist-sw-01
+    event_type: stp_port_state
+    params:
+      interface: GigabitEthernet1/0/3
+      state: blocking
+    description: "STP blocks offending port at distribution"
+
+  # Recovery
+  - offset_seconds: 60
+    device: dist-sw-01
+    event_type: baseline_info
+    params: {}
+    description: "Distribution layer stabilizes"
+    metric_overrides:
+      network.device.cpu.utilization: 15.0
+
+  - offset_seconds: 120
+    device: acc-sw-03
+    event_type: config_change
+    params:
+      user: netops_admin
+      command: "spanning-tree portfast bpduguard default"
+    description: "Admin enables global BPDU guard"

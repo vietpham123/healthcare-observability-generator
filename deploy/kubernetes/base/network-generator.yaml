@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-generator
+  namespace: healthcare-gen
+  labels:
+    app: network-generator
+    app.kubernetes.io/part-of: healthcare-observability-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: network-generator
+  template:
+    metadata:
+      labels:
+        app: network-generator
+    spec:
+      containers:
+        - name: network
+          image: healthcare-gen/network:latest
+          envFrom:
+            - configMapRef:
+                name: generator-config
+            - secretRef:
+                name: dt-credentials
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

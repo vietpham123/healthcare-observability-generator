@@ -1,0 +1,43 @@
+[
+  {"emp_id": "99001^EPIC, HYPERSPACE^EPICHYPERSPACE", "username": "EPICHYPERSPACE", "role": "SYSTEM", "department": "IT", "user_type": "System", "is_service_account": true, "site": "lrmc-main"},
+  {"emp_id": "99002^EPIC, INTERCONNECT^EPICINTERCONNECT", "username": "EPICINTERCONNECT", "role": "SYSTEM", "department": "IT", "user_type": "System", "is_service_account": true, "site": "lrmc-main"},
+  {"emp_id": "99003^EPIC, BRIDGES^EPICBRIDGES", "username": "EPICBRIDGES", "role": "SYSTEM", "department": "IT", "user_type": "System", "is_service_account": true, "site": "lrmc-main"},
+  {"emp_id": "99004^EPIC, MYCHART^EPICMYCHART", "username": "EPICMYCHART", "role": "SYSTEM", "department": "IT", "user_type": "System", "is_service_account": true, "site": "lrmc-main"},
+
+  {"emp_id": "1001^CHEN, DAVID^DCHEN", "username": "DCHEN", "role": "PHYSICIAN", "department": "EMERGENCY", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.25"},
+  {"emp_id": "1002^WILLIAMS, SARAH^SWILLIAMS", "username": "SWILLIAMS", "role": "PHYSICIAN", "department": "ICU", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "1003^PATEL, ANISH^APATEL", "username": "APATEL", "role": "PHYSICIAN", "department": "CARDIOLOGY", "user_type": "Physician", "is_service_account": false, "site": "lkn-satellite", "typical_ip_prefix": "10.30.20"},
+  {"emp_id": "1004^GARCIA, ELENA^EGARCIA", "username": "EGARCIA", "role": "PHYSICIAN", "department": "ONCOLOGY", "user_type": "Physician", "is_service_account": false, "site": "lkn-satellite", "typical_ip_prefix": "10.30.20"},
+  {"emp_id": "1005^JOHNSON, ROBERT^RJOHNSON", "username": "RJOHNSON", "role": "PHYSICIAN", "department": "ORTHOPEDICS", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "1006^THOMPSON, LISA^LTHOMPSON", "username": "LTHOMPSON", "role": "PHYSICIAN", "department": "MED-SURG 3W", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "1007^NAKAMURA, YUKI^YNAKAMURA", "username": "YNAKAMURA", "role": "PHYSICIAN", "department": "PEDIATRICS", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "1008^OKONKWO, CHIDI^COKONKWO", "username": "COKONKWO", "role": "PHYSICIAN", "department": "PRIMARY CARE", "user_type": "Physician", "is_service_account": false, "site": "lks-satellite", "typical_ip_prefix": "10.40.20"},
+  {"emp_id": "1009^REEVES, AMANDA^AREEVES", "username": "AREEVES", "role": "PHYSICIAN", "department": "RADIOLOGY", "user_type": "Physician", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.60"},
+  {"emp_id": "1010^MUELLER, HANS^HMUELLER", "username": "HMUELLER", "role": "PHYSICIAN", "department": "URGENT CARE", "user_type": "Physician", "is_service_account": false, "site": "lkw-satellite", "typical_ip_prefix": "10.20.20"},
+
+  {"emp_id": "2001^MARTINEZ, ROSA^RMARTINEZ", "username": "RMARTINEZ", "role": "NURSE", "department": "EMERGENCY", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.25"},
+  {"emp_id": "2002^KIM, SOYEON^SKIM", "username": "SKIM", "role": "NURSE", "department": "ICU", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2003^BROWN, MARCUS^MBROWN", "username": "MBROWN", "role": "NURSE", "department": "MED-SURG 3W", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2004^JACKSON, TANYA^TJACKSON", "username": "TJACKSON", "role": "NURSE", "department": "MED-SURG 3E", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2005^NGUYEN, THANH^TNGUYEN", "username": "TNGUYEN", "role": "NURSE", "department": "MED-SURG 4W", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2006^SCHMIDT, HEIDI^HSCHMIDT", "username": "HSCHMIDT", "role": "NURSE", "department": "ONCOLOGY", "user_type": "Nurse", "is_service_account": false, "site": "lkn-satellite", "typical_ip_prefix": "10.30.20"},
+  {"emp_id": "2007^WRIGHT, KEVIN^KWRIGHT", "username": "KWRIGHT", "role": "NURSE", "department": "CARDIOLOGY", "user_type": "Nurse", "is_service_account": false, "site": "lkn-satellite", "typical_ip_prefix": "10.30.20"},
+  {"emp_id": "2008^DAVIS, ANGELA^ADAVIS", "username": "ADAVIS", "role": "NURSE", "department": "EMERGENCY", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.25"},
+  {"emp_id": "2009^HARRIS, BRANDON^BHARRIS", "username": "BHARRIS", "role": "NURSE", "department": "OR", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2010^SULLIVAN, MEGAN^MSULLIVAN", "username": "MSULLIVAN", "role": "NURSE", "department": "L&D", "user_type": "Nurse", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "2011^TAYLOR, JESSICA^JTAYLOR", "username": "JTAYLOR", "role": "NURSE", "department": "URGENT CARE", "user_type": "Nurse", "is_service_account": false, "site": "lkw-satellite", "typical_ip_prefix": "10.20.20"},
+  {"emp_id": "2012^WALKER, DENISE^DWALKER", "username": "DWALKER", "role": "NURSE", "department": "PRIMARY CARE", "user_type": "Nurse", "is_service_account": false, "site": "lks-satellite", "typical_ip_prefix": "10.40.20"},
+
+  {"emp_id": "3001^LEE, JONATHAN^JLEE", "username": "JLEE", "role": "PHARMACIST", "department": "PHARMACY", "user_type": "Pharmacist", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "3002^ANDERSON, MICHELLE^MANDERSON", "username": "MANDERSON", "role": "PHARMACIST", "department": "PHARMACY", "user_type": "Pharmacist", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+
+  {"emp_id": "4001^PEREZ, CARLOS^CPEREZ", "username": "CPEREZ", "role": "TECH", "department": "LABORATORY", "user_type": "Tech", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.30"},
+  {"emp_id": "4002^WHITE, SANDRA^SWHITE", "username": "SWHITE", "role": "TECH", "department": "RADIOLOGY", "user_type": "Tech", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.60"},
+  {"emp_id": "4003^GREEN, TOMMY^TGREEN", "username": "TGREEN", "role": "TECH", "department": "RESPIRATORY THERAPY", "user_type": "Tech", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+
+  {"emp_id": "5001^ROBINSON, DIANE^DROBINSON", "username": "DROBINSON", "role": "ADMIN", "department": "REGISTRATION", "user_type": "Admin", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.20"},
+  {"emp_id": "5002^CLARK, BRIAN^BCLARK", "username": "BCLARK", "role": "ADMIN", "department": "HIM", "user_type": "Admin", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.90"},
+  {"emp_id": "5003^LEWIS, PATRICIA^PLEWIS", "username": "PLEWIS", "role": "ADMIN", "department": "BILLING", "user_type": "Admin", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.90"},
+  {"emp_id": "5004^YOUNG, MICHAEL^MYOUNG", "username": "MYOUNG", "role": "ADMIN", "department": "IT", "user_type": "Admin", "is_service_account": false, "site": "lrmc-main", "typical_ip_prefix": "10.10.100"},
+  {"emp_id": "5005^MOORE, KATHLEEN^KMOORE", "username": "KMOORE", "role": "ADMIN", "department": "REGISTRATION", "user_type": "Admin", "is_service_account": false, "site": "lkw-satellite", "typical_ip_prefix": "10.20.20"}
+]

@@ -1,0 +1,520 @@
+# Large Enterprise Topology — multi-site, multi-vendor
+# 3 data centers + 5 campus sites + 10 branch offices
+# Covers all 13 vendor types with realistic infrastructure
+
+sites:
+  - name: dc-east
+    location: "US-East (Virginia)"
+    latitude: "38.9072"
+    longitude: "-77.0369"
+    country: "United States"
+  - name: dc-west
+    location: "US-West (Oregon)"
+    latitude: "45.5152"
+    longitude: "-122.6784"
+    country: "United States"
+  - name: dc-eu
+    location: "EU (Frankfurt)"
+    latitude: "50.1109"
+    longitude: "8.6821"
+    country: "Germany"
+  - name: campus-hq
+    location: "Corporate HQ"
+    latitude: "40.7128"
+    longitude: "-74.0060"
+    country: "United States"
+  - name: campus-eng
+    location: "Engineering Campus"
+    latitude: "37.3861"
+    longitude: "-122.0839"
+    country: "United States"
+  - name: campus-finance
+    location: "Finance Campus"
+    latitude: "41.8781"
+    longitude: "-87.6298"
+    country: "United States"
+  - name: campus-sales-east
+    location: "Sales East"
+    latitude: "33.7490"
+    longitude: "-84.3880"
+    country: "United States"
+  - name: campus-sales-west
+    location: "Sales West"
+    latitude: "34.0522"
+    longitude: "-118.2437"
+    country: "United States"
+  - name: branch-01
+    location: "Branch Office 01"
+    latitude: "51.5074"
+    longitude: "-0.1278"
+    country: "United Kingdom"
+  - name: branch-02
+    location: "Branch Office 02"
+    latitude: "48.8566"
+    longitude: "2.3522"
+    country: "France"
+  - name: branch-03
+    location: "Branch Office 03"
+    latitude: "35.6762"
+    longitude: "139.6503"
+    country: "Japan"
+
+subnets:
+  dc_mgmt: "10.0.0.0/16"
+  dc_server: "10.1.0.0/16"
+  campus: "10.10.0.0/16"
+  branch: "10.20.0.0/16"
+  dmz: "172.16.0.0/16"
+  transit: "100.64.0.0/16"
+
+devices:
+  # ════════════════════════════════════════════════════════════════
+  # DC-EAST — Cisco Nexus + Palo Alto + F5 + Citrix
+  # ════════════════════════════════════════════════════════════════
+
+  # Spine switches (Nexus)
+  - hostname: dc-east-spine-01
+    vendor: cisco_nxos
+    role: core_switch
+    management_ip: "10.0.1.1"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.1", status: up }
+      - { name: "Ethernet1/2", ip: "100.64.1.1", status: up }
+
+  - hostname: dc-east-spine-02
+    vendor: cisco_nxos
+    role: core_switch
+    management_ip: "10.0.1.2"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.2", status: up }
+
+  # Leaf switches
+  - hostname: dc-east-leaf-01
+    vendor: cisco_nxos
+    role: access_switch
+    management_ip: "10.0.1.11"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.11", status: up }
+      - { name: "Ethernet1/49", ip: "100.64.1.11", status: up }
+
+  - hostname: dc-east-leaf-02
+    vendor: cisco_nxos
+    role: access_switch
+    management_ip: "10.0.1.12"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.12", status: up }
+
+  - hostname: dc-east-leaf-03
+    vendor: cisco_nxos
+    role: access_switch
+    management_ip: "10.0.1.13"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.13", status: up }
+
+  - hostname: dc-east-leaf-04
+    vendor: cisco_nxos
+    role: access_switch
+    management_ip: "10.0.1.14"
+    site: dc-east
+    interfaces:
+      - { name: "Ethernet1/1", ip: "10.0.1.14", status: up }
+
+  # DC Firewalls (Palo Alto)
+  - hostname: dc-east-fw-01
+    vendor: paloalto
+    role: firewall
+    management_ip: "10.0.1.50"
+    site: dc-east
+    interfaces:
+      - { name: "ethernet1/1", ip: "10.0.1.50", status: up }
+      - { name: "ethernet1/2", ip: "172.16.1.1", status: up }
+
+  - hostname: dc-east-fw-02
+    vendor: paloalto
+    role: firewall
+    management_ip: "10.0.1.51"
+    site: dc-east
+    interfaces:
+      - { name: "ethernet1/1", ip: "10.0.1.51", status: up }
+
+  # Load Balancers (F5)
+  - hostname: dc-east-lb-01
+    vendor: f5
+    role: load_balancer
+    management_ip: "10.0.1.60"
+    site: dc-east
+    interfaces:
+      - { name: "1.1", ip: "10.0.1.60", status: up }
+      - { name: "1.2", ip: "10.1.1.1", status: up }
+
+  - hostname: dc-east-lb-02
+    vendor: f5
+    role: load_balancer
+    management_ip: "10.0.1.61"
+    site: dc-east
+    interfaces:
+      - { name: "1.1", ip: "10.0.1.61", status: up }
+
+  # ADC (Citrix)
+  - hostname: dc-east-adc-01
+    vendor: citrix
+    role: load_balancer
+    management_ip: "10.0.1.70"
+    site: dc-east
+    interfaces:
+      - { name: "0/1", ip: "10.0.1.70", status: up }
+
+  # WAN Router
+  - hostname: dc-east-rtr-01
+    vendor: cisco_ios
+    role: router
+    management_ip: "10.0.1.80"
+    site: dc-east
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.0.1.80", status: up }
+      - { name: "GigabitEthernet0/1", ip: "100.64.0.1", status: up }
+
+  # ════════════════════════════════════════════════════════════════
+  # DC-WEST — Arista + Check Point + F5
+  # ════════════════════════════════════════════════════════════════
+
+  - hostname: dc-west-spine-01
+    vendor: arista
+    role: core_switch
+    management_ip: "10.0.2.1"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.1", status: up }
+
+  - hostname: dc-west-spine-02
+    vendor: arista
+    role: core_switch
+    management_ip: "10.0.2.2"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.2", status: up }
+
+  - hostname: dc-west-leaf-01
+    vendor: arista
+    role: access_switch
+    management_ip: "10.0.2.11"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.11", status: up }
+
+  - hostname: dc-west-leaf-02
+    vendor: arista
+    role: access_switch
+    management_ip: "10.0.2.12"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.12", status: up }
+
+  - hostname: dc-west-leaf-03
+    vendor: arista
+    role: access_switch
+    management_ip: "10.0.2.13"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.13", status: up }
+
+  - hostname: dc-west-leaf-04
+    vendor: arista
+    role: access_switch
+    management_ip: "10.0.2.14"
+    site: dc-west
+    interfaces:
+      - { name: "Ethernet1", ip: "10.0.2.14", status: up }
+
+  - hostname: dc-west-fw-01
+    vendor: checkpoint
+    role: firewall
+    management_ip: "10.0.2.50"
+    site: dc-west
+    interfaces:
+      - { name: "eth0", ip: "10.0.2.50", status: up }
+
+  - hostname: dc-west-fw-02
+    vendor: checkpoint
+    role: firewall
+    management_ip: "10.0.2.51"
+    site: dc-west
+    interfaces:
+      - { name: "eth0", ip: "10.0.2.51", status: up }
+
+  - hostname: dc-west-lb-01
+    vendor: f5
+    role: load_balancer
+    management_ip: "10.0.2.60"
+    site: dc-west
+    interfaces:
+      - { name: "1.1", ip: "10.0.2.60", status: up }
+
+  - hostname: dc-west-rtr-01
+    vendor: juniper
+    role: router
+    management_ip: "10.0.2.80"
+    site: dc-west
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.2.80", status: up }
+      - { name: "ge-0/0/1", ip: "100.64.0.2", status: up }
+
+  # ════════════════════════════════════════════════════════════════
+  # DC-EU — Juniper + Fortinet + Sophos
+  # ════════════════════════════════════════════════════════════════
+
+  - hostname: dc-eu-spine-01
+    vendor: juniper
+    role: core_switch
+    management_ip: "10.0.3.1"
+    site: dc-eu
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.3.1", status: up }
+
+  - hostname: dc-eu-spine-02
+    vendor: juniper
+    role: core_switch
+    management_ip: "10.0.3.2"
+    site: dc-eu
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.3.2", status: up }
+
+  - hostname: dc-eu-leaf-01
+    vendor: juniper
+    role: access_switch
+    management_ip: "10.0.3.11"
+    site: dc-eu
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.3.11", status: up }
+
+  - hostname: dc-eu-leaf-02
+    vendor: juniper
+    role: access_switch
+    management_ip: "10.0.3.12"
+    site: dc-eu
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.3.12", status: up }
+
+  - hostname: dc-eu-fw-01
+    vendor: fortinet
+    role: firewall
+    management_ip: "10.0.3.50"
+    site: dc-eu
+    interfaces:
+      - { name: "port1", ip: "10.0.3.50", status: up }
+
+  - hostname: dc-eu-fw-02
+    vendor: sophos
+    role: firewall
+    management_ip: "10.0.3.51"
+    site: dc-eu
+    interfaces:
+      - { name: "Port1", ip: "10.0.3.51", status: up }
+
+  - hostname: dc-eu-rtr-01
+    vendor: juniper
+    role: router
+    management_ip: "10.0.3.80"
+    site: dc-eu
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.0.3.80", status: up }
+      - { name: "ge-0/0/1", ip: "100.64.0.3", status: up }
+
+  # ════════════════════════════════════════════════════════════════
+  # CAMPUS-HQ — Cisco IOS + Aruba wireless + Cisco ASA
+  # ════════════════════════════════════════════════════════════════
+
+  - hostname: hq-core-01
+    vendor: cisco_ios
+    role: core_switch
+    management_ip: "10.10.0.1"
+    site: campus-hq
+    interfaces:
+      - { name: "TenGigabitEthernet1/0/1", ip: "10.10.0.1", status: up }
+
+  - hostname: hq-core-02
+    vendor: cisco_ios
+    role: core_switch
+    management_ip: "10.10.0.2"
+    site: campus-hq
+    interfaces:
+      - { name: "TenGigabitEthernet1/0/1", ip: "10.10.0.2", status: up }
+
+  - hostname: hq-dist-01
+    vendor: cisco_ios
+    role: distribution_switch
+    management_ip: "10.10.0.10"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.10", status: up }
+
+  - hostname: hq-dist-02
+    vendor: cisco_ios
+    role: distribution_switch
+    management_ip: "10.10.0.11"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.11", status: up }
+
+  - hostname: hq-access-01
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.10.0.20"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.20", status: up }
+
+  - hostname: hq-access-02
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.10.0.21"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.21", status: up }
+
+  - hostname: hq-access-03
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.10.0.22"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.22", status: up }
+
+  - hostname: hq-access-04
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.10.0.23"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.23", status: up }
+
+  - hostname: hq-fw-01
+    vendor: cisco_asa
+    role: firewall
+    management_ip: "10.10.0.50"
+    site: campus-hq
+    interfaces:
+      - { name: "outside", ip: "203.0.113.50", status: up }
+      - { name: "inside", ip: "10.10.0.50", status: up }
+
+  - hostname: hq-fw-02
+    vendor: cisco_asa
+    role: firewall
+    management_ip: "10.10.0.51"
+    site: campus-hq
+    interfaces:
+      - { name: "outside", ip: "203.0.113.51", status: up }
+      - { name: "inside", ip: "10.10.0.51", status: up }
+
+  - hostname: hq-wlc-01
+    vendor: aruba
+    role: wireless_controller
+    management_ip: "10.10.0.70"
+    site: campus-hq
+    interfaces:
+      - { name: "vlan1", ip: "10.10.0.70", status: up }
+
+  - hostname: hq-rtr-01
+    vendor: cisco_ios
+    role: router
+    management_ip: "10.10.0.80"
+    site: campus-hq
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.10.0.80", status: up }
+      - { name: "GigabitEthernet0/1", ip: "100.64.10.1", status: up }
+
+  # ════════════════════════════════════════════════════════════════
+  # CAMPUS-ENG — Arista + Juniper firewall
+  # ════════════════════════════════════════════════════════════════
+
+  - hostname: eng-core-01
+    vendor: arista
+    role: core_switch
+    management_ip: "10.10.1.1"
+    site: campus-eng
+    interfaces:
+      - { name: "Ethernet1", ip: "10.10.1.1", status: up }
+
+  - hostname: eng-access-01
+    vendor: arista
+    role: access_switch
+    management_ip: "10.10.1.10"
+    site: campus-eng
+    interfaces:
+      - { name: "Ethernet1", ip: "10.10.1.10", status: up }
+
+  - hostname: eng-access-02
+    vendor: arista
+    role: access_switch
+    management_ip: "10.10.1.11"
+    site: campus-eng
+    interfaces:
+      - { name: "Ethernet1", ip: "10.10.1.11", status: up }
+
+  - hostname: eng-fw-01
+    vendor: juniper
+    role: firewall
+    management_ip: "10.10.1.50"
+    site: campus-eng
+    interfaces:
+      - { name: "ge-0/0/0", ip: "10.10.1.50", status: up }
+
+  # ════════════════════════════════════════════════════════════════
+  # BRANCHES — SonicWall + Cisco IOS
+  # ════════════════════════════════════════════════════════════════
+
+  - hostname: branch-01-fw
+    vendor: sonicwall
+    role: firewall
+    management_ip: "10.20.1.1"
+    site: branch-01
+    interfaces:
+      - { name: "X0", ip: "10.20.1.1", status: up }
+      - { name: "X1", ip: "203.0.113.101", status: up }
+
+  - hostname: branch-01-sw
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.20.1.10"
+    site: branch-01
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.20.1.10", status: up }
+
+  - hostname: branch-02-fw
+    vendor: sonicwall
+    role: firewall
+    management_ip: "10.20.2.1"
+    site: branch-02
+    interfaces:
+      - { name: "X0", ip: "10.20.2.1", status: up }
+      - { name: "X1", ip: "203.0.113.102", status: up }
+
+  - hostname: branch-02-sw
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.20.2.10"
+    site: branch-02
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.20.2.10", status: up }
+
+  - hostname: branch-03-fw
+    vendor: fortinet
+    role: firewall
+    management_ip: "10.20.3.1"
+    site: branch-03
+    interfaces:
+      - { name: "port1", ip: "10.20.3.1", status: up }
+      - { name: "wan1", ip: "203.0.113.103", status: up }
+
+  - hostname: branch-03-sw
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.20.3.10"
+    site: branch-03
+    interfaces:
+      - { name: "GigabitEthernet0/0", ip: "10.20.3.10", status: up }

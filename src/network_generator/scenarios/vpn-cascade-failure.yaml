@@ -1,0 +1,94 @@
+# Scenario: VPN Tunnel Cascade Failure
+# Multiple site-to-site VPN tunnels fail due to certificate expiration,
+# causing branch offices to lose connectivity.
+
+name: VPN Cascade Failure
+description: >
+  IKE certificate expires on the VPN concentrator, causing cascade
+  failure of all site-to-site VPN tunnels. Branch sites lose
+  connectivity to HQ until certificates are renewed.
+duration_seconds: 3600
+severity: critical
+tags: [vpn, ike, certificate, availability]
+
+steps:
+  - offset_seconds: 0
+    device: vpn-asa-01
+    event_type: ike_failed
+    params: {}
+    description: "IKE negotiation fails — certificate expired"
+
+  - offset_seconds: 5
+    device: vpn-asa-01
+    event_type: vpn_tunnel_down
+    params: {}
+    description: "Primary VPN tunnel drops"
+
+  - offset_seconds: 10
+    device: fw-fg-branch
+    event_type: event_vpn
+    params:
+      action: tunnel-down
+      tunnel_name: "HQ-Branch-IPSec-Primary"
+      reason: "IKE phase1 failed"
+    description: "Branch FortiGate sees tunnel down"
+
+  - offset_seconds: 15
+    device: vpn-asa-01
+    event_type: aaa_fail
+    params: {}
+    description: "AAA authentication failures from VPN users"
+
+  - offset_seconds: 30
+    device: vpn-asa-01
+    event_type: ike_failed
+    params: {}
+    description: "Repeated IKE renegotiation attempts fail"
+
+  - offset_seconds: 60
+    device: fw-fg-branch
+    event_type: event_vpn
+    params:
+      action: tunnel-down
+      tunnel_name: "HQ-Branch-IPSec-Backup"
+      reason: "IKE phase1 failed"
+    description: "Backup tunnel also fails (same cert issue)"
+
+  - offset_seconds: 120
+    device: fw-fg-branch
+    event_type: traffic_forward_deny
+    params:
+      src_ip: "10.2.10.50"
+      dst_ip: "10.1.40.10"
+      reason: "no route to host"
+    description: "Branch-to-HQ traffic starts failing"
+    metric_overrides:
+      network.device.cpu.utilization: 45.0
+
+  - offset_seconds: 300
+    device: vpn-asa-01
+    event_type: config_change
+    params:
+      user: netops_admin
+      command: "crypto ca import new-cert pkcs12"
+    description: "Admin imports renewed certificate"
+
+  - offset_seconds: 320
+    device: vpn-asa-01
+    event_type: ike_established
+    params: {}
+    description: "IKE renegotiation succeeds with new cert"
+
+  - offset_seconds: 325
+    device: vpn-asa-01
+    event_type: vpn_tunnel_up
+    params: {}
+    description: "VPN tunnel re-established"
+
+  - offset_seconds: 340
+    device: fw-fg-branch
+    event_type: event_vpn
+    params:
+      action: tunnel-up
+      tunnel_name: "HQ-Branch-IPSec-Primary"
+    description: "Branch confirms tunnel recovery"

@@ -1,0 +1,20 @@
+{
+  "name": "Normal Day Shift — LRMC",
+  "description": "Typical 7AM-7PM day shift at Lakeside Regional. High clinical volume, steady MyChart evening traffic, routine ETL jobs. Baseline for anomaly detection.",
+  "volume_multiplier": 1.0,
+  "mychart_multiplier": 1.0,
+  "max_sessions": 25,
+  "curve_overrides": {},
+  "network_correlation": {
+    "enabled": true,
+    "description": "Normal baseline network traffic. No incidents. All links healthy.",
+    "traffic_profile": "baseline",
+    "expected_patterns": [
+      "Steady VLAN 10 (Epic) traffic 7AM-7PM",
+      "VLAN 20 (clinical) traffic mirrors shift schedule",
+      "VLAN 50 (DMZ/MyChart) peaks 6PM-9PM",
+      "HL7 VLAN 30 steady with lab result bursts 10AM and 2PM",
+      "Satellite WAN links at 30-40% utilization"
+    ]
+  }
+}

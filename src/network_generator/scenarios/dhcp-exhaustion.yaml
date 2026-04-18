@@ -1,0 +1,67 @@
+# Scenario: DHCP Pool Exhaustion  
+# DHCP scope runs out of addresses, new devices can't connect.
+
+name: DHCP Pool Exhaustion
+description: >
+  DHCP address pool approaches exhaustion due to short lease times
+  and a rogue device assigning addresses. New clients fail to get
+  IPs, causing help desk tickets and access failures until the
+  rogue device is isolated and the pool is expanded.
+duration_seconds: 2400
+severity: warning
+tags: [dhcp, availability, rogue-device]
+
+steps:
+  - offset_seconds: 0
+    device: acc-sw-01
+    event_type: baseline_info
+    params: {}
+    description: "Normal access switch operation — pool nearing limit"
+
+  - offset_seconds: 30
+    device: dist-sw-01
+    event_type: baseline_info
+    params: {}
+    description: "Distribution sees increased DHCP relay traffic"
+    metric_overrides:
+      network.device.cpu.utilization: 25.0
+
+  - offset_seconds: 120
+    device: fw-pa-01
+    event_type: traffic_deny
+    params:
+      src_zone: trust
+      dst_zone: untrust
+      reason: "no-source-ip"
+    description: "Clients without DHCP lease can't access network"
+
+  - offset_seconds: 180
+    device: acc-sw-02
+    event_type: baseline_info
+    params: {}
+    description: "Access switch sees DHCP NAK responses"
+
+  - offset_seconds: 300
+    device: acc-sw-01
+    event_type: config_change
+    params:
+      user: netops_admin
+      command: "ip dhcp snooping enable"
+    description: "Admin enables DHCP snooping"
+
+  - offset_seconds: 360
+    device: acc-sw-01
+    event_type: err_disable
+    params:
+      interface: GigabitEthernet0/3
+      reason: dhcp-rate-limit
+    description: "Rogue DHCP server port err-disabled"
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+
+  - offset_seconds: 420
+    device: dist-sw-01
+    event_type: baseline_info
+    params: {}
+    description: "DHCP service normalizing"
+    metric_overrides:
+      network.device.cpu.utilization: 12.0

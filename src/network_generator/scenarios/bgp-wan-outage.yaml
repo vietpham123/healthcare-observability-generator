@@ -1,0 +1,110 @@
+# Scenario: BGP Route Leak / WAN Outage
+# ISP BGP peer goes down, causing WAN failover and branch connectivity impact.
+
+name: BGP WAN Outage
+description: >
+  Primary ISP BGP peer drops due to upstream provider issue.
+  Triggers BGP withdrawal, WAN failover to backup MPLS link,
+  branch site experiences degraded connectivity until primary recovers.
+duration_seconds: 2400
+severity: warning
+tags: [network, bgp, wan, failover]
+
+steps:
+  # Phase 1: BGP peer down (T+0)
+  - offset_seconds: 0
+    device: wan-rtr-01
+    event_type: bgp_peer_down
+    params:
+      peer_ip: "203.0.113.254"
+      peer_as: 64512
+      reason: "Hold Timer Expired"
+    trap_oid: "1.3.6.1.2.1.15.3.1.14.2"
+    description: "Primary ISP BGP peer drops"
+    metric_overrides:
+      network.device.cpu.utilization: 45.0
+
+  - offset_seconds: 3
+    device: wan-rtr-01
+    event_type: interface_down
+    params:
+      interface: GigabitEthernet0/0/0
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "WAN interface carrier lost"
+
+  # Phase 2: Convergence (T+30)
+  - offset_seconds: 30
+    device: core-rtr-01
+    event_type: ospf_neighbor_down
+    params:
+      neighbor_id: "10.255.0.50"
+      neighbor_ip: "10.0.10.1"
+      interface: TenGigabitEthernet1/0/4
+    description: "OSPF sees WAN router unreachable via primary path"
+
+  - offset_seconds: 35
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Default route withdrawn, switching to backup"
+    description: "Firewall detects route change"
+
+  # Phase 3: Branch impact (T+60)
+  - offset_seconds: 60
+    device: fw-fg-branch
+    event_type: event_vpn
+    params:
+      action: tunnel-down
+      tunnel_name: "HQ-Branch-IPSec"
+      reason: "peer unreachable"
+    description: "VPN tunnel to HQ drops"
+
+  - offset_seconds: 65
+    device: vpn-asa-01
+    event_type: vpn_tunnel_down
+    params: {}
+    description: "ASA side confirms tunnel down"
+
+  # Phase 4: Manual intervention (T+300)
+  - offset_seconds: 300
+    device: wan-rtr-01
+    event_type: config_change
+    params:
+      user: netops_admin
+      command: "ip route 0.0.0.0 0.0.0.0 198.51.100.254 10"
+    description: "Admin adds static backup route via MPLS"
+
+  # Phase 5: Recovery (T+900)
+  - offset_seconds: 900
+    device: wan-rtr-01
+    event_type: interface_up
+    params:
+      interface: GigabitEthernet0/0/0
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "WAN link carrier restored"
+
+  - offset_seconds: 920
+    device: wan-rtr-01
+    event_type: bgp_peer_up
+    params:
+      peer_ip: "203.0.113.254"
+      peer_as: 64512
+    trap_oid: "1.3.6.1.2.1.15.3.1.14.2"
+    description: "BGP peer re-established"
+    metric_overrides:
+      network.device.cpu.utilization: 20.0
+
+  - offset_seconds: 940
+    device: fw-fg-branch
+    event_type: event_vpn
+    params:
+      action: tunnel-up
+      tunnel_name: "HQ-Branch-IPSec"
+    description: "VPN tunnel restored"
+
+  - offset_seconds: 945
+    device: vpn-asa-01
+    event_type: vpn_tunnel_up
+    params: {}
+    description: "ASA confirms tunnel recovery"

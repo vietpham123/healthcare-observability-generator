@@ -1,0 +1,536 @@
+# Enterprise Network Topology — Default Configuration
+# Simulates a mid-size enterprise with HQ + branch sites
+# ~20 devices across 4 vendors
+
+name: enterprise-default
+
+sites:
+  - name: hq-dc
+    location: "US-East Data Center"
+    latitude: "38.9072"
+    longitude: "-77.0369"
+    country: "United States"
+  - name: hq-campus
+    location: "US-East Campus"
+    latitude: "39.0438"
+    longitude: "-77.4874"
+    country: "United States"
+  - name: branch-west
+    location: "US-West Branch"
+    latitude: "37.7749"
+    longitude: "-122.4194"
+    country: "United States"
+
+devices:
+  # =========================================
+  # HQ Data Center — Core Layer
+  # =========================================
+  - hostname: core-rtr-01
+    vendor: cisco_ios
+    model: Catalyst 9500
+    os_version: "17.09.04a"
+    role: core
+    site: hq-dc
+    management_ip: 10.0.0.1
+    router_id: 10.0.0.1
+    serial_number: FJC2348K0PQ
+    interfaces:
+      - name: TenGigabitEthernet1/0/1
+        ip: 10.0.1.1/30
+        speed: 10G
+        if_index: 10101
+        connected_to: [core-rtr-02, TenGigabitEthernet1/0/1]
+        description: "Core Interconnect to core-rtr-02"
+      - name: TenGigabitEthernet1/0/2
+        ip: 10.0.2.1/30
+        speed: 10G
+        if_index: 10102
+        connected_to: [dist-sw-01, TenGigabitEthernet1/0/49]
+        description: "Downlink to dist-sw-01"
+      - name: TenGigabitEthernet1/0/3
+        ip: 10.0.3.1/30
+        speed: 10G
+        if_index: 10103
+        connected_to: [dist-sw-02, TenGigabitEthernet1/0/49]
+        description: "Downlink to dist-sw-02"
+      - name: TenGigabitEthernet1/0/4
+        ip: 10.0.10.1/30
+        speed: 10G
+        if_index: 10104
+        connected_to: [fw-pa-01, ethernet1/1]
+        description: "To Firewall Cluster"
+      - name: Loopback0
+        ip: 10.255.0.1/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID / OSPF"
+
+  - hostname: core-rtr-02
+    vendor: cisco_ios
+    model: Catalyst 9500
+    os_version: "17.09.04a"
+    role: core
+    site: hq-dc
+    management_ip: 10.0.0.2
+    router_id: 10.0.0.2
+    serial_number: FJC2348K0PR
+    interfaces:
+      - name: TenGigabitEthernet1/0/1
+        ip: 10.0.1.2/30
+        speed: 10G
+        if_index: 10101
+        connected_to: [core-rtr-01, TenGigabitEthernet1/0/1]
+        description: "Core Interconnect to core-rtr-01"
+      - name: TenGigabitEthernet1/0/2
+        ip: 10.0.4.1/30
+        speed: 10G
+        if_index: 10102
+        connected_to: [dist-sw-01, TenGigabitEthernet1/0/50]
+        description: "Downlink to dist-sw-01"
+      - name: TenGigabitEthernet1/0/3
+        ip: 10.0.5.1/30
+        speed: 10G
+        if_index: 10103
+        connected_to: [dist-sw-02, TenGigabitEthernet1/0/50]
+        description: "Downlink to dist-sw-02"
+      - name: TenGigabitEthernet1/0/4
+        ip: 10.0.10.5/30
+        speed: 10G
+        if_index: 10104
+        connected_to: [fw-pa-02, ethernet1/1]
+        description: "To Firewall Cluster Secondary"
+      - name: Loopback0
+        ip: 10.255.0.2/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID / OSPF"
+
+  # =========================================
+  # HQ Data Center — Distribution Layer
+  # =========================================
+  - hostname: dist-sw-01
+    vendor: cisco_ios
+    model: Catalyst 9300
+    os_version: "17.06.05"
+    role: distribution
+    site: hq-dc
+    management_ip: 10.0.0.11
+    serial_number: FOC2503LABC
+    interfaces:
+      - name: TenGigabitEthernet1/0/49
+        ip: 10.0.2.2/30
+        speed: 10G
+        if_index: 10149
+        connected_to: [core-rtr-01, TenGigabitEthernet1/0/2]
+        description: "Uplink to core-rtr-01"
+      - name: TenGigabitEthernet1/0/50
+        ip: 10.0.4.2/30
+        speed: 10G
+        if_index: 10150
+        connected_to: [core-rtr-02, TenGigabitEthernet1/0/2]
+        description: "Uplink to core-rtr-02"
+      - name: GigabitEthernet1/0/1
+        ip: 10.1.10.1/24
+        speed: 1G
+        if_index: 10001
+        connected_to: [acc-sw-01, GigabitEthernet0/1]
+        vlan: 10
+        description: "To access-sw-01 VLAN 10"
+      - name: GigabitEthernet1/0/2
+        ip: 10.1.20.1/24
+        speed: 1G
+        if_index: 10002
+        connected_to: [acc-sw-02, GigabitEthernet0/1]
+        vlan: 20
+        description: "To access-sw-02 VLAN 20"
+      - name: GigabitEthernet1/0/3
+        ip: 10.1.30.1/24
+        speed: 1G
+        if_index: 10003
+        connected_to: [acc-sw-03, GigabitEthernet0/1]
+        vlan: 30
+        description: "To access-sw-03 VLAN 30"
+
+  - hostname: dist-sw-02
+    vendor: cisco_ios
+    model: Catalyst 9300
+    os_version: "17.06.05"
+    role: distribution
+    site: hq-dc
+    management_ip: 10.0.0.12
+    serial_number: FOC2503LDEF
+    interfaces:
+      - name: TenGigabitEthernet1/0/49
+        ip: 10.0.3.2/30
+        speed: 10G
+        if_index: 10149
+        connected_to: [core-rtr-01, TenGigabitEthernet1/0/3]
+        description: "Uplink to core-rtr-01"
+      - name: TenGigabitEthernet1/0/50
+        ip: 10.0.5.2/30
+        speed: 10G
+        if_index: 10150
+        connected_to: [core-rtr-02, TenGigabitEthernet1/0/3]
+        description: "Uplink to core-rtr-02"
+      - name: GigabitEthernet1/0/1
+        ip: 10.1.40.1/24
+        speed: 1G
+        if_index: 10001
+        connected_to: [acc-sw-04, GigabitEthernet0/1]
+        vlan: 40
+        description: "To access-sw-04 Server VLAN"
+      - name: GigabitEthernet1/0/2
+        ip: 10.1.50.1/24
+        speed: 1G
+        if_index: 10002
+        connected_to: [acc-sw-05, GigabitEthernet0/1]
+        vlan: 50
+        description: "To access-sw-05 Voice VLAN"
+
+  # =========================================
+  # HQ Campus — Access Layer
+  # =========================================
+  - hostname: acc-sw-01
+    vendor: cisco_ios
+    model: Catalyst 9200L
+    os_version: "17.09.04"
+    role: access
+    site: hq-campus
+    management_ip: 10.1.10.254
+    serial_number: FOC2612MAAA
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.1.10.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [dist-sw-01, GigabitEthernet1/0/1]
+        vlan: 10
+        description: "Uplink"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 10
+        description: "User Port - Floor 1"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 10
+        description: "User Port - Floor 1"
+
+  - hostname: acc-sw-02
+    vendor: cisco_ios
+    model: Catalyst 9200L
+    os_version: "17.09.04"
+    role: access
+    site: hq-campus
+    management_ip: 10.1.20.254
+    serial_number: FOC2612MBBB
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.1.20.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [dist-sw-01, GigabitEthernet1/0/2]
+        vlan: 20
+        description: "Uplink"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "User Port - Floor 2"
+
+  - hostname: acc-sw-03
+    vendor: cisco_ios
+    model: Catalyst 9200L
+    os_version: "17.09.04"
+    role: access
+    site: hq-campus
+    management_ip: 10.1.30.254
+    serial_number: FOC2612MCCC
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.1.30.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [dist-sw-01, GigabitEthernet1/0/3]
+        vlan: 30
+        description: "Uplink"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 30
+        description: "User Port - Floor 3"
+
+  - hostname: acc-sw-04
+    vendor: cisco_ios
+    model: Catalyst 9200
+    os_version: "17.09.04"
+    role: access
+    site: hq-dc
+    management_ip: 10.1.40.254
+    serial_number: FOC2612MDDD
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.1.40.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [dist-sw-02, GigabitEthernet1/0/1]
+        vlan: 40
+        description: "Uplink to dist-sw-02"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 40
+        description: "Server Port - Rack A"
+
+  - hostname: acc-sw-05
+    vendor: cisco_ios
+    model: Catalyst 9200
+    os_version: "17.09.04"
+    role: access
+    site: hq-dc
+    management_ip: 10.1.50.254
+    serial_number: FOC2612MEEE
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.1.50.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [dist-sw-02, GigabitEthernet1/0/2]
+        vlan: 50
+        description: "Uplink to dist-sw-02"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 50
+        description: "VoIP Phone Port"
+
+  # =========================================
+  # HQ — Palo Alto Firewall HA Pair
+  # =========================================
+  - hostname: fw-pa-01
+    vendor: paloalto
+    model: PA-5250
+    os_version: "11.1.2-h3"
+    role: firewall
+    site: hq-dc
+    management_ip: 10.0.0.100
+    serial_number: "012345678901"
+    interfaces:
+      - name: ethernet1/1
+        ip: 10.0.10.2/30
+        speed: 10G
+        if_index: 16777217
+        zone: trust
+        connected_to: [core-rtr-01, TenGigabitEthernet1/0/4]
+        description: "Inside / Trust"
+      - name: ethernet1/2
+        ip: 203.0.113.2/29
+        speed: 10G
+        if_index: 16777218
+        zone: untrust
+        connected_to: [wan-rtr-01, GigabitEthernet0/0/0]
+        description: "Outside / Untrust"
+      - name: ethernet1/3
+        ip: 10.0.20.1/24
+        speed: 1G
+        if_index: 16777219
+        zone: dmz
+        description: "DMZ Segment"
+      - name: ethernet1/15
+        ip: 10.0.10.9/30
+        speed: 1G
+        if_index: 16777231
+        zone: ha
+        connected_to: [fw-pa-02, ethernet1/15]
+        description: "HA1 Link"
+    zones:
+      - name: trust
+        interfaces: [ethernet1/1]
+      - name: untrust
+        interfaces: [ethernet1/2]
+      - name: dmz
+        interfaces: [ethernet1/3]
+      - name: ha
+        interfaces: [ethernet1/15]
+
+  - hostname: fw-pa-02
+    vendor: paloalto
+    model: PA-5250
+    os_version: "11.1.2-h3"
+    role: firewall
+    site: hq-dc
+    management_ip: 10.0.0.101
+    serial_number: "012345678902"
+    interfaces:
+      - name: ethernet1/1
+        ip: 10.0.10.6/30
+        speed: 10G
+        if_index: 16777217
+        zone: trust
+        connected_to: [core-rtr-02, TenGigabitEthernet1/0/4]
+        description: "Inside / Trust"
+      - name: ethernet1/2
+        ip: 203.0.113.3/29
+        speed: 10G
+        if_index: 16777218
+        zone: untrust
+        description: "Outside / Untrust (standby)"
+      - name: ethernet1/3
+        ip: 10.0.20.2/24
+        speed: 1G
+        if_index: 16777219
+        zone: dmz
+        description: "DMZ Segment (standby)"
+      - name: ethernet1/15
+        ip: 10.0.10.10/30
+        speed: 1G
+        if_index: 16777231
+        zone: ha
+        connected_to: [fw-pa-01, ethernet1/15]
+        description: "HA1 Link"
+    zones:
+      - name: trust
+        interfaces: [ethernet1/1]
+      - name: untrust
+        interfaces: [ethernet1/2]
+      - name: dmz
+        interfaces: [ethernet1/3]
+      - name: ha
+        interfaces: [ethernet1/15]
+
+  # =========================================
+  # HQ — WAN Edge
+  # =========================================
+  - hostname: wan-rtr-01
+    vendor: cisco_ios
+    model: ISR 4451-X
+    os_version: "17.06.03a"
+    role: wan_edge
+    site: hq-dc
+    management_ip: 10.0.0.50
+    router_id: 10.255.0.50
+    serial_number: FTX2241QZZZ
+    interfaces:
+      - name: GigabitEthernet0/0/0
+        ip: 203.0.113.1/29
+        speed: 1G
+        if_index: 1
+        connected_to: [fw-pa-01, ethernet1/2]
+        description: "WAN Uplink to ISP"
+      - name: GigabitEthernet0/0/1
+        ip: 198.51.100.1/30
+        speed: 1G
+        if_index: 2
+        description: "MPLS WAN to branch-west"
+      - name: Loopback0
+        ip: 10.255.0.50/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID"
+
+  # =========================================
+  # Branch West — Fortinet FortiGate
+  # =========================================
+  - hostname: fw-fg-branch
+    vendor: fortinet
+    model: FortiGate-60F
+    os_version: "7.4.3"
+    role: firewall
+    site: branch-west
+    management_ip: 10.2.0.1
+    serial_number: FGT60FTK12345678
+    interfaces:
+      - name: port1
+        ip: 198.51.100.2/30
+        speed: 1G
+        if_index: 1
+        zone: wan
+        description: "WAN to HQ"
+      - name: port2
+        ip: 10.2.10.1/24
+        speed: 1G
+        if_index: 2
+        zone: lan
+        description: "Branch LAN"
+      - name: port3
+        ip: 10.2.20.1/24
+        speed: 1G
+        if_index: 3
+        zone: dmz
+        description: "Branch DMZ"
+    zones:
+      - name: wan
+        interfaces: [port1]
+      - name: lan
+        interfaces: [port2]
+      - name: dmz
+        interfaces: [port3]
+
+  # =========================================
+  # Branch West — Cisco ASA (VPN Concentrator)
+  # =========================================
+  - hostname: vpn-asa-01
+    vendor: cisco_asa
+    model: ASA 5516-X
+    os_version: "9.18(3)"
+    role: firewall
+    site: branch-west
+    management_ip: 10.2.0.10
+    serial_number: JMX2345L0GH
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: 10.2.10.10/24
+        speed: 1G
+        if_index: 2
+        zone: inside
+        connected_to: [fw-fg-branch, port2]
+        description: "Inside"
+      - name: GigabitEthernet0/1
+        ip: 198.51.100.10/30
+        speed: 1G
+        if_index: 3
+        zone: outside
+        description: "Outside / VPN"
+      - name: Management0/0
+        ip: 10.2.0.10/24
+        speed: 100M
+        if_index: 1
+        zone: management
+        description: "Mgmt"
+    zones:
+      - name: inside
+        interfaces: [GigabitEthernet0/0]
+      - name: outside
+        interfaces: [GigabitEthernet0/1]
+      - name: management
+        interfaces: [Management0/0]
+
+  # =========================================
+  # Branch West — Access Switch
+  # =========================================
+  - hostname: acc-sw-branch
+    vendor: cisco_ios
+    model: Catalyst 9200L
+    os_version: "17.09.04"
+    role: access
+    site: branch-west
+    management_ip: 10.2.10.254
+    serial_number: FOC2612MFFF
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.2.10.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [fw-fg-branch, port2]
+        description: "Uplink to FortiGate LAN"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 100
+        description: "User Port"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 100
+        description: "User Port"

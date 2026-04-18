@@ -1,0 +1,107 @@
+# Scenario: Firewall HA Failover
+# Primary Palo Alto firewall experiences hardware failure,
+# triggering HA failover to secondary unit.
+
+name: Firewall HA Failover
+description: >
+  Primary firewall (fw-pa-01) experiences power supply failure,
+  triggering HA failover to secondary (fw-pa-02). Session sync
+  maintains most connections, but some drops occur during transition.
+duration_seconds: 1800
+severity: critical
+tags: [firewall, ha, failover, availability]
+
+steps:
+  # Phase 1: Hardware alert (T+0)
+  - offset_seconds: 0
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Power supply 1 failed"
+    trap_oid: "1.3.6.1.4.1.9.9.43.2.0.1"
+    description: "Power supply failure detected"
+    metric_overrides:
+      network.device.cpu.utilization: 85.0
+
+  # Phase 2: HA state change (T+5)
+  - offset_seconds: 5
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: ha
+      description: "HA state change: active -> non-functional"
+    description: "Primary declares itself non-functional"
+
+  - offset_seconds: 7
+    device: fw-pa-02
+    event_type: system_event
+    params:
+      event_subtype: ha
+      description: "HA state change: passive -> active"
+    description: "Secondary takes over active role"
+
+  - offset_seconds: 8
+    device: fw-pa-02
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "ARP cache refresh for all virtual IPs"
+    description: "New active unit sends gratuitous ARPs"
+
+  # Phase 3: Traffic impact (T+10)
+  - offset_seconds: 10
+    device: fw-pa-02
+    event_type: traffic_allow
+    params:
+      src_zone: trust
+      dst_zone: untrust
+    description: "Traffic flowing through secondary"
+    metric_overrides:
+      network.device.cpu.utilization: 65.0
+      network.firewall.sessions.active: 45000.0
+
+  - offset_seconds: 12
+    device: fw-pa-02
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Session sync complete — 42,891 sessions recovered"
+    description: "Session state synchronized from primary"
+
+  # Phase 4: Steady state on backup (T+60)
+  - offset_seconds: 60
+    device: fw-pa-02
+    event_type: traffic_allow
+    params:
+      src_zone: trust
+      dst_zone: untrust
+    description: "Normal traffic flow on secondary"
+    metric_overrides:
+      network.device.cpu.utilization: 35.0
+      network.firewall.sessions.active: 50000.0
+
+  # Phase 5: Primary repair and sync-back (T+600)
+  - offset_seconds: 600
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: ha
+      description: "HA state change: non-functional -> passive"
+    description: "Primary powered back on, enters passive mode"
+
+  - offset_seconds: 610
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Session sync started from active peer"
+    description: "Session table sync from active secondary"
+
+  - offset_seconds: 660
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: ha
+      description: "HA state: passive, preemption scheduled in 300s"
+    description: "Primary ready but waiting for preemption timer"

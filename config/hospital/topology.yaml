@@ -1,0 +1,999 @@
+# ============================================================================
+# Lakeside Regional Medical Center — Network Topology
+# ============================================================================
+# Regional Medical Center (~500 beds) + 3 satellite facilities
+#
+# IP Scheme (designed for consistent trending & anomaly detection):
+#   10.10.x.x  = Main Campus (LRMC)
+#   10.20.x.x  = Satellite West  — Lakeside West Urgent Care & Family Medicine
+#   10.30.x.x  = Satellite North — Lakeside North Cardiology/Oncology
+#   10.40.x.x  = Satellite South — Lakeside South Primary Care
+#   172.16.0.x  = WAN transit links (MPLS/SD-WAN)
+#   203.0.113.x = Public-facing (MyChart, Interconnect)
+#
+# VLAN Strategy (per-site, consistent numbering):
+#   VLAN 10  = Epic Application Tier (Citrix/Hyperspace hosts)
+#   VLAN 20  = Clinical Workstations (nursing, physician)
+#   VLAN 25  = Emergency Department
+#   VLAN 30  = HL7 Interface Zone (Rhapsody/Bridges)
+#   VLAN 40  = Medical Devices / IoMT (pumps, monitors, imaging)
+#   VLAN 50  = DMZ (MyChart, Interconnect public)
+#   VLAN 60  = Radiology / PACS
+#   VLAN 70  = Voice / Nurse Call
+#   VLAN 80  = Data Warehouse (Clarity/Caboodle)
+#   VLAN 90  = Server Infrastructure (AD, DNS, DHCP)
+#   VLAN 100 = Management (switch/firewall management)
+#   VLAN 200 = Guest WiFi (patient/visitor)
+#   VLAN 250 = Remote Access / VPN
+# ============================================================================
+
+name: lakeside-regional-medical-center
+
+sites:
+  - name: lrmc-main
+    location: "Lakeside Regional Medical Center — Main Campus"
+    address: "4500 Lakeshore Drive, Lakeville, IL 60045"
+    latitude: "42.2828"
+    longitude: "-87.9530"
+    country: "United States"
+    bed_count: 500
+    departments:
+      - Emergency Department (ED)
+      - Intensive Care Unit (ICU)
+      - Medical-Surgical (Med-Surg 3W, 3E, 4W, 4E)
+      - Operating Room (OR)
+      - Labor & Delivery (L&D)
+      - Pediatrics
+      - Cardiology
+      - Oncology
+      - Radiology
+      - Laboratory
+      - Pharmacy
+      - Rehabilitation
+      - Administration
+
+  - name: lkw-satellite
+    location: "Lakeside West Urgent Care & Family Medicine"
+    address: "1200 Prairie Road, Westlake, IL 60048"
+    latitude: "42.2900"
+    longitude: "-87.9800"
+    country: "United States"
+    bed_count: 0
+    departments:
+      - Urgent Care
+      - Family Medicine
+      - Lab Draw Station
+      - Imaging (X-Ray only)
+
+  - name: lkn-satellite
+    location: "Lakeside North Cardiology & Oncology Center"
+    address: "800 Northshore Blvd, North Lakeville, IL 60046"
+    latitude: "42.3100"
+    longitude: "-87.9530"
+    country: "United States"
+    bed_count: 0
+    departments:
+      - Cardiology Clinic
+      - Oncology Clinic
+      - Infusion Center
+      - Cardiac Rehab
+      - Lab Draw Station
+
+  - name: lks-satellite
+    location: "Lakeside South Primary Care"
+    address: "2100 South Lake Street, South Lakeville, IL 60044"
+    latitude: "42.2600"
+    longitude: "-87.9530"
+    country: "United States"
+    bed_count: 0
+    departments:
+      - Primary Care
+      - Pediatrics Outpatient
+      - Lab Draw Station
+
+devices:
+  # =========================================================================
+  #  MAIN CAMPUS — Core Layer
+  # =========================================================================
+  - hostname: lrmc-core-01
+    vendor: cisco_ios
+    model: Catalyst 9500-48Y4C
+    os_version: "17.09.04a"
+    role: core
+    site: lrmc-main
+    management_ip: 10.10.0.1
+    router_id: 10.10.255.1
+    serial_number: FJC2348K0PQ
+    interfaces:
+      - name: TenGigabitEthernet1/0/1
+        ip: 10.10.0.1/30
+        speed: 10G
+        if_index: 10101
+        connected_to: [lrmc-core-02, TenGigabitEthernet1/0/1]
+        description: "Core Interconnect to lrmc-core-02"
+      - name: TenGigabitEthernet1/0/2
+        ip: 10.10.0.5/30
+        speed: 10G
+        if_index: 10102
+        connected_to: [lrmc-dist-epic-01, TenGigabitEthernet1/0/49]
+        description: "Downlink to Epic App Tier dist switch"
+      - name: TenGigabitEthernet1/0/3
+        ip: 10.10.0.9/30
+        speed: 10G
+        if_index: 10103
+        connected_to: [lrmc-dist-clin-01, TenGigabitEthernet1/0/49]
+        description: "Downlink to Clinical dist switch"
+      - name: TenGigabitEthernet1/0/4
+        ip: 10.10.0.13/30
+        speed: 10G
+        if_index: 10104
+        connected_to: [lrmc-fw-pa-01, ethernet1/1]
+        description: "To Palo Alto Firewall HA primary"
+      - name: TenGigabitEthernet1/0/5
+        ip: 10.10.0.17/30
+        speed: 10G
+        if_index: 10105
+        connected_to: [lrmc-dist-srv-01, TenGigabitEthernet1/0/49]
+        description: "Downlink to Server/Infra dist switch"
+      - name: Loopback0
+        ip: 10.10.255.1/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID / OSPF"
+
+  - hostname: lrmc-core-02
+    vendor: cisco_ios
+    model: Catalyst 9500-48Y4C
+    os_version: "17.09.04a"
+    role: core
+    site: lrmc-main
+    management_ip: 10.10.0.2
+    router_id: 10.10.255.2
+    serial_number: FJC2348K0PR
+    interfaces:
+      - name: TenGigabitEthernet1/0/1
+        ip: 10.10.0.2/30
+        speed: 10G
+        if_index: 10101
+        connected_to: [lrmc-core-01, TenGigabitEthernet1/0/1]
+        description: "Core Interconnect to lrmc-core-01"
+      - name: TenGigabitEthernet1/0/2
+        ip: 10.10.0.21/30
+        speed: 10G
+        if_index: 10102
+        connected_to: [lrmc-dist-epic-01, TenGigabitEthernet1/0/50]
+        description: "Downlink to Epic App Tier dist switch"
+      - name: TenGigabitEthernet1/0/3
+        ip: 10.10.0.25/30
+        speed: 10G
+        if_index: 10103
+        connected_to: [lrmc-dist-clin-01, TenGigabitEthernet1/0/50]
+        description: "Downlink to Clinical dist switch"
+      - name: TenGigabitEthernet1/0/4
+        ip: 10.10.0.29/30
+        speed: 10G
+        if_index: 10104
+        connected_to: [lrmc-fw-pa-02, ethernet1/1]
+        description: "To Palo Alto Firewall HA secondary"
+      - name: TenGigabitEthernet1/0/5
+        ip: 10.10.0.33/30
+        speed: 10G
+        if_index: 10105
+        connected_to: [lrmc-dist-srv-01, TenGigabitEthernet1/0/50]
+        description: "Downlink to Server/Infra dist switch"
+      - name: Loopback0
+        ip: 10.10.255.2/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID / OSPF"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Distribution Layer: Epic Application Tier
+  # =========================================================================
+  - hostname: lrmc-dist-epic-01
+    vendor: cisco_ios
+    model: Catalyst 9300-48UXM
+    os_version: "17.06.05"
+    role: distribution
+    site: lrmc-main
+    management_ip: 10.10.100.11
+    serial_number: FOC2503LABC
+    interfaces:
+      - name: TenGigabitEthernet1/0/49
+        ip: 10.10.0.6/30
+        speed: 10G
+        if_index: 10149
+        connected_to: [lrmc-core-01, TenGigabitEthernet1/0/2]
+        description: "Uplink to core-01"
+      - name: TenGigabitEthernet1/0/50
+        ip: 10.10.0.22/30
+        speed: 10G
+        if_index: 10150
+        connected_to: [lrmc-core-02, TenGigabitEthernet1/0/2]
+        description: "Uplink to core-02"
+      - name: GigabitEthernet1/0/1
+        ip: 10.10.10.1/24
+        speed: 1G
+        if_index: 10001
+        vlan: 10
+        description: "Epic Hyperspace / Citrix VLAN"
+      - name: GigabitEthernet1/0/2
+        ip: 10.10.30.1/24
+        speed: 1G
+        if_index: 10002
+        vlan: 30
+        description: "HL7 Interface Zone VLAN"
+      - name: GigabitEthernet1/0/3
+        ip: 10.10.80.1/24
+        speed: 1G
+        if_index: 10003
+        vlan: 80
+        description: "Data Warehouse (Clarity/Caboodle) VLAN"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Distribution Layer: Clinical
+  # =========================================================================
+  - hostname: lrmc-dist-clin-01
+    vendor: cisco_ios
+    model: Catalyst 9300-48UXM
+    os_version: "17.06.05"
+    role: distribution
+    site: lrmc-main
+    management_ip: 10.10.100.12
+    serial_number: FOC2503LDEF
+    interfaces:
+      - name: TenGigabitEthernet1/0/49
+        ip: 10.10.0.10/30
+        speed: 10G
+        if_index: 10149
+        connected_to: [lrmc-core-01, TenGigabitEthernet1/0/3]
+        description: "Uplink to core-01"
+      - name: TenGigabitEthernet1/0/50
+        ip: 10.10.0.26/30
+        speed: 10G
+        if_index: 10150
+        connected_to: [lrmc-core-02, TenGigabitEthernet1/0/3]
+        description: "Uplink to core-02"
+      - name: GigabitEthernet1/0/1
+        ip: 10.10.20.1/24
+        speed: 1G
+        if_index: 10001
+        vlan: 20
+        connected_to: [lrmc-acc-ed-01, GigabitEthernet0/1]
+        description: "Clinical Workstations VLAN"
+      - name: GigabitEthernet1/0/2
+        ip: 10.10.25.1/24
+        speed: 1G
+        if_index: 10002
+        vlan: 25
+        connected_to: [lrmc-acc-ed-01, GigabitEthernet0/2]
+        description: "Emergency Department VLAN"
+      - name: GigabitEthernet1/0/3
+        ip: 10.10.40.1/24
+        speed: 1G
+        if_index: 10003
+        vlan: 40
+        description: "Medical Devices / IoMT VLAN"
+      - name: GigabitEthernet1/0/4
+        ip: 10.10.60.1/24
+        speed: 1G
+        if_index: 10004
+        vlan: 60
+        description: "Radiology / PACS VLAN"
+      - name: GigabitEthernet1/0/5
+        ip: 10.10.70.1/24
+        speed: 1G
+        if_index: 10005
+        vlan: 70
+        description: "Voice / Nurse Call VLAN"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Distribution Layer: Server Infrastructure
+  # =========================================================================
+  - hostname: lrmc-dist-srv-01
+    vendor: cisco_ios
+    model: Catalyst 9300-48UXM
+    os_version: "17.06.05"
+    role: distribution
+    site: lrmc-main
+    management_ip: 10.10.100.13
+    serial_number: FOC2503LGHI
+    interfaces:
+      - name: TenGigabitEthernet1/0/49
+        ip: 10.10.0.18/30
+        speed: 10G
+        if_index: 10149
+        connected_to: [lrmc-core-01, TenGigabitEthernet1/0/5]
+        description: "Uplink to core-01"
+      - name: TenGigabitEthernet1/0/50
+        ip: 10.10.0.34/30
+        speed: 10G
+        if_index: 10150
+        connected_to: [lrmc-core-02, TenGigabitEthernet1/0/5]
+        description: "Uplink to core-02"
+      - name: GigabitEthernet1/0/1
+        ip: 10.10.90.1/24
+        speed: 1G
+        if_index: 10001
+        vlan: 90
+        description: "Server Infrastructure (AD, DNS, DHCP)"
+      - name: GigabitEthernet1/0/2
+        ip: 10.10.100.1/24
+        speed: 1G
+        if_index: 10002
+        vlan: 100
+        description: "Network Management VLAN"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Access Layer: ED
+  # =========================================================================
+  - hostname: lrmc-acc-ed-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-48P
+    os_version: "17.09.04"
+    role: access
+    site: lrmc-main
+    management_ip: 10.10.100.21
+    serial_number: FOC2612MAAA
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.10.25.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [lrmc-dist-clin-01, GigabitEthernet1/0/2]
+        vlan: 25
+        description: "Uplink to clinical dist — ED"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 25
+        description: "ED Triage Workstation"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 25
+        description: "ED Bay 1 Workstation"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 25
+        description: "ED Bay 2 Workstation"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "ED Patient Monitor - Bay 1"
+      - name: GigabitEthernet0/6
+        speed: 1G
+        if_index: 6
+        vlan: 40
+        description: "ED Infusion Pump - Bay 2"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Access Layer: ICU
+  # =========================================================================
+  - hostname: lrmc-acc-icu-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-48P
+    os_version: "17.09.04"
+    role: access
+    site: lrmc-main
+    management_ip: 10.10.100.22
+    serial_number: FOC2612MBBB
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.10.20.252/24
+        speed: 1G
+        if_index: 1
+        connected_to: [lrmc-dist-clin-01, GigabitEthernet1/0/1]
+        vlan: 20
+        description: "Uplink to clinical dist — ICU"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "ICU Room 1 Workstation"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 20
+        description: "ICU Room 2 Workstation"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 40
+        description: "ICU Ventilator - Room 1"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "ICU Patient Monitor - Room 1"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Access Layer: Med-Surg
+  # =========================================================================
+  - hostname: lrmc-acc-medsurg-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-48P
+    os_version: "17.09.04"
+    role: access
+    site: lrmc-main
+    management_ip: 10.10.100.23
+    serial_number: FOC2612MCCC
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.10.20.253/24
+        speed: 1G
+        if_index: 1
+        vlan: 20
+        description: "Uplink to clinical dist — Med-Surg"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "Med-Surg 3W Nursing Station"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 20
+        description: "Med-Surg 3E Nursing Station"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 20
+        description: "Med-Surg 4W Nursing Station"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "Med-Surg WOW Cart 1"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Access Layer: Radiology
+  # =========================================================================
+  - hostname: lrmc-acc-rad-01
+    vendor: cisco_ios
+    model: Catalyst 9200-24P
+    os_version: "17.09.04"
+    role: access
+    site: lrmc-main
+    management_ip: 10.10.100.24
+    serial_number: FOC2612MDDD
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.10.60.254/24
+        speed: 1G
+        if_index: 1
+        vlan: 60
+        description: "Uplink to clinical dist — Radiology"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 60
+        description: "PACS Server Connection"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 60
+        description: "CT Scanner Control"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 60
+        description: "MRI Control Workstation"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 20
+        description: "Radiologist Reading Station"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Palo Alto Firewall HA Pair
+  # =========================================================================
+  - hostname: lrmc-fw-pa-01
+    vendor: paloalto
+    model: PA-5260
+    os_version: "11.1.2-h3"
+    role: firewall
+    site: lrmc-main
+    management_ip: 10.10.100.50
+    serial_number: "014001000001"
+    interfaces:
+      - name: ethernet1/1
+        ip: 10.10.0.14/30
+        speed: 10G
+        if_index: 16777217
+        zone: trust
+        connected_to: [lrmc-core-01, TenGigabitEthernet1/0/4]
+        description: "Inside / Trust — Core"
+      - name: ethernet1/2
+        ip: 203.0.113.2/28
+        speed: 10G
+        if_index: 16777218
+        zone: untrust
+        connected_to: [lrmc-wan-01, GigabitEthernet0/0/0]
+        description: "Outside / Untrust — WAN"
+      - name: ethernet1/3
+        ip: 10.10.50.1/24
+        speed: 1G
+        if_index: 16777219
+        zone: dmz
+        description: "DMZ — MyChart, Interconnect"
+      - name: ethernet1/4
+        ip: 10.10.0.37/30
+        speed: 1G
+        if_index: 16777220
+        zone: hl7-zone
+        description: "HL7 Interface Zone"
+      - name: ethernet1/15
+        ip: 10.10.0.41/30
+        speed: 1G
+        if_index: 16777231
+        zone: ha
+        connected_to: [lrmc-fw-pa-02, ethernet1/15]
+        description: "HA1 Link"
+    zones:
+      - name: trust
+        interfaces: [ethernet1/1]
+      - name: untrust
+        interfaces: [ethernet1/2]
+      - name: dmz
+        interfaces: [ethernet1/3]
+      - name: hl7-zone
+        interfaces: [ethernet1/4]
+      - name: ha
+        interfaces: [ethernet1/15]
+
+  - hostname: lrmc-fw-pa-02
+    vendor: paloalto
+    model: PA-5260
+    os_version: "11.1.2-h3"
+    role: firewall
+    site: lrmc-main
+    management_ip: 10.10.100.51
+    serial_number: "014001000002"
+    interfaces:
+      - name: ethernet1/1
+        ip: 10.10.0.30/30
+        speed: 10G
+        if_index: 16777217
+        zone: trust
+        connected_to: [lrmc-core-02, TenGigabitEthernet1/0/4]
+        description: "Inside / Trust — Core"
+      - name: ethernet1/2
+        ip: 203.0.113.3/28
+        speed: 10G
+        if_index: 16777218
+        zone: untrust
+        description: "Outside / Untrust (standby)"
+      - name: ethernet1/3
+        ip: 10.10.50.2/24
+        speed: 1G
+        if_index: 16777219
+        zone: dmz
+        description: "DMZ (standby)"
+      - name: ethernet1/15
+        ip: 10.10.0.42/30
+        speed: 1G
+        if_index: 16777231
+        zone: ha
+        connected_to: [lrmc-fw-pa-01, ethernet1/15]
+        description: "HA1 Link"
+    zones:
+      - name: trust
+        interfaces: [ethernet1/1]
+      - name: untrust
+        interfaces: [ethernet1/2]
+      - name: dmz
+        interfaces: [ethernet1/3]
+      - name: ha
+        interfaces: [ethernet1/15]
+
+  # =========================================================================
+  #  MAIN CAMPUS — Citrix ADC (Epic Hyperspace delivery)
+  # =========================================================================
+  - hostname: lrmc-citrix-01
+    vendor: citrix
+    model: Citrix ADC MPX 14080
+    os_version: "14.1-12.35"
+    role: loadbalancer
+    site: lrmc-main
+    management_ip: 10.10.100.60
+    serial_number: CTX2024LR001
+    interfaces:
+      - name: 10/1
+        ip: 10.10.10.10/24
+        speed: 10G
+        if_index: 1
+        description: "Epic Hyperspace VServer — NSIP side"
+      - name: 10/2
+        ip: 10.10.10.11/24
+        speed: 10G
+        if_index: 2
+        description: "Backend to Citrix XenApp servers"
+
+  # =========================================================================
+  #  MAIN CAMPUS — F5 BIG-IP (Interconnect / FHIR load balancing)
+  # =========================================================================
+  - hostname: lrmc-f5-01
+    vendor: f5
+    model: BIG-IP i5800
+    os_version: "17.1.1"
+    role: loadbalancer
+    site: lrmc-main
+    management_ip: 10.10.100.61
+    serial_number: F5LR2024001
+    interfaces:
+      - name: 1.1
+        ip: 10.10.50.10/24
+        speed: 10G
+        if_index: 1
+        description: "DMZ — Interconnect VIP"
+      - name: 1.2
+        ip: 10.10.10.20/24
+        speed: 10G
+        if_index: 2
+        description: "Backend to Interconnect IIS servers"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Wireless LAN Controller
+  # =========================================================================
+  - hostname: lrmc-wlc-01
+    vendor: aruba
+    model: Aruba 7030
+    os_version: "8.11.1.1"
+    role: wlc
+    site: lrmc-main
+    management_ip: 10.10.100.70
+    serial_number: SG12345678
+    interfaces:
+      - name: GigabitEthernet0/0/0
+        ip: 10.10.100.70/24
+        speed: 1G
+        if_index: 1
+        description: "Management"
+      - name: VLAN20
+        ip: 10.10.20.250/24
+        speed: 1G
+        if_index: 20
+        vlan: 20
+        description: "Clinical WiFi (SSID: LRMC-Clinical)"
+      - name: VLAN200
+        ip: 10.10.200.1/24
+        speed: 1G
+        if_index: 200
+        vlan: 200
+        description: "Guest WiFi (SSID: LRMC-Guest)"
+
+  # =========================================================================
+  #  MAIN CAMPUS — WAN Edge
+  # =========================================================================
+  - hostname: lrmc-wan-01
+    vendor: cisco_ios
+    model: ISR 4451-X
+    os_version: "17.06.03a"
+    role: wan_edge
+    site: lrmc-main
+    management_ip: 10.10.100.80
+    router_id: 10.10.255.50
+    serial_number: FTX2241QZZZ
+    interfaces:
+      - name: GigabitEthernet0/0/0
+        ip: 203.0.113.1/28
+        speed: 1G
+        if_index: 1
+        connected_to: [lrmc-fw-pa-01, ethernet1/2]
+        description: "WAN Uplink to ISP / Internet"
+      - name: GigabitEthernet0/0/1
+        ip: 172.16.0.1/30
+        speed: 1G
+        if_index: 2
+        connected_to: [lkw-fw-01, port1]
+        description: "MPLS to Lakeside West"
+      - name: GigabitEthernet0/0/2
+        ip: 172.16.0.5/30
+        speed: 1G
+        if_index: 3
+        connected_to: [lkn-fw-01, port1]
+        description: "MPLS to Lakeside North"
+      - name: GigabitEthernet0/0/3
+        ip: 172.16.0.9/30
+        speed: 1G
+        if_index: 4
+        connected_to: [lks-fw-01, port1]
+        description: "MPLS to Lakeside South"
+      - name: Loopback0
+        ip: 10.10.255.50/32
+        speed: 1G
+        if_index: 100
+        description: "Router ID"
+
+  # =========================================================================
+  #  SATELLITE WEST — Lakeside West Urgent Care
+  # =========================================================================
+  - hostname: lkw-fw-01
+    vendor: fortinet
+    model: FortiGate-100F
+    os_version: "7.4.3"
+    role: firewall
+    site: lkw-satellite
+    management_ip: 10.20.0.1
+    serial_number: FGT100FTK20240001
+    interfaces:
+      - name: port1
+        ip: 172.16.0.2/30
+        speed: 1G
+        if_index: 1
+        zone: wan
+        connected_to: [lrmc-wan-01, GigabitEthernet0/0/1]
+        description: "WAN to Main Campus"
+      - name: port2
+        ip: 10.20.20.1/24
+        speed: 1G
+        if_index: 2
+        zone: clinical
+        description: "Clinical Workstations"
+      - name: port3
+        ip: 10.20.40.1/24
+        speed: 1G
+        if_index: 3
+        zone: iomt
+        description: "Medical Devices"
+      - name: port4
+        ip: 10.20.60.1/24
+        speed: 1G
+        if_index: 4
+        zone: imaging
+        description: "X-Ray / Imaging"
+      - name: port5
+        ip: 10.20.200.1/24
+        speed: 1G
+        if_index: 5
+        zone: guest
+        description: "Guest WiFi"
+    zones:
+      - name: wan
+        interfaces: [port1]
+      - name: clinical
+        interfaces: [port2]
+      - name: iomt
+        interfaces: [port3]
+      - name: imaging
+        interfaces: [port4]
+      - name: guest
+        interfaces: [port5]
+
+  - hostname: lkw-sw-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-24P
+    os_version: "17.09.04"
+    role: access
+    site: lkw-satellite
+    management_ip: 10.20.100.1
+    serial_number: FOC2612MWWW
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.20.20.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [lkw-fw-01, port2]
+        vlan: 20
+        description: "Uplink to FortiGate — Clinical"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "Urgent Care Triage"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 20
+        description: "Urgent Care Exam Room 1"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 20
+        description: "Family Medicine Office 1"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "Lab Draw Station"
+
+  # =========================================================================
+  #  SATELLITE NORTH — Lakeside North Cardiology/Oncology
+  # =========================================================================
+  - hostname: lkn-fw-01
+    vendor: fortinet
+    model: FortiGate-100F
+    os_version: "7.4.3"
+    role: firewall
+    site: lkn-satellite
+    management_ip: 10.30.0.1
+    serial_number: FGT100FTK20240002
+    interfaces:
+      - name: port1
+        ip: 172.16.0.6/30
+        speed: 1G
+        if_index: 1
+        zone: wan
+        connected_to: [lrmc-wan-01, GigabitEthernet0/0/2]
+        description: "WAN to Main Campus"
+      - name: port2
+        ip: 10.30.20.1/24
+        speed: 1G
+        if_index: 2
+        zone: clinical
+        description: "Clinical Workstations"
+      - name: port3
+        ip: 10.30.40.1/24
+        speed: 1G
+        if_index: 3
+        zone: iomt
+        description: "Infusion Pumps / Monitors"
+      - name: port4
+        ip: 10.30.200.1/24
+        speed: 1G
+        if_index: 4
+        zone: guest
+        description: "Guest WiFi"
+    zones:
+      - name: wan
+        interfaces: [port1]
+      - name: clinical
+        interfaces: [port2]
+      - name: iomt
+        interfaces: [port3]
+      - name: guest
+        interfaces: [port4]
+
+  - hostname: lkn-sw-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-24P
+    os_version: "17.09.04"
+    role: access
+    site: lkn-satellite
+    management_ip: 10.30.100.1
+    serial_number: FOC2612MNNN
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.30.20.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [lkn-fw-01, port2]
+        vlan: 20
+        description: "Uplink to FortiGate — Clinical"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "Cardiology Clinic WS 1"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 20
+        description: "Oncology Clinic WS 1"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 40
+        description: "Infusion Center Pump 1"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "Cardiac Rehab Monitor"
+
+  # =========================================================================
+  #  SATELLITE SOUTH — Lakeside South Primary Care
+  # =========================================================================
+  - hostname: lks-fw-01
+    vendor: fortinet
+    model: FortiGate-60F
+    os_version: "7.4.3"
+    role: firewall
+    site: lks-satellite
+    management_ip: 10.40.0.1
+    serial_number: FGT60FTK20240003
+    interfaces:
+      - name: port1
+        ip: 172.16.0.10/30
+        speed: 1G
+        if_index: 1
+        zone: wan
+        connected_to: [lrmc-wan-01, GigabitEthernet0/0/3]
+        description: "WAN to Main Campus"
+      - name: port2
+        ip: 10.40.20.1/24
+        speed: 1G
+        if_index: 2
+        zone: clinical
+        description: "Clinical Workstations"
+      - name: port3
+        ip: 10.40.200.1/24
+        speed: 1G
+        if_index: 3
+        zone: guest
+        description: "Guest WiFi"
+    zones:
+      - name: wan
+        interfaces: [port1]
+      - name: clinical
+        interfaces: [port2]
+      - name: guest
+        interfaces: [port3]
+
+  - hostname: lks-sw-01
+    vendor: cisco_ios
+    model: Catalyst 9200L-24P
+    os_version: "17.09.04"
+    role: access
+    site: lks-satellite
+    management_ip: 10.40.100.1
+    serial_number: FOC2612MSSS
+    interfaces:
+      - name: GigabitEthernet0/1
+        ip: 10.40.20.254/24
+        speed: 1G
+        if_index: 1
+        connected_to: [lks-fw-01, port2]
+        vlan: 20
+        description: "Uplink to FortiGate — Clinical"
+      - name: GigabitEthernet0/2
+        speed: 1G
+        if_index: 2
+        vlan: 20
+        description: "Primary Care Office 1"
+      - name: GigabitEthernet0/3
+        speed: 1G
+        if_index: 3
+        vlan: 20
+        description: "Primary Care Office 2"
+      - name: GigabitEthernet0/4
+        speed: 1G
+        if_index: 4
+        vlan: 20
+        description: "Pediatrics Office"
+      - name: GigabitEthernet0/5
+        speed: 1G
+        if_index: 5
+        vlan: 40
+        description: "Lab Draw Station"
+
+  # =========================================================================
+  #  MAIN CAMPUS — Cisco ASA (VPN Concentrator for remote clinicians)
+  # =========================================================================
+  - hostname: lrmc-vpn-01
+    vendor: cisco_asa
+    model: ASA 5545-X
+    os_version: "9.18(3)"
+    role: firewall
+    site: lrmc-main
+    management_ip: 10.10.100.55
+    serial_number: JMX2345L0VPN
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: 10.10.250.1/24
+        speed: 1G
+        if_index: 2
+        zone: inside
+        description: "Inside — VPN users land here"
+      - name: GigabitEthernet0/1
+        ip: 203.0.113.10/28
+        speed: 1G
+        if_index: 3
+        zone: outside
+        description: "Outside — Public-facing VPN"
+      - name: Management0/0
+        ip: 10.10.100.55/24
+        speed: 100M
+        if_index: 1
+        zone: management
+        description: "Management"
+    zones:
+      - name: inside
+        interfaces: [GigabitEthernet0/0]
+      - name: outside
+        interfaces: [GigabitEthernet0/1]
+      - name: management
+        interfaces: [Management0/0]

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LRMC — Healthcare Observability Generator</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>🏥 Lakeside Regional Medical Center</h1>
+    <p class="subtitle">Healthcare Observability Generator — Control Panel</p>
+  </header>
+
+  <main>
+    <!-- Generator Controls -->
+    <section class="card">
+      <h2>Generators</h2>
+      <div class="generator-grid">
+        <div class="generator-card" id="gen-epic">
+          <div class="gen-header">
+            <span class="gen-icon">📋</span>
+            <h3>Epic SIEM</h3>
+            <span class="status-badge" id="epic-status">Stopped</span>
+          </div>
+          <p class="gen-desc">SIEM, Clinical, HL7, FHIR, MyChart, ETL logs</p>
+          <div class="gen-controls">
+            <button class="btn btn-start" onclick="controlGenerator('epic', 'start')">Start</button>
+            <button class="btn btn-stop" onclick="controlGenerator('epic', 'stop')">Stop</button>
+          </div>
+        </div>
+        <div class="generator-card" id="gen-network">
+          <div class="gen-header">
+            <span class="gen-icon">🌐</span>
+            <h3>Network</h3>
+            <span class="status-badge" id="network-status">Stopped</span>
+          </div>
+          <p class="gen-desc">Cisco, Palo Alto, FortiGate, F5, Citrix, Aruba logs</p>
+          <div class="gen-controls">
+            <button class="btn btn-start" onclick="controlGenerator('network', 'start')">Start</button>
+            <button class="btn btn-stop" onclick="controlGenerator('network', 'stop')">Stop</button>
+          </div>
+        </div>
+      </div>
+      <div class="bulk-controls">
+        <button class="btn btn-primary" onclick="startAll()">▶ Start All</button>
+        <button class="btn btn-danger" onclick="stopAll()">⏹ Stop All</button>
+      </div>
+    </section>
+
+    <!-- Scenarios -->
+    <section class="card">
+      <h2>Scenarios</h2>
+      <p class="section-desc">Toggle scenarios to inject correlated events across both generators.</p>
+      <div id="scenarios-grid" class="scenarios-grid">
+        <p class="loading">Loading scenarios…</p>
+      </div>
+      <div class="bulk-controls">
+        <button class="btn btn-secondary" onclick="deactivateAll()">Deactivate All</button>
+        <button class="btn btn-secondary" onclick="reloadScenarios()">↻ Reload from Disk</button>
+      </div>
+    </section>
+
+    <!-- Activity Log -->
+    <section class="card">
+      <h2>Activity Log</h2>
+      <div id="activity-log" class="activity-log">
+        <p class="log-entry info">Control panel loaded. Polling for status…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Lakeside Regional Medical Center — Synthetic Observability Data for Dynatrace</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+# Scenario: DDoS Attack
+# Volumetric DDoS hitting the perimeter firewall, causing session exhaustion,
+# high CPU, and firewall policy denials escalating to threat detection.
+
+name: DDoS Volumetric Attack
+description: >
+  A volumetric DDoS attack targets the public-facing firewall.
+  Starts with an SYN flood, escalates to session table exhaustion,
+  triggers threat detection, and impacts legitimate traffic until
+  rate-limiting and upstream scrubbing mitigate the attack.
+duration_seconds: 3600
+severity: critical
+tags: [security, ddos, firewall, availability]
+
+steps:
+  # Phase 1: Early warning signs (T+0)
+  - offset_seconds: 0
+    device: fw-pa-01
+    event_type: traffic_allow
+    params:
+      src_zone: untrust
+      dst_zone: dmz
+      repeat: 5
+    description: "Increasing inbound traffic volume"
+    metric_overrides:
+      network.device.cpu.utilization: 45.0
+      network.firewall.sessions.active: 12000.0
+
+  # Phase 2: SYN flood detected (T+60)
+  - offset_seconds: 60
+    device: fw-pa-01
+    event_type: threat_detect
+    params:
+      threat_type: vulnerability
+      threat_name: "SYN Flood Attack"
+      severity: critical
+      src_zone: untrust
+      dst_zone: dmz
+    description: "Firewall detects SYN flood pattern"
+    metric_overrides:
+      network.device.cpu.utilization: 65.0
+      network.firewall.sessions.active: 35000.0
+      network.firewall.sessions.rate: 2500.0
+
+  - offset_seconds: 65
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Connection rate threshold exceeded"
+    description: "System alert for connection rate"
+
+  # Phase 3: Escalation — ASA sees VPN impact (T+120)
+  - offset_seconds: 120
+    device: vpn-asa-01
+    event_type: connection_limit
+    params: {}
+    description: "ASA hitting connection limits from overflow"
+    metric_overrides:
+      network.device.cpu.utilization: 72.0
+      network.firewall.sessions.active: 65000.0
+
+  - offset_seconds: 125
+    device: fw-pa-01
+    event_type: threat_detect
+    params:
+      threat_type: spyware
+      threat_name: "DNS Amplification Botnet C2"
+      severity: critical
+      src_zone: untrust
+      dst_zone: trust
+    description: "Spyware C2 callback detected in DDoS traffic"
+    metric_overrides:
+      network.device.cpu.utilization: 82.0
+      network.firewall.sessions.active: 90000.0
+
+  # Phase 4: Session table full (T+180)
+  - offset_seconds: 180
+    device: fw-pa-01
+    event_type: traffic_deny
+    params:
+      src_zone: untrust
+      dst_zone: dmz
+      reason: "session limit"
+    description: "Firewall starts dropping legitimate traffic"
+    metric_overrides:
+      network.device.cpu.utilization: 95.0
+      network.firewall.sessions.active: 128000.0
+
+  - offset_seconds: 185
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "Session table utilization at 95%"
+    description: "Critical session table warning"
+
+  - offset_seconds: 190
+    device: core-rtr-01
+    event_type: cpu_high
+    params:
+      cpu_percent: 85
+      process: "IP Input"
+    description: "Core router CPU spikes from traffic overflow"
+    metric_overrides:
+      network.device.cpu.utilization: 85.0
+
+  # Phase 5: Rate limiting applied (T+300)
+  - offset_seconds: 300
+    device: fw-pa-01
+    event_type: config_change
+    params:
+      admin: secops_admin
+      command: "set deviceconfig setting session session-threshold 50000"
+    description: "SecOps applies emergency rate limiting"
+
+  - offset_seconds: 305
+    device: fw-pa-01
+    event_type: traffic_deny
+    params:
+      src_zone: untrust
+      dst_zone: dmz
+      reason: "policy-deny rate-limit"
+    description: "Rate limiting actively dropping attack traffic"
+    metric_overrides:
+      network.device.cpu.utilization: 70.0
+      network.firewall.sessions.active: 55000.0
+
+  # Phase 6: Mitigation effective (T+600)
+  - offset_seconds: 600
+    device: fw-pa-01
+    event_type: traffic_allow
+    params:
+      src_zone: trust
+      dst_zone: untrust
+    description: "Legitimate traffic flowing again"
+    metric_overrides:
+      network.device.cpu.utilization: 35.0
+      network.firewall.sessions.active: 15000.0
+      network.firewall.sessions.rate: 350.0
+
+  - offset_seconds: 610
+    device: core-rtr-01
+    event_type: baseline_info
+    params: {}
+    description: "Core router returns to normal"
+    metric_overrides:
+      network.device.cpu.utilization: 18.0

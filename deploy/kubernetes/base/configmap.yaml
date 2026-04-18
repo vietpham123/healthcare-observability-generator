@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: generator-config
+  namespace: healthcare-gen
+data:
+  DT_ENDPOINT: ""
+  OUTPUT_DIR: "/app/output"
+  EPIC_TICK_INTERVAL: "10"
+  NETWORK_TICK_INTERVAL: "60"
+  NETWORK_MODE: "realtime"
+  LOG_LEVEL: "INFO"

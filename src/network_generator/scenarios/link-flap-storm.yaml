@@ -1,0 +1,156 @@
+# Scenario: Link Flap Storm
+# A core uplink starts flapping, causing OSPF reconvergence,
+# STP topology changes, and downstream impact on user VLANs.
+
+name: Link Flap Storm
+description: >
+  Core router uplink begins flapping due to a failing SFP transceiver.
+  Triggers OSPF neighbor instability, STP topology changes, and intermittent
+  user connectivity issues until the link is shut manually.
+duration_seconds: 1800
+severity: critical
+tags: [network, layer2, ospf, stp, availability]
+
+steps:
+  # Phase 1: Initial link failure (T+0)
+  - offset_seconds: 0
+    device: core-rtr-01
+    event_type: interface_down
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "Core interconnect link goes down — SFP failure"
+
+  - offset_seconds: 2
+    device: core-rtr-02
+    event_type: interface_down
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "Remote side detects link loss"
+
+  - offset_seconds: 5
+    device: core-rtr-01
+    event_type: ospf_neighbor_down
+    params:
+      neighbor_id: "10.0.0.2"
+      neighbor_ip: "10.0.1.2"
+      interface: TenGigabitEthernet1/0/1
+    description: "OSPF adjacency drops on core interconnect"
+
+  - offset_seconds: 5
+    device: core-rtr-02
+    event_type: ospf_neighbor_down
+    params:
+      neighbor_id: "10.0.0.1"
+      neighbor_ip: "10.0.1.1"
+      interface: TenGigabitEthernet1/0/1
+    description: "Peer side sees OSPF neighbor down"
+
+  - offset_seconds: 8
+    device: dist-sw-01
+    event_type: stp_topology_change
+    params:
+      vlan: 10
+    description: "STP reconverges on VLAN 10"
+
+  - offset_seconds: 10
+    device: dist-sw-02
+    event_type: stp_topology_change
+    params:
+      vlan: 40
+    description: "STP reconverges on VLAN 40"
+
+  # Phase 2: Link comes back (T+45s)
+  - offset_seconds: 45
+    device: core-rtr-01
+    event_type: interface_up
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "Link recovers briefly"
+
+  - offset_seconds: 47
+    device: core-rtr-02
+    event_type: interface_up
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+
+  - offset_seconds: 55
+    device: core-rtr-01
+    event_type: ospf_neighbor_up
+    params:
+      neighbor_id: "10.0.0.2"
+      neighbor_ip: "10.0.1.2"
+    description: "OSPF adjacency re-establishes"
+
+  # Phase 3: Second flap (T+90s)
+  - offset_seconds: 90
+    device: core-rtr-01
+    event_type: interface_down
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "Link flaps down again"
+
+  - offset_seconds: 92
+    device: core-rtr-01
+    event_type: ospf_neighbor_down
+    params:
+      neighbor_id: "10.0.0.2"
+      neighbor_ip: "10.0.1.2"
+      interface: TenGigabitEthernet1/0/1
+
+  - offset_seconds: 95
+    device: core-rtr-01
+    event_type: err_disable
+    params:
+      interface: TenGigabitEthernet1/0/1
+      reason: link-flap
+    description: "Error-disable kicks in after repeated flaps"
+    metric_overrides:
+      network.device.cpu.utilization: 78.5
+
+  # Phase 4: Third flap cycle, then err-disable (T+150s)
+  - offset_seconds: 150
+    device: core-rtr-01
+    event_type: interface_up
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "Brief recovery before err-disable"
+
+  - offset_seconds: 165
+    device: core-rtr-01
+    event_type: interface_down
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "Final flap — err-disabled"
+
+  # Phase 5: Manual remediation (T+600s)  
+  - offset_seconds: 600
+    device: core-rtr-01
+    event_type: config_change
+    params:
+      user: netops_admin
+      line: console0
+      command: "shutdown ; no shutdown"
+    description: "Admin manually bounces the interface after replacing SFP"
+
+  - offset_seconds: 610
+    device: core-rtr-01
+    event_type: interface_up
+    params:
+      interface: TenGigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "Link comes up stable after SFP replacement"
+
+  - offset_seconds: 620
+    device: core-rtr-01
+    event_type: ospf_neighbor_up
+    params:
+      neighbor_id: "10.0.0.2"
+      neighbor_ip: "10.0.1.2"
+    description: "OSPF fully converged"

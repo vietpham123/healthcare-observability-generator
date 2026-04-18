@@ -1,0 +1,22 @@
+{
+    "E1Mid": ["IC_SERVICE_AUDIT", "AC_BREAK_THE_GLASS_FAILED_ACCESS", "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT", "AC_BREAK_THE_GLASS_ACCESS", "MCMEMEDISA", "WPSEC_LOGIN_FAIL", "HKU_LOGIN","LOGIN_BLOCKED","FAILEDLOGIN","PUL_SEARCH_AUDIT","WPSEC_2FACTOR_AUTHENTICATION","CONTEXTCHANGE","SECURE","WPSEC_PATIENT_LOOKUP_ATTEMPT","WPSEC_USER_PASSWORD_CHANGE","CTO_LOGIN"],
+    "EMPid": ["99001^EPIC, HYPERSPACE^EPICHYPERSPACE", "1001^PHAM, VIET^VPHAM", "1002^CANNON, DENNY^DCANNON","1003^CUNEAZ, LAWRENCE, LCUNEAZ","1004^STOJAN, ROBERT^RSTOJAN","1005^VLAMAKIS, EMMANUEL^EVLAMAKIS","1006^BRYANT, SHANNON^SBRYANT","1007^REIN, MATT^MREIN","1008^KELLY, JOHN^JKELLY","1009^STYX, BEN^BSTYX"],
+    "Source": ["PROD"],
+    "LWSid": ["CLISUP"],
+    "Action": ["Query"],
+    "Flag": ["Access History"], 
+    "Mnemonics": {
+        "APIID":[""],
+        "APPLICATIONID":[""],
+        "CLIENTNAME":[""],
+        "INSTANCEURN": ["urn:DTU:PRD:FHIR","urn:DTU:MyChartMobile", "urn:VPC:RoverPRD", "urn:VPC:PRD:FHIR","urn:VPC:MyChartMobile", "urn:CHI-PRD"],
+        "IP":[""],
+        "SERVICECATEGORY": ["Common","MyChartMobile"],
+        "SERVICEID":[""],
+        "SERVICEMSGID": [" "],
+        "SERVICENAME": ["urn:epic-com:Common.2015.Services.Patient.v2015_GetPatientIdentifiers","urn:Epic-com:MyChartMobile.2018.Services.GetMyChartUrlOperation","urn:Epic-com:MyChartMobile.2016.Services.SaveDeviceOperation","urn:Epic-com:MyChartMobile.2016.Services.AuthorizeCommunityTokenOperation","urn:Epic-com:MyChartMobile.2019.Services.AuditExploreMoreView","urn:Epic-com:MyChartMobile.2019.Services.GetSubjectItemFeedOperation","urn:Epic-com:MyChartMobile.2019.Services.GetMixedItemFeedOperation"],
+        "SERVICETYPE": ["REST-WebAPI","REST"],
+        "SERVICE_USER": ["RESIDENT", "PHYSICIAN","OR SURGEON", "OR NURSE", "ICU NURSE", "ICU PHYSICIAN", "RIS IPTECH", "ONCBCN INFUSION NURSE"],
+        "SERVICE_USERTYP": ["Physician", "Nurse", "Admin"]
+    }
+}

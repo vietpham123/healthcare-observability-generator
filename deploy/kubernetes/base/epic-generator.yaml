@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epic-generator
+  namespace: healthcare-gen
+  labels:
+    app: epic-generator
+    app.kubernetes.io/part-of: healthcare-observability-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: epic-generator
+  template:
+    metadata:
+      labels:
+        app: epic-generator
+    spec:
+      containers:
+        - name: epic
+          image: healthcare-gen/epic:latest
+          envFrom:
+            - configMapRef:
+                name: generator-config
+            - secretRef:
+                name: dt-credentials
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

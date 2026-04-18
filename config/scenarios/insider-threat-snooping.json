@@ -1,0 +1,63 @@
+{
+  "name": "Insider Threat — After-Hours Records Snooping",
+  "description": "Night-shift nurse accesses VIP patient records, celebrity records, and coworker records outside their department. Low and slow — no network anomalies, only detectable via Epic SIEM patterns. This is a pure Epic audit scenario.",
+  "volume_multiplier": 0.3,
+  "mychart_multiplier": 0.2,
+  "max_sessions": 5,
+  "curve_overrides": {
+    "22": 0.8, "23": 0.9, "0": 1.0, "1": 1.0, "2": 0.9, "3": 0.5
+  },
+  "epic_events": {
+    "phases": [
+      {
+        "name": "Normal duties (T+0)",
+        "offset_minutes": 0,
+        "events": [
+          {"event_type": "HKU_LOGIN", "count": 1, "username": "MBROWN", "department": "MED-SURG 3W", "source_ip": "10.10.20.73"},
+          {"event_type": "chart_review", "count": 5, "username": "MBROWN", "description": "Reviewing assigned patients — normal"},
+          {"event_type": "med_admin", "count": 3, "username": "MBROWN", "description": "Medication administration — normal"}
+        ]
+      },
+      {
+        "name": "VIP snooping begins (T+60min)",
+        "offset_minutes": 60,
+        "events": [
+          {"event_type": "PUL_SEARCH_AUDIT", "count": 1, "username": "MBROWN", "description": "Searching by name — VIP patient"},
+          {"event_type": "AC_BREAK_THE_GLASS_ACCESS", "count": 1, "username": "MBROWN", "patient": "VIP-CEO", "department": "EXECUTIVE HEALTH", "description": "Break-the-glass on VIP patient — not assigned"},
+          {"event_type": "chart_review", "count": 3, "username": "MBROWN", "description": "Viewing VIP demographics, notes, medications"}
+        ]
+      },
+      {
+        "name": "Coworker record access (T+90min)",
+        "offset_minutes": 90,
+        "events": [
+          {"event_type": "PUL_SEARCH_AUDIT", "count": 3, "username": "MBROWN", "description": "Searching for coworkers by name"},
+          {"event_type": "chart_review", "count": 6, "username": "MBROWN", "description": "Viewing coworker records — mental health, pregnancy"},
+          {"event_type": "CONTEXTCHANGE", "count": 3, "username": "MBROWN", "description": "Rapidly switching between different patients"}
+        ]
+      },
+      {
+        "name": "Celebrity patient (T+120min)",
+        "offset_minutes": 120,
+        "events": [
+          {"event_type": "PUL_SEARCH_AUDIT", "count": 1, "username": "MBROWN", "description": "Searching for celebrity patient"},
+          {"event_type": "AC_BREAK_THE_GLASS_ACCESS", "count": 1, "username": "MBROWN", "patient": "CELEBRITY", "description": "Second break-the-glass in one shift — highly suspicious"},
+          {"event_type": "chart_review", "count": 5, "username": "MBROWN", "description": "Extensive chart review of celebrity records"},
+          {"event_type": "WPSEC_EXPORT", "count": 1, "username": "MBROWN", "description": "Printing/exporting celebrity patient info"}
+        ]
+      }
+    ]
+  },
+  "network_correlation": {
+    "enabled": false,
+    "description": "No network anomalies — this is purely an Epic audit/behavioral detection scenario. Network traffic looks completely normal. This is the point: not all threats have network indicators."
+  },
+  "indicators": [
+    "Multiple break-the-glass events in a single shift (normally 0-1 per month for a nurse)",
+    "Accessing patients in EXECUTIVE HEALTH department — far outside MED-SURG 3W scope",
+    "Name-based patient searches for coworkers during off-hours",
+    "Rapid context switching between unrelated patients (not clinical workflow pattern)",
+    "Export/print of records for non-assigned patients",
+    "All activity from a single workstation IP during 11PM-3AM shift"
+  ]
+}

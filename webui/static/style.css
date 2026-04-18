@@ -1,0 +1,229 @@
+/* Healthcare Observability Generator — Web UI Styles */
+
+:root {
+  --bg: #0f1117;
+  --card-bg: #1a1d27;
+  --card-border: #2a2d3a;
+  --text: #e1e4eb;
+  --text-muted: #8b8fa3;
+  --accent: #4f8cff;
+  --green: #34d399;
+  --red: #f87171;
+  --orange: #fbbf24;
+  --purple: #a78bfa;
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem 1rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+header h1 { font-size: 1.6rem; font-weight: 600; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
+
+main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+.section-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+
+/* Generator cards */
+.generator-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.generator-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.gen-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.gen-icon { font-size: 1.3rem; }
+.gen-header h3 { flex: 1; font-size: 1rem; }
+
+.gen-desc { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem; }
+
+.gen-controls { display: flex; gap: 0.5rem; }
+
+/* Status badge */
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(248,113,113,0.15);
+  color: var(--red);
+}
+
+.status-badge.running {
+  background: rgba(52,211,153,0.15);
+  color: var(--green);
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:hover { filter: brightness(1.15); }
+.btn:active { transform: scale(0.97); }
+
+.btn-start { background: rgba(52,211,153,0.15); color: var(--green); }
+.btn-stop { background: rgba(248,113,113,0.15); color: var(--red); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-secondary { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+
+.bulk-controls { display: flex; gap: 0.75rem; justify-content: center; }
+
+/* Scenarios grid */
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.scenario-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.scenario-row.active { border-color: var(--green); }
+
+.scenario-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.scenario-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.1);
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.scenario-toggle input:checked + .toggle-slider {
+  background: var(--green);
+}
+
+.scenario-toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.scenario-info { flex: 1; min-width: 0; }
+.scenario-name { font-weight: 500; font-size: 0.9rem; }
+.scenario-desc { color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.scenario-badges { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+.badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.badge-network { background: rgba(167,139,250,0.15); color: var(--purple); }
+.badge-epic { background: rgba(79,140,255,0.15); color: var(--accent); }
+
+/* Activity log */
+.activity-log {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+}
+
+.log-entry { padding: 0.15rem 0; color: var(--text-muted); }
+.log-entry.info { color: var(--accent); }
+.log-entry.success { color: var(--green); }
+.log-entry.error { color: var(--red); }
+.log-entry.warn { color: var(--orange); }
+
+.loading { color: var(--text-muted); text-align: center; padding: 2rem; }
+
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--card-border);
+}
+
+@media (max-width: 600px) {
+  .generator-grid { grid-template-columns: 1fr; }
+}

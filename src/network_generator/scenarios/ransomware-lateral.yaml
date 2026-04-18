@@ -1,0 +1,152 @@
+# Scenario: Ransomware Lateral Movement
+# Compromised endpoint in the branch begins lateral movement, scanning
+# internal hosts, triggering IPS signatures, and anomalous east-west traffic.
+
+name: Ransomware Lateral Movement
+description: >
+  A branch workstation is compromised via phishing. The malware begins
+  internal reconnaissance (port scanning), then lateral movement via SMB
+  exploitation. IPS and antivirus signatures fire on the FortiGate and
+  Palo Alto, with anomalous east-west traffic patterns visible in NetFlow.
+duration_seconds: 2400
+severity: critical
+tags: [security, ransomware, lateral-movement, ips, antivirus]
+
+steps:
+  # Phase 1: Initial compromise — C2 callback (T+0)
+  - offset_seconds: 0
+    device: fw-fg-branch
+    event_type: traffic_forward
+    params:
+      action: accept
+      src_ip: "10.2.10.50"
+      dst_ip: "198.51.100.200"
+      dst_port: 443
+      app: "ssl"
+    description: "Compromised host establishes C2 channel over HTTPS"
+
+  - offset_seconds: 5
+    device: fw-fg-branch
+    event_type: utm_webfilter
+    params:
+      src_ip: "10.2.10.50"
+      url: "https://updates.microsft-cdn-edge.com/payload.bin"
+      category: "Malicious Websites"
+      action: warning
+    description: "Web filter flags suspicious domain (typosquat)"
+
+  # Phase 2: Internal reconnaissance (T+60)
+  - offset_seconds: 60
+    device: fw-fg-branch
+    event_type: utm_ips
+    params:
+      src_ip: "10.2.10.50"
+      dst_ip: "10.2.10.1"
+      attack_name: "TCP.Port.Scan"
+      severity: medium
+      action: detected
+    description: "IPS detects port scanning from compromised host"
+
+  - offset_seconds: 65
+    device: fw-fg-branch
+    event_type: utm_ips
+    params:
+      src_ip: "10.2.10.50"
+      dst_ip: "10.2.10.254"
+      attack_name: "SMB.Login.Brute.Force"
+      severity: high
+      action: detected
+    description: "Brute force SMB login attempts against switch mgmt"
+
+  # Phase 3: Lateral movement via SMB (T+180)
+  - offset_seconds: 180
+    device: fw-fg-branch
+    event_type: utm_ips
+    params:
+      src_ip: "10.2.10.50"
+      dst_ip: "10.2.10.100"
+      attack_name: "MS.SMB.Server.Trans.Peeking.Data.Information.Disclosure"
+      severity: critical
+      action: dropped
+    description: "EternalBlue exploit attempt blocked by IPS"
+
+  - offset_seconds: 185
+    device: fw-fg-branch
+    event_type: utm_antivirus
+    params:
+      src_ip: "10.2.10.50"
+      filename: "svchost_update.exe"
+      virus_name: "W32/Filecoder.Ransomware!tr"
+    description: "AV catches ransomware payload transfer"
+
+  # Phase 4: Spread attempt reaches HQ firewall (T+300)
+  - offset_seconds: 300
+    device: fw-pa-01
+    event_type: threat_detect
+    params:
+      threat_type: vulnerability
+      threat_name: "MS-SMBv1 EternalBlue Exploit Attempt"
+      severity: critical
+      src_zone: untrust
+      dst_zone: trust
+    description: "Palo Alto blocks exploitation attempt from branch"
+
+  - offset_seconds: 305
+    device: fw-pa-01
+    event_type: threat_detect
+    params:
+      threat_type: spyware
+      threat_name: "Ransomware.Gen Command-and-Control Traffic"
+      severity: critical
+      src_zone: trust
+      dst_zone: untrust
+    description: "C2 traffic from compromised segment detected"
+    metric_overrides:
+      network.device.cpu.utilization: 55.0
+
+  # Phase 5: VPN tunnel anomaly (T+420)
+  - offset_seconds: 420
+    device: vpn-asa-01
+    event_type: threat_detected
+    params: {}
+    description: "ASA detects scanning through VPN tunnel"
+    metric_overrides:
+      network.device.cpu.utilization: 60.0
+
+  - offset_seconds: 425
+    device: vpn-asa-01
+    event_type: acl_deny
+    params:
+      interface: GigabitEthernet0/0
+      protocol: tcp
+      src_ip: "10.2.10.50"
+      dst_ip: "10.1.40.10"
+      dst_port: 445
+    description: "ASA ACL blocks SMB from branch to DC server VLAN"
+
+  # Phase 6: SecOps response — quarantine (T+600)
+  - offset_seconds: 600
+    device: fw-fg-branch
+    event_type: traffic_deny
+    params:
+      action: deny
+      src_ip: "10.2.10.50"
+      policy: "quarantine-policy"
+    description: "Compromised host quarantined by firewall policy"
+
+  - offset_seconds: 605
+    device: fw-pa-01
+    event_type: config_change
+    params:
+      admin: secops_admin
+      command: "set address quarantine-10.2.10.50 ip-netmask 10.2.10.50/32"
+    description: "Palo Alto updated with quarantine address object"
+
+  - offset_seconds: 610
+    device: fw-pa-01
+    event_type: traffic_deny
+    params:
+      src_zone: untrust
+      dst_zone: trust
+      reason: "security-policy quarantine"
+    description: "All traffic from compromised host blocked at perimeter"

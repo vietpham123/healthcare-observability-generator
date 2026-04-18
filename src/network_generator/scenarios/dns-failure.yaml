@@ -1,0 +1,73 @@
+# Scenario: DNS Resolution Failure
+# Internal DNS server becomes unresponsive, causing widespread
+# application failures and user complaints.
+
+name: DNS Resolution Failure
+description: >
+  Primary internal DNS server stops responding due to zone transfer
+  corruption. Applications fail name resolution, firewall logs show
+  NXDOMAIN responses, and users experience widespread outages until
+  secondary DNS takes over.
+duration_seconds: 1800
+severity: warning
+tags: [dns, application, availability]
+
+steps:
+  - offset_seconds: 0
+    device: fw-pa-01
+    event_type: traffic_deny
+    params:
+      src_zone: trust
+      dst_zone: trust
+      reason: "dns-timeout"
+    description: "Firewall sees DNS query timeouts"
+
+  - offset_seconds: 10
+    device: fw-pa-01
+    event_type: traffic_allow
+    params:
+      src_zone: trust
+      dst_zone: untrust
+    description: "Clients falling back to external DNS"
+
+  - offset_seconds: 30
+    device: core-rtr-01
+    event_type: baseline_info
+    params: {}
+    description: "Core router sees increased unknown-destination traffic"
+    metric_overrides:
+      network.device.cpu.utilization: 35.0
+
+  - offset_seconds: 60
+    device: fw-fg-branch
+    event_type: traffic_forward_accept
+    params:
+      dst_port: 53
+      app: "dns"
+    description: "Branch DNS queries routing externally"
+
+  - offset_seconds: 120
+    device: fw-pa-01
+    event_type: system_event
+    params:
+      event_subtype: general
+      description: "DNS proxy: upstream server 10.1.40.10 not responding"
+    description: "Firewall DNS proxy detects server failure"
+
+  - offset_seconds: 180
+    device: core-rtr-01
+    event_type: config_change
+    params:
+      user: netops_admin
+      command: "ip name-server 10.1.40.11"
+    description: "Admin switches to secondary DNS"
+
+  - offset_seconds: 200
+    device: fw-pa-01
+    event_type: traffic_allow
+    params:
+      src_zone: trust
+      dst_zone: trust
+    description: "DNS resolution restored via secondary"
+    metric_overrides:
+      network.device.cpu.utilization: 18.0

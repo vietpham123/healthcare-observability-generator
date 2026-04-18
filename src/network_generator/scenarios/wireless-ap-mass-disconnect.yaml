@@ -1,0 +1,81 @@
+# Scenario: Wireless AP Mass Disconnection
+# WLC firmware bug causes simultaneous AP reset, disconnecting all
+# wireless clients in the campus.
+
+name: Wireless AP Mass Disconnect
+description: >
+  A firmware bug on the wireless LAN controller triggers a mass
+  AP reboot event. All wireless clients disconnect simultaneously,
+  APs rejoin over 5 minutes with staggered recovery. Wired network
+  sees spike in DHCP requests as clients reassociate.
+duration_seconds: 1200
+severity: critical
+tags: [wireless, wlc, availability, firmware]
+
+steps:
+  - offset_seconds: 0
+    device: dist-sw-01
+    event_type: interface_down
+    params:
+      interface: GigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "AP trunk link drops — WLC reset event"
+
+  - offset_seconds: 2
+    device: dist-sw-01
+    event_type: interface_down
+    params:
+      interface: GigabitEthernet1/0/2
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "Second AP trunk drops"
+
+  - offset_seconds: 5
+    device: dist-sw-02
+    event_type: interface_down
+    params:
+      interface: GigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.3"
+    description: "AP ports on second distribution also down"
+    metric_overrides:
+      network.device.cpu.utilization: 55.0
+
+  - offset_seconds: 10
+    device: core-rtr-01
+    event_type: baseline_info
+    params: {}
+    description: "Core sees MAC table flush for wireless VLANs"
+    metric_overrides:
+      network.device.cpu.utilization: 40.0
+
+  # Recovery — APs staggered rejoin
+  - offset_seconds: 120
+    device: dist-sw-01
+    event_type: interface_up
+    params:
+      interface: GigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "First AP comes back online"
+
+  - offset_seconds: 180
+    device: dist-sw-01
+    event_type: interface_up
+    params:
+      interface: GigabitEthernet1/0/2
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "Second AP recovers"
+
+  - offset_seconds: 240
+    device: dist-sw-02
+    event_type: interface_up
+    params:
+      interface: GigabitEthernet1/0/1
+    trap_oid: "1.3.6.1.6.3.1.1.5.4"
+    description: "Remote building APs recover"
+
+  - offset_seconds: 300
+    device: dist-sw-01
+    event_type: baseline_info
+    params: {}
+    description: "All APs re-joined, wireless service restored"
+    metric_overrides:
+      network.device.cpu.utilization: 15.0

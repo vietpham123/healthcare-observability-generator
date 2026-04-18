@@ -1,0 +1,93 @@
+# Master configuration file for Network Log Generator
+# This file controls all aspects of generation including topology,
+# scenarios, outputs, and runtime parameters.
+
+# ── Generation Settings ────────────────────────────────────────────
+generation:
+  mode: batch            # batch | realtime
+  duration: 3600         # seconds (batch mode only)
+  tick_interval: 60      # seconds between baseline ticks
+  seed: 42               # random seed for reproducibility (null = random)
+
+# ── Topology ───────────────────────────────────────────────────────
+topology:
+  file: config/default-topology.yaml
+  # Or use one of: small-topology.yaml, large-topology.yaml
+
+# ── Scenarios ──────────────────────────────────────────────────────
+scenarios:
+  - scenarios/ddos-attack.yaml
+  - scenarios/bgp-wan-outage.yaml
+  # Available scenarios:
+  # - scenarios/link-flap-storm.yaml
+  # - scenarios/ransomware-lateral.yaml
+  # - scenarios/vpn-cascade-failure.yaml
+  # - scenarios/firewall-ha-failover.yaml
+  # - scenarios/stp-broadcast-storm.yaml
+  # - scenarios/dns-failure.yaml
+  # - scenarios/dhcp-exhaustion.yaml
+  # - scenarios/wireless-ap-mass-disconnect.yaml
+
+# ── Baseline Settings ──────────────────────────────────────────────
+baseline:
+  enabled: true
+  # Traffic volume multiplier (1.0 = normal)
+  volume_multiplier: 1.0
+  # Enable diurnal patterns (business hours vs off-hours)
+  diurnal_patterns: true
+
+# ── Outputs ────────────────────────────────────────────────────────
+outputs:
+  file:
+    enabled: true
+    directory: output
+    format: json           # json | csv | raw
+
+  dynatrace:
+    enabled: false
+    endpoint: ${DT_ENDPOINT}    # or set DT_ENDPOINT env var
+    api_token: ${DT_API_TOKEN}  # or set DT_API_TOKEN env var
+    # API methods to use:
+    log_ingest: true
+    metrics_ingest: true
+    events: true
+    bizevents: false
+
+  syslog:
+    enabled: false
+    host: "127.0.0.1"
+    port: 514
+    protocol: udp          # udp | tcp | tls
+    format: rfc5424         # rfc3164 | rfc5424
+
+  snmp:
+    enabled: false
+    host: "127.0.0.1"
+    port: 162
+    community: "public"
+
+  netflow:
+    enabled: false
+    host: "127.0.0.1"
+    port: 2055
+    version: 9             # 5 | 9 | 10 (IPFIX)
+
+  http:
+    enabled: false
+    url: "http://localhost:8080/api/logs"
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Bearer ${WEBHOOK_TOKEN}"
+    batch_size: 100
+
+  kafka:
+    enabled: false
+    bootstrap_servers: "localhost:9092"
+    topic_prefix: "netloggen"
+    # Topics: netloggen.logs, netloggen.metrics, netloggen.traps, netloggen.flows
+
+# ── Logging ────────────────────────────────────────────────────────
+logging:
+  level: INFO              # DEBUG | INFO | WARNING | ERROR
+  # Log to file in addition to console
+  file: null               # e.g., "netloggen.log"

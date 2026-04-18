@@ -1,0 +1,86 @@
+{
+  "name": "IoMT Medical Device Compromise",
+  "description": "Compromised IoMT device (infusion pump) on VLAN 40 starts lateral scanning. Triggers IPS alerts on medical device VLAN, anomalous traffic patterns, and potential patient safety concern if device reaches HL7 interface.",
+  "volume_multiplier": 1.0,
+  "mychart_multiplier": 1.0,
+  "max_sessions": 20,
+  "epic_events": {
+    "phases": [
+      {
+        "name": "Unusual Device Activity (T+0)",
+        "offset_minutes": 0,
+        "events": [
+          {"event_type": "IC_SERVICE_AUDIT", "count": 5, "description": "FHIR API calls from unexpected IP range (10.10.40.x — medical devices shouldn't call FHIR)"}
+        ]
+      },
+      {
+        "name": "Potential HL7 Injection (T+10min)",
+        "offset_minutes": 10,
+        "events": [
+          {"event_type": "HL7_MALFORMED", "count": 15, "description": "Malformed HL7 messages from unexpected source"},
+          {"event_type": "HL7_NACK", "count": 10, "description": "Interface engine rejecting messages from unknown sender"}
+        ]
+      }
+    ]
+  },
+  "network_correlation": {
+    "enabled": true,
+    "description": "Infusion pump on VLAN 40 (IoMT) begins ARP scanning, DNS lookups to C2 domain, and lateral movement attempts to VLAN 30 (HL7) and VLAN 10 (Epic app tier)",
+    "events": [
+      {
+        "offset_seconds": 0,
+        "device": "lrmc-acc-icu-01",
+        "event_type": "port_security_violation",
+        "params": {"interface": "GigabitEthernet0/12", "mac_address": "00:1A:2B:3C:4D:5E", "violation_type": "restrict"},
+        "description": "Port security detects unusual MAC activity on infusion pump port"
+      },
+      {
+        "offset_seconds": 30,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "threat_detect",
+        "params": {"threat_type": "spyware", "threat_name": "Suspicious DNS Query", "severity": "medium", "src_ip": "10.10.40.15", "dst_ip": "8.8.8.8"},
+        "description": "IoMT device making DNS queries to external resolver — should use internal only"
+      },
+      {
+        "offset_seconds": 60,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "traffic_deny",
+        "params": {"src_ip": "10.10.40.15", "dst_ip": "10.10.30.10", "dst_port": 2575, "action": "deny", "rule": "iomt-to-hl7-deny"},
+        "description": "Firewall denies MLLP (HL7) connection attempt from IoMT device"
+      },
+      {
+        "offset_seconds": 90,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "traffic_deny",
+        "params": {"src_ip": "10.10.40.15", "dst_ip": "10.10.10.30", "dst_port": 443, "action": "deny", "rule": "iomt-to-epic-deny"},
+        "description": "Firewall denies HTTPS connection to Interconnect from IoMT device"
+      },
+      {
+        "offset_seconds": 120,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "threat_detect",
+        "params": {"threat_type": "vulnerability", "threat_name": "TCP Port Scan Detected", "severity": "high", "src_ip": "10.10.40.15"},
+        "description": "Palo Alto detects lateral scanning from IoMT device"
+      },
+      {
+        "offset_seconds": 180,
+        "device": "lrmc-acc-icu-01",
+        "event_type": "interface_down",
+        "params": {"interface": "GigabitEthernet0/12", "reason": "administratively down"},
+        "description": "Security team shuts down the compromised device port"
+      }
+    ],
+    "flow_anomalies": [
+      {"src_ip": "10.10.40.15", "dst_subnet": "10.10.40.0/24", "protocol": "arp", "increase_factor": 100.0, "description": "ARP scan on IoMT VLAN — device enumerating neighbors"},
+      {"src_ip": "10.10.40.15", "dst_subnet": "10.10.30.0/24", "increase_factor": 50.0, "description": "Attempted lateral movement to HL7 VLAN"},
+      {"src_ip": "10.10.40.15", "dst_subnet": "10.10.10.0/24", "increase_factor": 50.0, "description": "Attempted lateral movement to Epic app tier"}
+    ]
+  },
+  "indicators": [
+    "IoMT device (10.10.40.x) should NEVER make outbound DNS to external resolvers",
+    "IoMT device attempting to connect to HL7 port (2575) is a critical indicator",
+    "Port security violation precedes all other events — earliest detection",
+    "Micro-segmentation (firewall deny rules) successfully contains the compromise",
+    "ARP flood pattern on VLAN 40 visible in NetFlow before threat detection"
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "name": "Ransomware Attack — Hospital Kill Chain",
+  "description": "Phishing email at Lakeside West satellite compromises a workstation. Attacker pivots through WAN to main campus, attempts credential harvesting against Epic, and begins mass patient record exfiltration. Correlated across FortiGate IPS, Palo Alto threat logs, Epic SIEM break-the-glass, and anomalous NetFlow.",
+  "volume_multiplier": 2.0,
+  "mychart_multiplier": 0.3,
+  "max_sessions": 50,
+  "curve_overrides": {
+    "1": 2.0, "2": 2.5, "3": 2.5, "4": 2.0, "5": 1.5
+  },
+  "epic_events": {
+    "phases": [
+      {
+        "name": "Credential Harvesting (T+5min)",
+        "offset_minutes": 5,
+        "events": [
+          {"event_type": "FAILEDLOGIN", "count": 30, "source_ip_prefix": "10.20.20", "description": "Brute force login attempts from compromised LKW workstation"},
+          {"event_type": "WPSEC_LOGIN_FAIL", "count": 15, "source_ip_prefix": "10.20.20"},
+          {"event_type": "LOGIN_BLOCKED", "count": 5, "source_ip_prefix": "10.20.20"}
+        ]
+      },
+      {
+        "name": "Successful Login (T+8min)",
+        "offset_minutes": 8,
+        "events": [
+          {"event_type": "HKU_LOGIN", "count": 1, "username": "KMOORE", "source_ip_prefix": "10.20.20", "description": "Attacker gains access using KMOORE credentials"},
+          {"event_type": "CTO_LOGIN", "count": 1, "username": "KMOORE", "source_ip_prefix": "10.20.20"}
+        ]
+      },
+      {
+        "name": "Reconnaissance (T+10min)",
+        "offset_minutes": 10,
+        "events": [
+          {"event_type": "PUL_SEARCH_AUDIT", "count": 50, "username": "KMOORE", "description": "Mass patient lookup — sequential MRN access"},
+          {"event_type": "CONTEXTCHANGE", "count": 20, "username": "KMOORE"}
+        ]
+      },
+      {
+        "name": "Data Access (T+15min)",
+        "offset_minutes": 15,
+        "events": [
+          {"event_type": "AC_BREAK_THE_GLASS_ACCESS", "count": 25, "username": "KMOORE", "description": "Break-the-glass on patients outside KMOORE's department"},
+          {"event_type": "chart_review", "count": 40, "username": "KMOORE"},
+          {"event_type": "IC_SERVICE_AUDIT", "count": 100, "description": "Mass API calls — data exfiltration via Interconnect"}
+        ]
+      }
+    ]
+  },
+  "network_correlation": {
+    "enabled": true,
+    "description": "Multi-phase attack visible across firewall IPS, WAN traffic, and flow data",
+    "events": [
+      {
+        "offset_seconds": 0,
+        "device": "lkw-fw-01",
+        "event_type": "utm_webfilter",
+        "params": {"src_ip": "10.20.20.50", "url": "https://updates.micros0ft-patch.com/loader.exe", "category": "Malicious Websites", "action": "warning"},
+        "description": "Web filter flags phishing payload download"
+      },
+      {
+        "offset_seconds": 30,
+        "device": "lkw-fw-01",
+        "event_type": "traffic_forward",
+        "params": {"action": "accept", "src_ip": "10.20.20.50", "dst_ip": "198.51.100.99", "dst_port": 443, "app": "ssl"},
+        "description": "C2 callback established from compromised workstation"
+      },
+      {
+        "offset_seconds": 120,
+        "device": "lkw-fw-01",
+        "event_type": "utm_ips",
+        "params": {"src_ip": "10.20.20.50", "dst_ip": "10.20.20.1", "attack_name": "TCP.Port.Scan", "severity": "medium", "action": "detected"},
+        "description": "Internal reconnaissance — port scanning satellite LAN"
+      },
+      {
+        "offset_seconds": 180,
+        "device": "lkw-fw-01",
+        "event_type": "utm_ips",
+        "params": {"src_ip": "10.20.20.50", "dst_ip": "172.16.0.1", "attack_name": "SMB.Login.Brute.Force", "severity": "high", "action": "detected"},
+        "description": "Attempting to traverse WAN link to main campus"
+      },
+      {
+        "offset_seconds": 300,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "threat_detect",
+        "params": {"threat_type": "spyware", "threat_name": "Ransomware.Gen C2 Traffic", "severity": "critical", "src_zone": "untrust", "dst_zone": "trust"},
+        "description": "Palo Alto detects C2 traffic crossing into main campus"
+      },
+      {
+        "offset_seconds": 600,
+        "device": "lrmc-fw-pa-01",
+        "event_type": "threat_detect",
+        "params": {"threat_type": "vulnerability", "threat_name": "Epic Interconnect API Abuse - High Volume", "severity": "high", "src_zone": "trust", "dst_zone": "dmz"},
+        "description": "Anomalous API traffic volume to Epic Interconnect"
+      },
+      {
+        "offset_seconds": 900,
+        "device": "lkw-fw-01",
+        "event_type": "utm_antivirus",
+        "params": {"src_ip": "10.20.20.50", "filename": "svchost_update.exe", "virus_name": "W32/Filecoder.Ransomware!tr"},
+        "description": "AV finally catches ransomware binary"
+      }
+    ],
+    "flow_anomalies": [
+      {"src_subnet": "10.20.20.0/24", "dst_ip": "198.51.100.99", "dst_port": 443, "bytes_per_sec": 500000, "description": "C2 channel — sustained HTTPS to external"},
+      {"src_subnet": "10.20.20.0/24", "dst_subnet": "10.10.10.0/24", "increase_factor": 10.0, "description": "Satellite West → Epic app tier — 10x normal (credential stuffing)"},
+      {"src_subnet": "10.20.20.0/24", "dst_subnet": "10.10.50.0/24", "increase_factor": 20.0, "description": "Satellite West → DMZ/Interconnect — 20x normal (data exfiltration)"}
+    ]
+  },
+  "indicators": [
+    "Failed login burst from satellite IP range (10.20.20.x) → same range succeeds login",
+    "Break-the-glass events from admin account (KMOORE) who is not a clinician",
+    "Sequential patient lookup pattern (MRN+1, MRN+2, ...) — not clinical behavior",
+    "FortiGate IPS + Palo Alto threat alerts correlate temporally with Epic SIEM burst",
+    "WAN traffic from LKW to LRMC spikes 10x during off-hours",
+    "NetFlow shows high-volume HTTPS to single external IP during C2 phase"
+  ]
+}

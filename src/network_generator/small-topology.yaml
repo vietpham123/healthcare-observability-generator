@@ -1,0 +1,200 @@
+# Small Enterprise Topology — ~50 devices
+# Single site with basic infrastructure
+# Vendors: Cisco IOS, Cisco ASA, Fortinet, Aruba
+
+sites:
+  - name: small-office
+    location: "Small Office"
+    latitude: "42.3601"
+    longitude: "-71.0589"
+    country: "United States"
+
+subnets:
+  management: "10.1.0.0/24"
+  servers: "10.1.1.0/24"
+  users: "10.1.2.0/24"
+  wifi: "10.1.3.0/24"
+  guest: "10.1.4.0/24"
+  dmz: "10.1.100.0/24"
+
+devices:
+  # ── Core / Distribution ──────────────────────────────────────────
+  - hostname: core-sw-01
+    vendor: cisco_ios
+    role: core_switch
+    management_ip: "10.1.0.1"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.1"
+        status: up
+      - name: GigabitEthernet0/1
+        ip: "10.1.1.1"
+        status: up
+      - name: GigabitEthernet0/2
+        ip: "10.1.2.1"
+        status: up
+
+  - hostname: core-sw-02
+    vendor: cisco_ios
+    role: core_switch
+    management_ip: "10.1.0.2"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.2"
+        status: up
+      - name: GigabitEthernet0/1
+        ip: "10.1.1.2"
+        status: up
+
+  # ── Access Switches ──────────────────────────────────────────────
+  - hostname: access-sw-01
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.1.0.10"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.10"
+        status: up
+      - name: GigabitEthernet0/1
+        ip: "10.1.2.10"
+        status: up
+
+  - hostname: access-sw-02
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.1.0.11"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.11"
+        status: up
+
+  - hostname: access-sw-03
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.1.0.12"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.12"
+        status: up
+
+  - hostname: access-sw-04
+    vendor: cisco_ios
+    role: access_switch
+    management_ip: "10.1.0.13"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.13"
+        status: up
+
+  # ── Firewall ─────────────────────────────────────────────────────
+  - hostname: fw-primary
+    vendor: cisco_asa
+    role: firewall
+    management_ip: "10.1.0.50"
+    site: small-office
+    interfaces:
+      - name: outside
+        ip: "203.0.113.1"
+        status: up
+      - name: inside
+        ip: "10.1.0.50"
+        status: up
+      - name: dmz
+        ip: "10.1.100.1"
+        status: up
+
+  - hostname: fw-secondary
+    vendor: cisco_asa
+    role: firewall
+    management_ip: "10.1.0.51"
+    site: small-office
+    interfaces:
+      - name: outside
+        ip: "203.0.113.2"
+        status: up
+      - name: inside
+        ip: "10.1.0.51"
+        status: up
+
+  # ── UTM / NGFW ──────────────────────────────────────────────────
+  - hostname: utm-01
+    vendor: fortinet
+    role: firewall
+    management_ip: "10.1.0.60"
+    site: small-office
+    interfaces:
+      - name: port1
+        ip: "10.1.0.60"
+        status: up
+      - name: port2
+        ip: "10.1.2.60"
+        status: up
+
+  # ── Wireless Controller + APs ───────────────────────────────────
+  - hostname: wlc-01
+    vendor: aruba
+    role: wireless_controller
+    management_ip: "10.1.0.70"
+    site: small-office
+    interfaces:
+      - name: vlan10
+        ip: "10.1.0.70"
+        status: up
+
+  - hostname: ap-1f-01
+    vendor: aruba
+    role: access_point
+    management_ip: "10.1.3.1"
+    site: small-office
+    interfaces:
+      - name: radio0
+        status: up
+      - name: radio1
+        status: up
+
+  - hostname: ap-1f-02
+    vendor: aruba
+    role: access_point
+    management_ip: "10.1.3.2"
+    site: small-office
+    interfaces:
+      - name: radio0
+        status: up
+
+  - hostname: ap-2f-01
+    vendor: aruba
+    role: access_point
+    management_ip: "10.1.3.3"
+    site: small-office
+    interfaces:
+      - name: radio0
+        status: up
+
+  - hostname: ap-2f-02
+    vendor: aruba
+    role: access_point
+    management_ip: "10.1.3.4"
+    site: small-office
+    interfaces:
+      - name: radio0
+        status: up
+
+  # ── Router (WAN) ────────────────────────────────────────────────
+  - hostname: wan-rtr-01
+    vendor: cisco_ios
+    role: router
+    management_ip: "10.1.0.80"
+    site: small-office
+    interfaces:
+      - name: GigabitEthernet0/0
+        ip: "10.1.0.80"
+        status: up
+      - name: GigabitEthernet0/1
+        ip: "203.0.113.10"
+        status: up
