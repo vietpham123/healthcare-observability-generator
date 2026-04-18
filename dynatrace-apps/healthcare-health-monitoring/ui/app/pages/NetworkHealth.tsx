@@ -31,28 +31,28 @@ export const NetworkHealth = () => {
 
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <TitleBar><TitleBar.Title>Device Fleet — CPU Utilization</TitleBar.Title><TitleBar.Subtitle>Honeycomb view of all network devices by average CPU load</TitleBar.Subtitle></TitleBar>
-      <DeviceHoneycomb />
+      <DeviceHoneycomb site={site} />
     </Surface>
 
     <Flex gap={16}>
       <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>CPU by Device</TitleBar.Title></TitleBar>
-        <TsChart query={queries.deviceCpuOverTime} />
+        <TsChart query={fn(queries.deviceCpuOverTime)} />
       </Surface>
       <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Memory by Device</TitleBar.Title></TitleBar>
-        <TsChart query={queries.deviceMemOverTime} />
+        <TsChart query={fn(queries.deviceMemOverTime)} />
       </Surface>
     </Flex>
 
     <Flex gap={16}>
       <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Traffic In</TitleBar.Title></TitleBar>
-        <TsChart query={queries.trafficInOverTime} />
+        <TsChart query={fn(queries.trafficInOverTime)} />
       </Surface>
       <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Traffic Out</TitleBar.Title></TitleBar>
-        <TsChart query={queries.trafficOutOverTime} />
+        <TsChart query={fn(queries.trafficOutOverTime)} />
       </Surface>
     </Flex>
 
@@ -83,6 +83,7 @@ export const NetworkHealth = () => {
       <Surface style={{ flex: 2, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Network Log Timeline</TitleBar.Title></TitleBar>
         <TsChart query={fn(queries.networkLogTimeline)} />
+
       </Surface>
       <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Vendor Distribution</TitleBar.Title></TitleBar>
@@ -122,8 +123,8 @@ const ProtocolDonut = ({ site }: { site: string | null }) => {
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
 
-const DeviceHoneycomb = () => {
-  const { data, isLoading } = useDql({ query: queries.deviceSnapshot });
+const DeviceHoneycomb = ({ site }: { site: string | null }) => {
+  const { data, isLoading } = useDql({ query: withSiteFilter(queries.deviceSnapshot, site, "network") });
   if (isLoading) return <Flex justifyContent="center" style={{ height: 200 }}><ProgressCircle /></Flex>;
   const records = data?.records ?? [];
   if (records.length === 0) return <Text>No device data</Text>;
