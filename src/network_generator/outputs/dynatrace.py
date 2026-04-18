@@ -101,7 +101,7 @@ class DynatraceOutput(BaseOutput):
             "content": event.content,
             "timestamp": event.timestamp.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "log.source": event.log_source,
-            "severity": _severity_to_dt(event.severity.name),
+            "severity": _severity_to_dt((event.severity.name if hasattr(event.severity, "name") else str(event.severity))),
             "network.device.hostname": event.device,
             "network.device.vendor": event.vendor.value,
             "network.device.role": event.device_role,
@@ -183,14 +183,14 @@ class DynatraceOutput(BaseOutput):
         total_sent = 0
         for trap in traps:
             payload = {
-                "eventType": "CUSTOM_INFO" if trap.severity.value >= 4 else "CUSTOM_ALERT",
+                "eventType": "CUSTOM_INFO" if (trap.severity.value if hasattr(trap.severity, "value") else int(trap.severity)) >= 4 else "CUSTOM_ALERT",
                 "title": f"SNMP Trap: {trap.trap_name} on {trap.device}",
                 "timeout": 15,
                 "properties": {
                     "network.device.hostname": trap.device,
                     "network.trap.oid": trap.trap_oid,
                     "network.trap.name": trap.trap_name,
-                    "network.trap.severity": trap.severity.name.lower(),
+                    "network.trap.severity": (trap.severity.name if hasattr(trap.severity, "name") else str(trap.severity)).lower(),
                     "network.device.site": trap.site,
                     **{k: str(v) for k, v in trap.varbinds.items()},
                     **trap.attributes,

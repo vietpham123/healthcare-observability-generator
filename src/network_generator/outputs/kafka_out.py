@@ -57,7 +57,7 @@ class KafkaOutput(BaseOutput):
             record = {
                 "timestamp": e.timestamp.astimezone(timezone.utc).isoformat(),
                 "device": e.device, "vendor": e.vendor.value,
-                "severity": e.severity.name, "content": e.content,
+                "severity": (e.severity.name if hasattr(e.severity, "name") else str(e.severity)), "content": e.content,
                 "event_type": e.event_type, "site": e.site,
                 **e.attributes,
             }

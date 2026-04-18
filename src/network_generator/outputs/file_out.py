@@ -78,7 +78,7 @@ class FileOutput(BaseOutput):
                 row["timestamp"] = event.timestamp.isoformat()
                 row["device"] = event.device
                 row["vendor"] = event.vendor.value
-                row["severity"] = event.severity.name
+                row["severity"] = (event.severity.name if hasattr(event.severity, "name") else str(event.severity))
                 row["facility"] = str(event.facility)
                 row["event_type"] = event.event_type
                 row["log_source"] = event.log_source
@@ -96,7 +96,7 @@ class FileOutput(BaseOutput):
                     "timestamp": event.timestamp.isoformat(),
                     "device": event.device,
                     "vendor": event.vendor.value,
-                    "severity": event.severity.name,
+                    "severity": (event.severity.name if hasattr(event.severity, "name") else str(event.severity)) if hasattr(event.severity, "name") else str(event.severity),
                     "content": event.content,
                     "event_type": event.event_type,
                     "log_source": event.log_source,
@@ -136,7 +136,7 @@ class FileOutput(BaseOutput):
                 "device": t.device,
                 "trap_oid": t.trap_oid,
                 "trap_name": t.trap_name,
-                "severity": t.severity.name,
+                "severity": (t.severity.name if hasattr(t.severity, "name") else str(t.severity)),
                 "site": t.site,
                 **t.varbinds,
                 **t.attributes,
