@@ -8,7 +8,7 @@ import {
 import { DataTable } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
-import { queries, EPIC_FILTER, SNMP_FILTER } from "../queries";
+import { queries, EPIC_FILTER } from "../queries";
 import { SiteCard } from "../components/SiteCard";
 
 const SITES = [
@@ -19,14 +19,24 @@ const SITES = [
 ];
 
 function SiteDetail({ siteCode, siteName }: { siteCode: string; siteName: string }) {
-  const epicFilter = `${EPIC_FILTER} AND healthcare.site == "${siteCode}"`;
-  const snmpFilter = `${SNMP_FILTER} AND healthcare.site == "${siteCode}"`;
-
   const loginTimeline = useDql({
-    query: `fetch logs | filter ${epicFilter} | filter isNotNull(Action) | makeTimeseries logins = count(), by: { Action }, interval: 5m`,
+    query: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+      | filter ${EPIC_FILTER} AND healthcare.site == "${siteCode}"
+      | filter isNotNull(Action)
+      | makeTimeseries logins = count(), by: { Action }, interval: 5m`,
   });
-  const deviceTable = useDql({
-    query: `fetch logs | filter ${snmpFilter} | sort timestamp desc | summarize cpu = takeFirst(toDouble(network.snmp.cpu)), memory = takeFirst(toDouble(network.snmp.memory)), vendor = takeFirst(network.device.vendor), by: { hostname = network.device.hostname }`,
+  const siteCpu = useDql({
+    query: `timeseries cpu = avg(healthcare.network.device.cpu.utilization), by: {device}, from: now()-2h
+      | filter site == "${siteCode}"`,
+  });
+  const deviceSnap = useDql({
+    query: `timeseries
+        cpu = avg(healthcare.network.device.cpu.utilization),
+        mem = avg(healthcare.network.device.memory.utilization),
+        by: {device, site, vendor}, from: now()-15m
+      | filter site == "${siteCode}"
+      | fieldsAdd avg_cpu = arrayAvg(cpu), avg_mem = arrayAvg(mem)
+      | fields device, vendor, avg_cpu, avg_mem`,
   });
 
   return (
@@ -45,7 +55,7 @@ function SiteDetail({ siteCode, siteName }: { siteCode: string; siteName: string
             loginTimeline.data?.records ? (
               <TimeseriesChart
                 data={convertToTimeseries(loginTimeline.data.records, loginTimeline.data.types)}
-                variant="stacked-bar"
+                variant="bar"
                 gapPolicy="connect"
               />
             ) : <Text>No data for this site</Text>}
@@ -57,14 +67,32 @@ function SiteDetail({ siteCode, siteName }: { siteCode: string; siteName: string
         borderRadius: 12,
         padding: 20,
       }}>
+        <Heading level={3}>Device CPU Utilization</Heading>
+        <div style={{ height: 280 }}>
+          {siteCpu.isLoading ? <ProgressCircle /> :
+            siteCpu.data?.records ? (
+              <TimeseriesChart
+                data={convertToTimeseries(siteCpu.data.records, siteCpu.data.types)}
+                variant="line"
+                gapPolicy="connect"
+              />
+            ) : <Text>No metric data for this site</Text>}
+        </div>
+      </Flex>
+
+      <Flex flexDirection="column" style={{
+        background: "var(--dt-colors-surface-default)",
+        borderRadius: 12,
+        padding: 20,
+      }}>
         <Heading level={3}>Network Devices</Heading>
-        {deviceTable.isLoading ? <ProgressCircle /> :
-          deviceTable.data?.records?.length ? (
-            <DataTable data={deviceTable.data.records} columns={[
-              { accessor: "hostname", header: "Hostname" },
-              { accessor: "vendor", header: "Vendor" },
-              { accessor: "cpu", header: "CPU %" },
-              { accessor: "memory", header: "Memory %" },
+        {deviceSnap.isLoading ? <ProgressCircle /> :
+          deviceSnap.data?.records?.length ? (
+            <DataTable data={deviceSnap.data.records} columns={[
+              { id: "device", accessor: "device", header: "Device" },
+              { id: "vendor", accessor: "vendor", header: "Vendor" },
+              { id: "avg_cpu", accessor: "avg_cpu", header: "CPU %" },
+              { id: "avg_mem", accessor: "avg_mem", header: "Memory %" },
             ]} />
           ) : <Text>No devices at this site</Text>}
       </Flex>
@@ -78,7 +106,6 @@ export const SiteView = () => {
   const epicBySite = useDql({ query: queries.epicEventsBySite });
   const networkBySite = useDql({ query: queries.networkHealthBySite });
 
-  // Build per-site health from query results
   const epicMap: Record<string, { login_rate: number }> = {};
   if (epicBySite.data?.records) {
     for (const r of epicBySite.data.records as any[]) {
@@ -102,7 +129,6 @@ export const SiteView = () => {
         Click a site card to drill down.
       </Text>
 
-      {/* Site Cards */}
       <Flex gap={16} flexWrap="wrap">
         {SITES.map(site => {
           const epic = epicMap[site.code];
@@ -122,7 +148,6 @@ export const SiteView = () => {
         })}
       </Flex>
 
-      {/* Site Drill-Down */}
       {selectedSiteInfo && (
         <SiteDetail
           siteCode={selectedSiteInfo.code}

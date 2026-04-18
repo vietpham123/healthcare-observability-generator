@@ -12,7 +12,7 @@ import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <Flex flexDirection="column" gap={12} style={{
       background: "var(--dt-colors-surface-default)",
@@ -20,6 +20,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       padding: 20,
     }}>
       <Heading level={2}>{title}</Heading>
+      {subtitle && <Text style={{ opacity: 0.7 }}>{subtitle}</Text>}
       {children}
     </Flex>
   );
@@ -74,8 +75,8 @@ export const IntegrationHealth = () => {
         />
       </Flex>
 
-      {/* HL7v2 Interface Health */}
-      <Section title="HL7v2 Interface Health">
+      {/* HL7v2 */}
+      <Section title="HL7v2 Interface Health" subtitle="Message volume, types, and error tracking">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 2 }}>
             <Heading level={3}>Message Volume Over Time</Heading>
@@ -84,7 +85,7 @@ export const IntegrationHealth = () => {
                 hl7Volume.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(hl7Volume.data.records, hl7Volume.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -96,10 +97,7 @@ export const IntegrationHealth = () => {
               {hl7Types.isLoading ? <ProgressCircle /> :
                 hl7Types.data?.records?.length ? (
                   <PieChart
-                    data={hl7Types.data.records.map((r: any) => ({
-                      name: r.message_type || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{ slices: hl7Types.data.records.map((r: any) => ({ category: r.message_type || "Unknown", value: r.cnt || 0 })) }}
                   />
                 ) : <Text>No data</Text>}
             </div>
@@ -109,17 +107,17 @@ export const IntegrationHealth = () => {
         {hl7Errors.isLoading ? <ProgressCircle /> :
           hl7Errors.data?.records?.length ? (
             <DataTable data={hl7Errors.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "MSH.9", header: "Msg Type" },
-              { accessor: "MSH.10", header: "Control ID" },
-              { accessor: "healthcare.site", header: "Site" },
-              { accessor: "content", header: "Content" },
+              { id: "timestamp", accessor: "timestamp", header: "Time" },
+              { id: "MSH.9", accessor: "MSH.9", header: "Msg Type" },
+              { id: "MSH.10", accessor: "MSH.10", header: "Control ID" },
+              { id: "healthcare.site", accessor: "healthcare.site", header: "Site" },
+              { id: "content", accessor: "content", header: "Content" },
             ]} />
           ) : <Text>No HL7 errors</Text>}
       </Section>
 
-      {/* FHIR API Health */}
-      <Section title="FHIR API Health">
+      {/* FHIR API */}
+      <Section title="FHIR API Health" subtitle="Request rates, response times, and error tracking">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 1 }}>
             <Heading level={3}>Request Rate Over Time</Heading>
@@ -128,7 +126,7 @@ export const IntegrationHealth = () => {
                 fhirRate.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(fhirRate.data.records, fhirRate.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -140,10 +138,7 @@ export const IntegrationHealth = () => {
               {fhirStatus.isLoading ? <ProgressCircle /> :
                 fhirStatus.data?.records?.length ? (
                   <PieChart
-                    data={fhirStatus.data.records.map((r: any) => ({
-                      name: r.status_group || "Unknown",
-                      value: r.cnt || 0,
-                    }))}
+                    data={{ slices: fhirStatus.data.records.map((r: any) => ({ category: r.status_group || "Unknown", value: r.cnt || 0 })) }}
                   />
                 ) : <Text>No data</Text>}
             </div>
@@ -166,11 +161,11 @@ export const IntegrationHealth = () => {
             {fhirSlow.isLoading ? <ProgressCircle /> :
               fhirSlow.data?.records?.length ? (
                 <DataTable data={fhirSlow.data.records} columns={[
-                  { accessor: "timestamp", header: "Time" },
-                  { accessor: "method", header: "Method" },
-                  { accessor: "path", header: "Path" },
-                  { accessor: "status", header: "Status" },
-                  { accessor: "response_time_ms", header: "ms" },
+                  { id: "timestamp", accessor: "timestamp", header: "Time" },
+                  { id: "method", accessor: "method", header: "Method" },
+                  { id: "path", accessor: "path", header: "Path" },
+                  { id: "response_code", accessor: "response_code", header: "Status" },
+                  { id: "response_time_ms", accessor: "response_time_ms", header: "ms" },
                 ]} />
               ) : <Text>No slow requests</Text>}
           </Flex>
@@ -179,16 +174,16 @@ export const IntegrationHealth = () => {
             {fhirClients.isLoading ? <ProgressCircle /> :
               fhirClients.data?.records?.length ? (
                 <DataTable data={fhirClients.data.records} columns={[
-                  { accessor: "client_id", header: "Client" },
-                  { accessor: "requests", header: "Requests" },
+                  { id: "client_id", accessor: "client_id", header: "Client" },
+                  { id: "requests", accessor: "requests", header: "Requests" },
                 ]} />
               ) : <Text>No data</Text>}
           </Flex>
         </Flex>
       </Section>
 
-      {/* ETL/Integration Job Health */}
-      <Section title="ETL / Integration Jobs">
+      {/* ETL */}
+      <Section title="ETL / Integration Jobs" subtitle="Batch processing status and duration trends">
         <Flex gap={16}>
           <Flex flexDirection="column" style={{ flex: 1 }}>
             <Heading level={3}>Job Status Over Time</Heading>
@@ -197,7 +192,7 @@ export const IntegrationHealth = () => {
                 etlStatus.data?.records ? (
                   <TimeseriesChart
                     data={convertToTimeseries(etlStatus.data.records, etlStatus.data.types)}
-                    variant="stacked-bar"
+                    variant="bar"
                     gapPolicy="connect"
                   />
                 ) : <Text>No data</Text>}
@@ -221,11 +216,11 @@ export const IntegrationHealth = () => {
         {etlFailed.isLoading ? <ProgressCircle /> :
           etlFailed.data?.records?.length ? (
             <DataTable data={etlFailed.data.records} columns={[
-              { accessor: "timestamp", header: "Time" },
-              { accessor: "job_name", header: "Job" },
-              { accessor: "source_system", header: "Source" },
-              { accessor: "duration_seconds", header: "Duration (s)" },
-              { accessor: "content", header: "Details" },
+              { id: "timestamp", accessor: "timestamp", header: "Time" },
+              { id: "job_name", accessor: "job_name", header: "Job" },
+              { id: "source_system", accessor: "source_system", header: "Source" },
+              { id: "duration_seconds", accessor: "duration_seconds", header: "Duration (s)" },
+              { id: "content", accessor: "content", header: "Details" },
             ]} />
           ) : <Text>No failed ETL jobs</Text>}
       </Section>
