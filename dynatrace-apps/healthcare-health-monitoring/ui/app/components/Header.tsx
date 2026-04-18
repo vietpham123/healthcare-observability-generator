@@ -1,6 +1,8 @@
 import React from "react";
 import { AppHeader, Flex } from "@dynatrace/strato-components/layouts";
 import { Text } from "@dynatrace/strato-components/typography";
+import { TimeframeSelector } from "@dynatrace/strato-components/filters";
+import type { Timeframe } from "@dynatrace/strato-components/core";
 import { Link, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
@@ -12,12 +14,17 @@ const NAV_ITEMS = [
   { path: "/explore", label: "Explore" },
 ];
 
-export const Header = () => {
+interface HeaderProps {
+  timeframe?: Timeframe;
+  onTimeframeChange?: (tf: Timeframe | null) => void;
+}
+
+export const Header = ({ timeframe, onTimeframeChange }: HeaderProps) => {
   const location = useLocation();
   return (
     <AppHeader>
       <AppHeader.ActionItems>
-        <Flex gap={4} alignItems="center">
+        <Flex gap={4} alignItems="center" style={{ width: "100%" }}>
           <Text style={{ fontSize: 16, fontWeight: 700, marginRight: 24 }}>
             🏥 Healthcare Monitor
           </Text>
@@ -42,6 +49,9 @@ export const Header = () => {
               </Link>
             );
           })}
+          <div style={{ marginLeft: "auto" }}>
+            <TimeframeSelector value={timeframe} onChange={onTimeframeChange} />
+          </div>
         </Flex>
       </AppHeader.ActionItems>
     </AppHeader>

@@ -29,7 +29,7 @@ export const App = () => {
   return (
     <Page>
       <Page.Header>
-        <Header />
+        <Header timeframe={timeframe} onTimeframeChange={(tf) => { if (tf) setTimeframe(tf); }} />
       </Page.Header>
       <Page.Main>
         <DqlQueryParamsProvider

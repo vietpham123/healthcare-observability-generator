@@ -26,30 +26,27 @@ interface CampusMapProps {
   onSiteClick?: (code: string) => void;
 }
 
-// Kansas state outline (simplified)
 const KS_OUTLINE = "M 62 52 L 640 52 L 640 60 L 648 60 L 648 72 L 640 72 L 640 370 L 62 370 Z";
 
-// County grid for subtle texture
 const COUNTY_LINES = [
   "M 62 132 L 640 132", "M 62 212 L 640 212", "M 62 292 L 640 292",
   "M 158 52 L 158 370", "M 254 52 L 254 370", "M 350 52 L 350 370",
   "M 446 52 L 446 370", "M 542 52 L 542 370",
 ];
 
-// Geographic positions in SVG viewBox(0 0 700 420)
+// Spread out NE cluster: pushed Topeka left, Lawrence down, KC stays right
 const SITE_GEO: Record<string, { gx: number; gy: number }> = {
-  "kcrmc-main": { gx: 608, gy: 115 },
-  "tpk-clinic": { gx: 525, gy: 105 },
-  "lwr-clinic": { gx: 565, gy: 120 },
-  "wch-clinic": { gx: 430, gy: 270 },
+  "kcrmc-main": { gx: 610, gy: 92 },
+  "tpk-clinic": { gx: 462, gy: 88 },
+  "lwr-clinic": { gx: 538, gy: 175 },
+  "wch-clinic": { gx: 380, gy: 290 },
 };
 
-// Background reference cities
 const REF_CITIES = [
   { name: "Dodge City", x: 210, y: 255 },
   { name: "Salina", x: 350, y: 150 },
-  { name: "Manhattan", x: 468, y: 98 },
-  { name: "Emporia", x: 490, y: 195 },
+  { name: "Manhattan", x: 430, y: 98 },
+  { name: "Emporia", x: 490, y: 210 },
   { name: "Hays", x: 278, y: 132 },
   { name: "Garden City", x: 158, y: 230 },
   { name: "Hutchinson", x: 370, y: 225 },
@@ -58,7 +55,10 @@ const REF_CITIES = [
   { name: "Colby", x: 145, y: 75 },
 ];
 
-// Build a curved bezier path between two points
+// Hospital cross icon path centered at (0,0), size ~1 unit
+// A classic medical cross (plus sign with rounded ends)
+const HOSPITAL_CROSS = "M -4 -10 L 4 -10 L 4 -4 L 10 -4 L 10 4 L 4 4 L 4 10 L -4 10 L -4 4 L -10 4 L -10 -4 L -4 -4 Z";
+
 function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -69,13 +69,7 @@ function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
 }
 
-// Evaluate a quadratic bezier at t
-function bezierAt(
-  x1: number, y1: number,
-  cx: number, cy: number,
-  x2: number, y2: number,
-  t: number,
-) {
+function bezierAt(x1: number, y1: number, cx: number, cy: number, x2: number, y2: number, t: number) {
   const mt = 1 - t;
   return {
     x: mt * mt * x1 + 2 * mt * t * cx + t * t * x2,
@@ -86,13 +80,11 @@ function bezierAt(
 export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Merge geographic positions
   const geoSites = useMemo(
     () => sites.map((s) => ({ ...s, ...(SITE_GEO[s.code] ?? { gx: s.x, gy: s.y }) })),
     [sites],
   );
 
-  // Default hub-and-spoke flows if not provided
   const activeFlows = useMemo(() => {
     if (flows.length > 0) return flows;
     const hub = geoSites.find((s) => s.code === "kcrmc-main");
@@ -115,56 +107,35 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
     if (!canvas || activeFlows.length === 0 || geoSites.length < 2) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const rect = canvas.getBoundingClientRect();
-    const sx = rect.width / 700;
-    const sy = rect.height / 420;
+    const sx = rect.width / 700, sy = rect.height / 420;
     canvas.width = rect.width * 2;
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
 
-    interface Particle { fi: number; t: number; speed: number; sz: number; }
-    const particles: Particle[] = [];
+    interface P { fi: number; t: number; speed: number; sz: number; }
+    const ps: P[] = [];
     activeFlows.forEach((flow, fi) => {
       const n = Math.max(3, Math.round((flow.volume / maxVol) * 8));
-      for (let i = 0; i < n; i++) {
-        particles.push({
-          fi,
-          t: Math.random(),
-          speed: 0.0015 + Math.random() * 0.003,
-          sz: 1.2 + (flow.volume / maxVol) * 2.5,
-        });
-      }
+      for (let i = 0; i < n; i++) ps.push({ fi, t: Math.random(), speed: 0.0015 + Math.random() * 0.003, sz: 1.2 + (flow.volume / maxVol) * 2.5 });
     });
 
     let raf: number;
     const draw = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);
-      for (const p of particles) {
+      for (const p of ps) {
         const fl = activeFlows[p.fi];
         const a = geoSites.find((s) => s.code === fl.from);
         const b = geoSites.find((s) => s.code === fl.to);
         if (!a || !b) continue;
-        const x1 = a.gx * sx, y1 = a.gy * sy;
-        const x2 = b.gx * sx, y2 = b.gy * sy;
-        const dx = x2 - x1, dy = y2 - y1;
-        const len = Math.sqrt(dx * dx + dy * dy);
+        const x1 = a.gx * sx, y1 = a.gy * sy, x2 = b.gx * sx, y2 = b.gy * sy;
+        const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
         const off = Math.min(len * 0.18, 45 * sx);
-        const cx = (x1 + x2) / 2 + (-dy / len) * off;
-        const cy = (y1 + y2) / 2 + (dx / len) * off;
+        const cx = (x1 + x2) / 2 + (-dy / len) * off, cy = (y1 + y2) / 2 + (dx / len) * off;
         const pt = bezierAt(x1, y1, cx, cy, x2, y2, p.t);
-        // Glow
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, p.sz * 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(91,143,249,0.12)";
-        ctx.fill();
-        // Core
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, p.sz, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(120,170,255,0.9)";
-        ctx.fill();
-        p.t += p.speed;
-        if (p.t > 1) p.t = 0;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz * 3.5, 0, Math.PI * 2); ctx.fillStyle = "rgba(91,143,249,0.12)"; ctx.fill();
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz, 0, Math.PI * 2); ctx.fillStyle = "rgba(120,170,255,0.9)"; ctx.fill();
+        p.t += p.speed; if (p.t > 1) p.t = 0;
       }
       raf = requestAnimationFrame(draw);
     };
@@ -181,30 +152,20 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
       <svg viewBox="0 0 700 420" style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
         <defs>
           <filter id="fglow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="b" />
-            <feComposite in="SourceGraphic" in2="b" operator="over" />
+            <feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" />
           </filter>
           <filter id="sglow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="10" result="b" />
-            <feComposite in="SourceGraphic" in2="b" operator="over" />
+            <feGaussianBlur stdDeviation="12" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" />
           </filter>
-          <radialGradient id="rg-healthy" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#6ee7a0" /><stop offset="100%" stopColor="#2ab06f" />
-          </radialGradient>
-          <radialGradient id="rg-warning" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#fcd06e" /><stop offset="100%" stopColor="#f5a623" />
-          </radialGradient>
-          <radialGradient id="rg-critical" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#f87171" /><stop offset="100%" stopColor="#dc3545" />
-          </radialGradient>
+          {/* Hospital icon clip — white cross on colored bg */}
+          <clipPath id="crossClip">
+            <path d={HOSPITAL_CROSS} />
+          </clipPath>
         </defs>
 
-        {/* State outline */}
+        {/* State outline + county grid */}
         <path d={KS_OUTLINE} fill="rgba(25,50,85,0.18)" stroke="rgba(100,160,230,0.22)" strokeWidth="1.5" />
-        {/* County grid */}
         {COUNTY_LINES.map((d, i) => <path key={i} d={d} fill="none" stroke="rgba(100,160,230,0.05)" strokeWidth="0.5" />)}
-
-        {/* State label */}
         <text x="200" y="200" fill="rgba(100,150,210,0.08)" fontSize="72" fontWeight="800" fontFamily="system-ui" letterSpacing="16">KANSAS</text>
 
         {/* Reference cities */}
@@ -218,8 +179,8 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
         {/* Highway hints */}
         <path d="M 62 112 L 648 112" fill="none" stroke="rgba(130,170,220,0.06)" strokeWidth="2.5" />
         <text x="80" y="108" fill="rgba(130,170,220,0.12)" fontSize="7" fontFamily="monospace">I-70</text>
-        <path d="M 608 52 Q 500 160 430 370" fill="none" stroke="rgba(130,170,220,0.06)" strokeWidth="2.5" />
-        <text x="500" y="180" fill="rgba(130,170,220,0.12)" fontSize="7" fontFamily="monospace">I-35</text>
+        <path d="M 610 52 Q 500 160 380 370" fill="none" stroke="rgba(130,170,220,0.06)" strokeWidth="2.5" />
+        <text x="485" y="185" fill="rgba(130,170,220,0.12)" fontSize="7" fontFamily="monospace">I-35</text>
 
         {/* Flow paths */}
         {activeFlows.map((flow, i) => {
@@ -229,9 +190,7 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
           const w = 1.5 + (flow.volume / maxVol) * 4;
           const op = 0.15 + (flow.volume / maxVol) * 0.35;
           const d = curvedPath(a.gx, a.gy, b.gx, b.gy);
-          // Midpoint for label
-          const dx = b.gx - a.gx, dy = b.gy - a.gy;
-          const len = Math.sqrt(dx * dx + dy * dy);
+          const dx = b.gx - a.gx, dy = b.gy - a.gy, len = Math.sqrt(dx * dx + dy * dy);
           const off = Math.min(len * 0.18, 45);
           const lx = (a.gx + b.gx) / 2 + (-dy / len) * off;
           const ly = (a.gy + b.gy) / 2 + (dx / len) * off;
@@ -244,7 +203,7 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
               </path>
               {flow.label && (
                 <g>
-                  <rect x={lx - 22} y={ly - 7} width="44" height="14" rx="3" fill="rgba(8,12,24,0.85)" stroke="rgba(91,143,249,0.25)" strokeWidth="0.5" />
+                  <rect x={lx - 24} y={ly - 8} width="48" height="15" rx="3" fill="rgba(8,12,24,0.88)" stroke="rgba(91,143,249,0.25)" strokeWidth="0.5" />
                   <text x={lx} y={ly + 3} textAnchor="middle" fill="rgba(160,200,255,0.8)" fontSize="7.5" fontFamily="monospace">{flow.label}</text>
                 </g>
               )}
@@ -252,56 +211,101 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
           );
         })}
 
-        {/* Site nodes */}
+        {/* Site nodes — Hospital icons */}
         {geoSites.map((site) => {
           const hs = computeHealthStatus(site.loginRate, 90, 70);
           const col = statusColor(hs);
-          const main = site.code === "kcrmc-main";
-          const r = main ? 24 : 17;
+          const isMain = site.code === "kcrmc-main";
+          const scale = isMain ? 1.8 : 1.3;
+
           return (
             <g key={site.code} onClick={() => onSiteClick?.(site.code)} style={{ cursor: onSiteClick ? "pointer" : "default" }}>
-              {/* Double pulse rings */}
-              <circle cx={site.gx} cy={site.gy} r={r} fill="none" stroke={col} opacity="0">
-                <animate attributeName="r" from={r + 2} to={r + 22} dur="3s" repeatCount="indefinite" />
-                <animate attributeName="opacity" from="0.5" to="0" dur="3s" repeatCount="indefinite" />
+              {/* Pulse rings */}
+              <circle cx={site.gx} cy={site.gy} r="20" fill="none" stroke={col} opacity="0">
+                <animate attributeName="r" from="16" to="38" dur="3s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.45" to="0" dur="3s" repeatCount="indefinite" />
               </circle>
-              <circle cx={site.gx} cy={site.gy} r={r} fill="none" stroke={col} opacity="0">
-                <animate attributeName="r" from={r + 2} to={r + 22} dur="3s" begin="1.5s" repeatCount="indefinite" />
-                <animate attributeName="opacity" from="0.3" to="0" dur="3s" begin="1.5s" repeatCount="indefinite" />
+              <circle cx={site.gx} cy={site.gy} r="20" fill="none" stroke={col} opacity="0">
+                <animate attributeName="r" from="16" to="38" dur="3s" begin="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.25" to="0" dur="3s" begin="1.5s" repeatCount="indefinite" />
               </circle>
-              {/* Glow */}
-              <circle cx={site.gx} cy={site.gy} r={r + 8} fill={col} opacity="0.1" filter="url(#sglow)" />
-              {/* Main disc */}
-              <circle cx={site.gx} cy={site.gy} r={r} fill={`url(#rg-${hs})`} opacity="0.92" />
-              <circle cx={site.gx} cy={site.gy} r={r - 3} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              {/* Center number */}
-              <text x={site.gx} y={site.gy + 1} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={main ? "12" : "10"} fontWeight="700" fontFamily="monospace">
-                {site.devices ?? site.events}
-              </text>
+
+              {/* Glow backdrop */}
+              <circle cx={site.gx} cy={site.gy} r={18 * scale} fill={col} opacity="0.08" filter="url(#sglow)" />
+
+              {/* Hospital building icon */}
+              <g transform={`translate(${site.gx}, ${site.gy}) scale(${scale})`}>
+                {/* Building body */}
+                <rect x="-12" y="-8" width="24" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke={col} strokeWidth="1.2" />
+                {/* Roof accent */}
+                <rect x="-12" y="-8" width="24" height="3" rx="1" fill={col} opacity="0.7" />
+                {/* Cross */}
+                <rect x="-1.5" y="-4" width="3" height="10" rx="0.5" fill="#fff" opacity="0.9" />
+                <rect x="-5" y="-0.5" width="10" height="3" rx="0.5" fill="#fff" opacity="0.9" />
+                {/* Door */}
+                <rect x="-2.5" y="6" width="5" height="6" rx="1" fill={col} opacity="0.5" />
+                {/* Windows */}
+                <rect x="-9" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
+                <rect x="6" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
+                <rect x="-9" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
+                <rect x="6" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
+              </g>
+
+              {/* Status indicator dot */}
+              <circle cx={site.gx + 14 * scale} cy={site.gy - 10 * scale} r="5" fill={col} stroke="rgba(8,12,24,0.9)" strokeWidth="1.5" />
+
               {/* Label card */}
-              <rect x={site.gx - (main ? 62 : 48)} y={site.gy + r + 6} width={main ? 124 : 96} height={main ? 42 : 36} rx="5" fill="rgba(8,12,24,0.88)" stroke={`rgba(${hs === "healthy" ? "42,176,111" : hs === "warning" ? "245,166,35" : "220,53,69"},0.25)`} strokeWidth="0.5" />
-              <text x={site.gx} y={site.gy + r + 20} textAnchor="middle" fill="#e2e8f0" fontSize={main ? "11" : "9.5"} fontWeight="600">{site.label}</text>
-              <text x={site.gx} y={site.gy + r + (main ? 36 : 32)} textAnchor="middle" fill="rgba(160,200,255,0.55)" fontSize="8" fontFamily="monospace">
-                {site.loginRate.toFixed(0)}% login · {site.users}u · {site.events}ev
+              <rect
+                x={site.gx - (isMain ? 66 : 52)}
+                y={site.gy + 16 * scale + 4}
+                width={isMain ? 132 : 104}
+                height={isMain ? 44 : 38}
+                rx="5"
+                fill="rgba(8,12,24,0.9)"
+                stroke={`rgba(${hs === "healthy" ? "42,176,111" : hs === "warning" ? "245,166,35" : "220,53,69"},0.3)`}
+                strokeWidth="0.5"
+              />
+              <text
+                x={site.gx}
+                y={site.gy + 16 * scale + 18}
+                textAnchor="middle"
+                fill="#e2e8f0"
+                fontSize={isMain ? "11" : "9.5"}
+                fontWeight="600"
+              >
+                {site.label}
+              </text>
+              <text
+                x={site.gx}
+                y={site.gy + 16 * scale + (isMain ? 34 : 32)}
+                textAnchor="middle"
+                fill="rgba(160,200,255,0.55)"
+                fontSize="8"
+                fontFamily="monospace"
+              >
+                {site.loginRate.toFixed(0)}% · {site.users}u · {site.events}ev
               </text>
             </g>
           );
         })}
 
         {/* Legend */}
-        <g transform="translate(70, 338)">
-          <rect x="0" y="0" width="205" height="26" rx="5" fill="rgba(8,12,24,0.8)" stroke="rgba(91,143,249,0.15)" strokeWidth="0.5" />
-          <circle cx="16" cy="13" r="4" fill="#2ab06f" />
-          <text x="26" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Healthy</text>
-          <circle cx="72" cy="13" r="4" fill="#f5a623" />
-          <text x="82" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Warning</text>
-          <circle cx="128" cy="13" r="4" fill="#dc3545" />
-          <text x="138" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Critical</text>
-          <line x1="168" y1="5" x2="168" y2="21" stroke="rgba(91,143,249,0.2)" strokeWidth="0.5" />
-          <line x1="174" y1="13" x2="188" y2="13" stroke="rgba(120,170,255,0.5)" strokeWidth="1.5" strokeDasharray="3 4">
+        <g transform="translate(70, 340)">
+          <rect x="0" y="0" width="230" height="26" rx="5" fill="rgba(8,12,24,0.8)" stroke="rgba(91,143,249,0.15)" strokeWidth="0.5" />
+          {/* Mini hospital icon */}
+          <g transform="translate(14, 13) scale(0.45)">
+            <rect x="-12" y="-8" width="24" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke="#2ab06f" strokeWidth="1.5" />
+            <rect x="-1.5" y="-4" width="3" height="10" rx="0.5" fill="#fff" />
+            <rect x="-5" y="-0.5" width="10" height="3" rx="0.5" fill="#fff" />
+          </g>
+          <text x="28" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Hospital</text>
+          <circle cx="76" cy="13" r="4" fill="#2ab06f" /><text x="84" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Healthy</text>
+          <circle cx="122" cy="13" r="4" fill="#f5a623" /><text x="130" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Warning</text>
+          <circle cx="170" cy="13" r="4" fill="#dc3545" /><text x="178" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Critical</text>
+          <line x1="208" y1="5" x2="208" y2="21" stroke="rgba(91,143,249,0.2)" strokeWidth="0.5" />
+          <line x1="212" y1="13" x2="224" y2="13" stroke="rgba(120,170,255,0.5)" strokeWidth="1.5" strokeDasharray="3 4">
             <animate attributeName="stroke-dashoffset" from="0" to="-7" dur="1s" repeatCount="indefinite" />
           </line>
-          <text x="193" y="16" fill="rgba(160,200,255,0.6)" fontSize="7">Flow</text>
         </g>
       </svg>
 
