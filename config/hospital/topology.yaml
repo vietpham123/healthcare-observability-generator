@@ -642,12 +642,12 @@ devices:
     management_ip: 10.10.100.60
     serial_number: CTX2024KC001
     interfaces:
-      - name: 10/1
+      - name: "10/1"
         ip: 10.10.10.10/24
         speed: 10G
         if_index: 1
         description: "Epic Hyperspace VServer — NSIP side"
-      - name: 10/2
+      - name: "10/2"
         ip: 10.10.10.11/24
         speed: 10G
         if_index: 2
@@ -665,12 +665,12 @@ devices:
     management_ip: 10.10.100.61
     serial_number: F5KC2024001
     interfaces:
-      - name: 1.1
+      - name: "1.1"
         ip: 10.10.50.10/24
         speed: 10G
         if_index: 1
         description: "DMZ — Interconnect VIP"
-      - name: 1.2
+      - name: "1.2"
         ip: 10.10.10.20/24
         speed: 10G
         if_index: 2

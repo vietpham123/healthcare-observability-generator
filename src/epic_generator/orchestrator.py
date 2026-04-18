@@ -369,7 +369,9 @@ if __name__ == "__main__":
     frequency = float(os.environ.get("TICK_INTERVAL_EPIC", "10"))
     scenario = os.environ.get("EPIC_SCENARIO", None)
 
-    output = FileOutput(output_dir=output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "epic-siem.log")
+    output = FileOutput(filename=output_file)
 
     config_path = os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(config_path):
