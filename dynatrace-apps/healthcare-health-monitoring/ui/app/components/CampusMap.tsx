@@ -63,12 +63,18 @@ function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
-  const offset = Math.min(len * 0.12, 28);
-  let mx = (x1 + x2) / 2 + (-dy / len) * offset;
-  let my = (y1 + y2) / 2 + (dx / len) * offset;
+  const offset = Math.min(len * 0.1, 22);
+  // Perpendicular offset
+  let px = -dy / len, py = dx / len;
+  // Always bow toward vertical center of state (~y=210) so curves stay interior
+  const midY = (y1 + y2) / 2;
+  if ((midY + py * offset) < 210 && py < 0) { px = -px; py = -py; }
+  if ((midY + py * offset) > 210 && py > 0 && midY > 210) { px = -px; py = -py; }
+  let mx = (x1 + x2) / 2 + px * offset;
+  let my = (y1 + y2) / 2 + py * offset;
   // Clamp control point inside the state outline
-  mx = Math.max(70, Math.min(640, mx));
-  my = Math.max(58, Math.min(362, my));
+  mx = Math.max(75, Math.min(635, mx));
+  my = Math.max(60, Math.min(360, my));
   return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
 }
 
@@ -133,10 +139,15 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
         if (!a || !b) continue;
         const x1 = a.gx * sx, y1 = a.gy * sy, x2 = b.gx * sx, y2 = b.gy * sy;
         const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
-        const off = Math.min(len * 0.12, 28 * sx);
-        let cx = (x1 + x2) / 2 + (-dy / len) * off, cy = (y1 + y2) / 2 + (dx / len) * off;
-        cx = Math.max(70 * sx, Math.min(640 * sx, cx));
-        cy = Math.max(58 * sy, Math.min(362 * sy, cy));
+        const off = Math.min(len * 0.1, 22 * sx);
+        let px = -dy / len, py = dx / len;
+        const midYc = (y1 + y2) / 2;
+        const center = 210 * sy;
+        if ((midYc + py * off) < center && py < 0) { px = -px; py = -py; }
+        if ((midYc + py * off) > center && py > 0 && midYc > center) { px = -px; py = -py; }
+        let cx = (x1 + x2) / 2 + px * off, cy = (y1 + y2) / 2 + py * off;
+        cx = Math.max(75 * sx, Math.min(635 * sx, cx));
+        cy = Math.max(60 * sy, Math.min(360 * sy, cy));
         const pt = bezierAt(x1, y1, cx, cy, x2, y2, p.t);
         ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz * 3.5, 0, Math.PI * 2); ctx.fillStyle = "rgba(91,143,249,0.12)"; ctx.fill();
         ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz, 0, Math.PI * 2); ctx.fillStyle = "rgba(120,170,255,0.9)"; ctx.fill();
@@ -196,11 +207,15 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
           const op = 0.15 + (flow.volume / maxVol) * 0.35;
           const d = curvedPath(a.gx, a.gy, b.gx, b.gy);
           const dx = b.gx - a.gx, dy = b.gy - a.gy, len = Math.sqrt(dx * dx + dy * dy);
-          const off = Math.min(len * 0.12, 28);
-          let lx = (a.gx + b.gx) / 2 + (-dy / len) * off;
-          let ly = (a.gy + b.gy) / 2 + (dx / len) * off;
-          lx = Math.max(70, Math.min(640, lx));
-          ly = Math.max(58, Math.min(362, ly));
+          const off = Math.min(len * 0.1, 22);
+          let px = -dy / len, py = dx / len;
+          const midY = (a.gy + b.gy) / 2;
+          if ((midY + py * off) < 210 && py < 0) { px = -px; py = -py; }
+          if ((midY + py * off) > 210 && py > 0 && midY > 210) { px = -px; py = -py; }
+          let lx = (a.gx + b.gx) / 2 + px * off;
+          let ly = (a.gy + b.gy) / 2 + py * off;
+          lx = Math.max(75, Math.min(635, lx));
+          ly = Math.max(60, Math.min(360, ly));
           return (
             <g key={i}>
               <path d={d} fill="none" stroke="rgba(91,143,249,0.1)" strokeWidth={w + 6} filter="url(#fglow)" />
@@ -210,7 +225,7 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
               </path>
               {flow.label && (
                 <g>
-                  <rect x={lx - 24} y={ly - 8} width="48" height="15" rx="3" fill="rgba(8,12,24,0.88)" stroke="rgba(91,143,249,0.25)" strokeWidth="0.5" />
+                  <rect x={lx - 30} y={ly - 8} width="60" height="15" rx="3" fill="rgba(8,12,24,0.88)" stroke="rgba(91,143,249,0.25)" strokeWidth="0.5" />
                   <text x={lx} y={ly + 3} textAnchor="middle" fill="rgba(160,200,255,0.8)" fontSize="7.5" fontFamily="monospace">{flow.label}</text>
                 </g>
               )}

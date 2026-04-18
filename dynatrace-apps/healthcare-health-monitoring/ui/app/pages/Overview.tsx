@@ -53,6 +53,7 @@ export const Overview = () => {
   const fe = (q: string) => withSiteFilter(q, site, "epic");
   const siteHealth = useDql({ query: queries.siteHealthSummary });
   const netDevices = useDql({ query: queries.networkDevicesBySite });
+  const netflowBySite = useDql({ query: queries.netflowBySite });
   const siteRecords = mergeSiteRecords(siteHealth.data?.records ?? [], SITE_ALIAS);
   const devRecords = mergeDeviceRecords(netDevices.data?.records ?? [], SITE_ALIAS);
 
@@ -70,6 +71,23 @@ export const Overview = () => {
       devices: Number(devRec?.devices) || 0,
     };
   });
+
+  // Build real flow data from netflow query — hub-and-spoke from KC to satellites
+  const flowRecords = netflowBySite.data?.records ?? [];
+  const flowBySiteMap: Record<string, number> = {};
+  for (const r of flowRecords) {
+    const raw = String(r.site ?? "");
+    const code = SITE_ALIAS[raw] ?? raw;
+    flowBySiteMap[code] = (flowBySiteMap[code] || 0) + (Number(r.flows) || 0);
+  }
+  const campusFlows = Object.entries(flowBySiteMap)
+    .filter(([code]) => code !== "kcrmc-main" && code !== "")
+    .map(([code, flows]) => ({
+      from: "kcrmc-main",
+      to: code,
+      volume: flows,
+      label: `${flows} flows`,
+    }));
 
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
@@ -91,7 +109,7 @@ export const Overview = () => {
           <TitleBar><TitleBar.Title>Campus Health Map</TitleBar.Title><TitleBar.Subtitle>Kansas Healthcare Network</TitleBar.Subtitle></TitleBar>
           {siteHealth.isLoading
             ? <Flex alignItems="center" justifyContent="center" style={{ height: 300 }}><ProgressCircle /></Flex>
-            : <CampusMap sites={campusSites} />}
+            : <CampusMap sites={campusSites} flows={campusFlows} />}
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
           <TitleBar><TitleBar.Title>Epic Event Distribution</TitleBar.Title></TitleBar>
