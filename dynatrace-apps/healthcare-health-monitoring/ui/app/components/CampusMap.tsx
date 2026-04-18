@@ -113,10 +113,18 @@ const COUNTY_V = [-101, -100, -99, -98, -97, -96, -95].map(lonToX);
 export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const geoSites = useMemo(
-    () => sites.map((s) => ({ ...s, ...(SITE_GEO[s.code] ?? { gx: s.x, gy: s.y }) })),
-    [sites],
-  );
+  const geoSites = useMemo(() => {
+    const mapped = sites.map((s) => ({ ...s, ...(SITE_GEO[s.code] ?? { gx: s.x, gy: s.y }) }));
+    // Ensure hub is always present so flow lines always have an origin
+    if (!mapped.find((s) => s.code === "kcrmc-main") && SITE_GEO["kcrmc-main"]) {
+      mapped.push({
+        code: "kcrmc-main", name: "KC Regional Medical Center", label: "KC Main Campus",
+        x: 0, y: 0, events: 0, loginRate: 100, users: 0,
+        ...SITE_GEO["kcrmc-main"],
+      });
+    }
+    return mapped;
+  }, [sites]);
 
   const activeFlows = useMemo(() => {
     if (flows.length > 0) return flows;
