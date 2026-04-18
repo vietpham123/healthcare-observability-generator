@@ -15,7 +15,7 @@ import { withSiteFilter } from "../utils/queryHelpers";
 const SITE_ALIAS = SITE_ALIAS_Q;
 
 const SITE_META: Record<string, { name: string; label: string; x: number; y: number }> = {
-  "kcrmc-main": { name: "KC Regional Medical Center", label: "KC Main Campus", x: 450, y: 130 },
+  "kcrmc-main": { name: "Lawrence Regional Medical Center", label: "Lawrence Main Campus", x: 450, y: 130 },
   "oak-clinic": { name: "Oakley Rural Health", label: "Oakley Clinic", x: 100, y: 130 },
   "wel-clinic": { name: "Wellington Care Center", label: "Wellington Clinic", x: 280, y: 260 },
   "bel-clinic": { name: "Belleville Family Medicine", label: "Belleville Clinic", x: 300, y: 60 },
@@ -92,7 +92,7 @@ export const Overview = () => {
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
-        System-wide view of Kansas City Regional Medical Center and satellite clinics — login health, device status, event distribution, and cross-system correlation.
+        System-wide view of Lawrence Regional Medical Center and satellite clinics — login health, device status, event distribution, and cross-system correlation.
       </Text>
       <SiteFilter value={site} onChange={setSite} />
       <Flex gap={12} flexWrap="wrap">

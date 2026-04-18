@@ -19,7 +19,7 @@ export const SITE_ALIAS: Record<string, string> = {
 };
 
 export const ALL_SITES = [
-  { code: "kcrmc-main", name: "KC Regional Medical Center" },
+  { code: "kcrmc-main", name: "Lawrence Regional Medical Center" },
   { code: "oak-clinic", name: "Oakley Rural Health" },
   { code: "wel-clinic", name: "Wellington Care Center" },
   { code: "bel-clinic", name: "Belleville Family Medicine" },

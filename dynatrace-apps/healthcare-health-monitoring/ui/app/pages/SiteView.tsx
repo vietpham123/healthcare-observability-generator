@@ -28,7 +28,7 @@ function mergeRecords(records: any[], aliasMap: Record<string, string>, siteFiel
 }
 
 const SITES = [
-  { code: "kcrmc-main", name: "KC Regional Medical Center", beds: 500, profile: "Level I Trauma Center" },
+  { code: "kcrmc-main", name: "Lawrence Regional Medical Center", beds: 500, profile: "Level I Trauma Center" },
   { code: "oak-clinic", name: "Oakley Rural Health", beds: 25, profile: "Rural Health & Specialty Outreach" },
   { code: "wel-clinic", name: "Wellington Care Center", beds: 40, profile: "Urgent Care + Family Medicine" },
   { code: "bel-clinic", name: "Belleville Family Medicine", beds: 20, profile: "Primary Care + Pediatrics" },
@@ -72,7 +72,7 @@ export const SiteView = () => {
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
-        Per-site breakdown of all hospital locations — KC Regional Medical Center (main campus) and three satellite clinics across Kansas. Click a site card to drill down into its Epic events and network activity.
+        Per-site breakdown of all hospital locations — Lawrence Regional Medical Center (main campus) and three satellite clinics across Kansas. Click a site card to drill down into its Epic events and network activity.
       </Text>
 
       {/* Main campus — full width on top */}

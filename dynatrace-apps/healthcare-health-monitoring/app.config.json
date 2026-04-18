@@ -3,7 +3,7 @@
   "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
   "app": {
     "name": "Healthcare Health Monitoring",
-    "version": "1.4.6",
+    "version": "1.4.7",
     "description": "Healthcare IT observability — campus map, fleet view, fixed KPIs",
     "id": "my.healthcare.health.monitoring",
     "scopes": [

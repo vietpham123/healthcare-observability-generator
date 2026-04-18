@@ -50,9 +50,9 @@ function geoToSvg(lat: number, lon: number) {
 }
 
 /* -- Site positions from real lat/lon -- */
-// Hub at Overland Park, KS (Johnson County) — well inside KS border
+// Hub at Lawrence, KS (Douglas County) — central-east Kansas along I-70
 const SITE_GEO: Record<string, { gx: number; gy: number }> = {
-  "kcrmc-main": geoToSvg(38.9822, -94.6708),   // Overland Park KS (Johnson County)
+  "kcrmc-main": geoToSvg(38.9717, -95.2353),   // Lawrence KS (Douglas County)
   "oak-clinic": geoToSvg(39.1333, -100.8528),   // Oakley KS
   "bel-clinic": geoToSvg(39.8258, -97.6322),    // Belleville KS
   "wel-clinic": geoToSvg(37.2650, -97.3714),    // Wellington KS
@@ -118,7 +118,7 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
     // Ensure hub is always present so flow lines always have an origin
     if (!mapped.find((s) => s.code === "kcrmc-main") && SITE_GEO["kcrmc-main"]) {
       mapped.push({
-        code: "kcrmc-main", name: "KC Regional Medical Center", label: "KC Main Campus",
+        code: "kcrmc-main", name: "Lawrence Regional Medical Center", label: "Lawrence Main Campus",
         x: 0, y: 0, events: 0, loginRate: 100, users: 0,
         ...SITE_GEO["kcrmc-main"],
       });
@@ -126,19 +126,8 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
     return mapped;
   }, [sites]);
 
-  const activeFlows = useMemo(() => {
-    if (flows.length > 0) return flows;
-    const hub = geoSites.find((s) => s.code === "kcrmc-main");
-    if (!hub) return [];
-    return geoSites
-      .filter((s) => s.code !== "kcrmc-main")
-      .map((s) => ({
-        from: "kcrmc-main",
-        to: s.code,
-        volume: Math.round((s.events + hub.events) / 2),
-        label: `${s.events} ev`,
-      }));
-  }, [flows, geoSites]);
+  // Only show real netflow data — no fake/synthetic flows
+  const activeFlows = useMemo(() => flows, [flows]);
 
   const maxVol = Math.max(1, ...activeFlows.map((f) => f.volume));
 
