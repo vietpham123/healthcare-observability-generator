@@ -16,9 +16,11 @@ spec:
       labels:
         app: epic-generator
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
         - name: epic
-          image: vietregistry.azurecr.io/healthcare-gen/epic:v1.0.0
+          image: vietregistry.azurecr.io/healthcare-gen/epic:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

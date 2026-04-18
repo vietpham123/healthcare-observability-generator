@@ -358,3 +358,29 @@ def load_legacy_config(filename):
             sys.exit(1)
 
     return config
+
+
+if __name__ == "__main__":
+    config_dir = os.environ.get(
+        "EPIC_CONFIG_DIR",
+        os.path.join(os.path.dirname(__file__), "config"),
+    )
+    output_dir = os.environ.get("OUTPUT_DIR", "/app/output")
+    frequency = float(os.environ.get("TICK_INTERVAL_EPIC", "10"))
+    scenario = os.environ.get("EPIC_SCENARIO", None)
+
+    output = FileOutput(output_dir=output_dir)
+
+    config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    if not os.path.exists(config_path):
+        config_path = "config.json"
+    config = load_legacy_config(config_path) if os.path.exists(config_path) else {}
+
+    orch = Orchestrator(
+        config=config,
+        config_dir=config_dir,
+        output=output,
+        scenario=scenario,
+    )
+    print(f"Epic SIEM Generator starting — frequency={frequency}s, output_dir={output_dir}")
+    orch.run(frequency=frequency)

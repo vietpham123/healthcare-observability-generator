@@ -16,9 +16,11 @@ spec:
       labels:
         app: network-generator
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
         - name: network
-          image: vietregistry.azurecr.io/healthcare-gen/network:v1.0.0
+          image: vietregistry.azurecr.io/healthcare-gen/network:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

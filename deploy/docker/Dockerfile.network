@@ -10,6 +10,8 @@ COPY src/network_generator/ ./src/network_generator/
 COPY src/shared/ ./src/shared/
 COPY config/ ./config/
 
+RUN ln -s /app/src/network_generator /app/src/netloggen
+
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
 

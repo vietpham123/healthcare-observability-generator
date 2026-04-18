@@ -47,6 +47,8 @@ class ScenarioCoordinator:
             logger.warning("Scenarios directory not found: %s", self.scenarios_dir)
             return
         for fp in sorted(self.scenarios_dir.glob("*.json")):
+            if fp.name.startswith("._"):
+                continue
             try:
                 with open(fp) as f:
                     data = json.load(f)

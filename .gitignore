@@ -13,6 +13,7 @@ env/
 output/
 *.log
 .DS_Store
+._*
 .idea/
 .vscode/
 *.swp

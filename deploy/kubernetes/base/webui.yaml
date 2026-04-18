@@ -16,9 +16,11 @@ spec:
       labels:
         app: webui
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
         - name: webui
-          image: vietregistry.azurecr.io/healthcare-gen/webui:v1.0.0
+          image: vietregistry.azurecr.io/healthcare-gen/webui:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
