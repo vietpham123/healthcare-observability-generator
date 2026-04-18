@@ -103,7 +103,7 @@ class Device(BaseModel):
 
 class Topology(BaseModel):
     name: str = "default"
-    sites: list[dict[str, str]] = Field(default_factory=list)
+    sites: list[dict[str, Any]] = Field(default_factory=list)
     devices: list[Device] = Field(default_factory=list)
 
     def get_device(self, hostname: str) -> Device | None:
