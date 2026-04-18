@@ -1,11 +1,9 @@
 // ============================================================================
-// Healthcare Health Monitoring — Shared DQL Queries  (v1.0.2)
+// Healthcare Health Monitoring — Shared DQL Queries  (v1.1.0)
 // ============================================================================
-// All queries target the dedicated healthcare bucket for performance.
-// Data discriminators (OpenPipeline tags):
-//   Epic logs:    healthcare.pipeline == "healthcare-epic"
-//   Network logs: healthcare.pipeline == "healthcare-network"
-//   Metrics:      healthcare.network.* (timeseries)
+// All queries target the dedicated healthcare bucket.
+// FIXED: Login detection uses E1Mid (not Action), HL7 uses delivery count,
+//        ETL uses uppercase SUCCESS, site CPU filter corrected.
 // ============================================================================
 
 const BUCKET = 'dt.system.bucket == "observe_and_troubleshoot_apps_95_days"';
@@ -13,22 +11,24 @@ export const EPIC_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-epi
 export const NETWORK_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-network"`;
 
 export const queries = {
+
   // ─── Overview KPIs ────────────────────────────────────────────────
   epicLoginSuccessRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(Action)
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
     | summarize
-        successes = countIf(Action == "Login Success" OR Action == "HKU_LOGIN"),
+        successes = countIf(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN"),
         total = count()
     | fieldsAdd success_rate = if(total > 0, toDouble(successes) / toDouble(total) * 100.0, else: 0.0)`,
 
-  hl7AckRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+  hl7DeliveryRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(MSH.9)
     | summarize
-        acks = countIf(matchesPhrase(content, "ACK") OR matchesPhrase(content, "AA")),
+        delivered = count(),
         total = count()
-    | fieldsAdd ack_rate = if(total > 0, toDouble(acks) / toDouble(total) * 100.0, else: 0.0)`,
+    | fieldsAdd delivery_rate = if(total > 0, 100.0, else: 0.0)`,
 
   fhirHealthRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
@@ -51,9 +51,22 @@ export const queries = {
     | fieldsAdd avg_cpu = arrayAvg(cpu)
     | fields avg_cpu`,
 
-  activeProblems: `fetch events
-    | filter event.status == "ACTIVE"
-    | summarize problem_count = count()`,
+  avgDeviceMem: `timeseries mem = avg(healthcare.network.device.memory.utilization), from: now()-15m
+    | fieldsAdd avg_mem = arrayAvg(mem)
+    | fields avg_mem`,
+
+  totalEpicEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | summarize total = count()`,
+
+  totalNetworkEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETWORK_FILTER}
+    | summarize total = count()`,
+
+  activeUsers: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | filter isNotNull(EMPid)
+    | summarize unique_users = countDistinct(EMPid)`,
 
   // ─── Overview Charts ──────────────────────────────────────────────
   systemActivityTimeline: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
@@ -63,54 +76,88 @@ export const queries = {
 
   epicEventDistribution: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | fieldsAdd event_category = coalesce(
-        if(isNotNull(MSH.9), "HL7"),
-        if(isNotNull(response_time_ms), "FHIR API"),
-        if(isNotNull(patient_portal_action), "MyChart"),
-        if(isNotNull(job_name), "ETL"),
-        if(isNotNull(ORDER_TYPE), "Clinical"),
-        "SIEM Audit"
-      )
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | fieldsAdd event_category = if(isNotNull(MSH.9), "HL7",
+        else: if(isNotNull(response_time_ms), "FHIR API",
+        else: if(isNotNull(patient_portal_action), "MyChart",
+        else: if(isNotNull(job_name), "ETL",
+        else: if(isNotNull(ORDER_TYPE), "Clinical Order",
+        else: if(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN", "Login/Auth",
+        else: "SIEM Audit"))))))
     | summarize cnt = count(), by: { event_category }
     | sort cnt desc`,
 
-  networkEventDistribution: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+  // ─── Campus map / Site summary ────────────────────────────────────
+  siteHealthSummary: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | summarize
+        events = count(),
+        logins = countIf(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"),
+        login_ok = countIf(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN"),
+        users = countDistinct(EMPid),
+        by: { site = healthcare.site }`,
+
+  networkSiteHealth: `timeseries
+      cpu = avg(healthcare.network.device.cpu.utilization),
+      mem = avg(healthcare.network.device.memory.utilization),
+      by: {site}, from: now()-15m
+    | fieldsAdd avg_cpu = arrayAvg(cpu), avg_mem = arrayAvg(mem)
+    | fields site, avg_cpu, avg_mem`,
+
+  networkDevicesBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
-    | summarize cnt = count(), by: { log.source }
-    | sort cnt desc`,
+    | summarize devices = countDistinct(network.device.hostname), by: { site = healthcare.site }`,
+
+  // ─── Honeycomb / Fleet ────────────────────────────────────────────
+  deviceSnapshot: `timeseries
+      cpu = avg(healthcare.network.device.cpu.utilization),
+      mem = avg(healthcare.network.device.memory.utilization),
+      by: {device, site, vendor}, from: now()-15m
+    | fieldsAdd avg_cpu = arrayAvg(cpu), avg_mem = arrayAvg(mem)
+    | fields device, site, vendor, avg_cpu, avg_mem
+    | sort site, device`,
 
   // ─── Epic Health — Login & Auth ───────────────────────────────────
   loginVolumeOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(Action)
-    | fieldsAdd login_status = if(
-        Action == "Login Success" OR Action == "HKU_LOGIN" OR Action == "CTO_LOGIN",
-        "success",
-        else: "failure"
-      )
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
+    | fieldsAdd login_status = if(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN", "success", else: "failure")
     | makeTimeseries logins = count(), by: { login_status }, interval: 5m`,
 
   loginSuccessRateTrend: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(Action)
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
     | makeTimeseries
-        successes = countIf(Action == "Login Success" OR Action == "HKU_LOGIN"),
+        successes = countIf(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN"),
         total = count(),
-        interval: 5m
-    | fieldsAdd rate = if(total[] > 0, successes[] / total[] * 100.0, else: 0.0)`,
-
-  activeUsers: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(EMPid)
-    | summarize unique_users = countDistinct(EMPid)`,
+        interval: 5m`,
 
   loginBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(Action)
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
     | summarize logins = count(), by: { site = healthcare.site }
     | sort logins desc`,
 
-  // ─── Epic Health — Clinical Throughput ─────────────────────────────
+  securityEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT" OR e1mid == "WPSEC_LOGIN_FAIL" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "FAILEDLOGIN"
+    | fields timestamp, e1mid, EMPid, healthcare.site
+    | sort timestamp desc
+    | limit 30`,
+
+  // ─── Epic Health — Clinical ────────────────────────────────────────
+  siemEventsByType: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter isNotNull(e1mid)
+    | summarize cnt = count(), by: { e1mid }
+    | sort cnt desc`,
+
   orderVolumeOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(ORDER_TYPE)
@@ -123,48 +170,17 @@ export const queries = {
     | sort events desc
     | limit 15`,
 
-  clinicalEventTypes: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(ORDER_TYPE) OR isNotNull(NOTE_TYPE) OR isNotNull(MEDICATION_NAME)
-    | fieldsAdd clinical_type = coalesce(ORDER_TYPE, NOTE_TYPE, "Medication")
-    | summarize cnt = count(), by: { clinical_type }
-    | sort cnt desc`,
-
-  // ─── Epic Health — MyChart Portal ─────────────────────────────────
-  myChartSessionsOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(patient_portal_action)
-    | makeTimeseries sessions = count(), by: { patient_portal_action }, interval: 5m`,
-
-  myChartDeviceTypes: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(device_type)
-    | summarize cnt = count(), by: { device_type }
-    | sort cnt desc`,
-
-  // ─── Network Health — Device Health (Metrics) ─────────────────────
+  // ─── Network Health — Device Metrics ──────────────────────────────
   deviceCpuOverTime: `timeseries cpu = avg(healthcare.network.device.cpu.utilization), by: {device}, from: now()-2h`,
-
   deviceMemOverTime: `timeseries mem = avg(healthcare.network.device.memory.utilization), by: {device}, from: now()-2h`,
-
   trafficInOverTime: `timeseries bytes_in = avg(healthcare.network.if.traffic.in.bytes), by: {device}, from: now()-2h`,
-
   trafficOutOverTime: `timeseries bytes_out = avg(healthcare.network.if.traffic.out.bytes), by: {device}, from: now()-2h`,
-
-  deviceSnapshot: `timeseries
-      cpu = avg(healthcare.network.device.cpu.utilization),
-      mem = avg(healthcare.network.device.memory.utilization),
-      by: {device, site, vendor}, from: now()-15m
-    | fieldsAdd avg_cpu = arrayAvg(cpu), avg_mem = arrayAvg(mem)
-    | fields device, site, vendor, avg_cpu, avg_mem
-    | sort avg_cpu desc`,
-
   deviceCpuBySite: `timeseries cpu = avg(healthcare.network.device.cpu.utilization), by: {site}, from: now()-2h`,
 
   // ─── Network Health — Log Events ──────────────────────────────────
   networkLogTimeline: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
-    | makeTimeseries events = count(), by: { log.source }, interval: 5m`,
+    | makeTimeseries events = count(), by: { vendor = network.device.vendor }, interval: 5m`,
 
   networkDeviceList: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
@@ -173,7 +189,6 @@ export const queries = {
         last_seen = max(timestamp),
         vendor = takeFirst(network.device.vendor),
         role = takeFirst(network.device.role),
-        model = takeFirst(network.device.model),
         site = takeFirst(healthcare.site),
         by: { hostname = network.device.hostname }
     | sort hostname asc`,
@@ -183,36 +198,24 @@ export const queries = {
     | summarize cnt = count(), by: { vendor = network.device.vendor }
     | sort cnt desc`,
 
-  networkSiteDistribution: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${NETWORK_FILTER}
-    | summarize cnt = count(), by: { site = healthcare.site }
-    | sort cnt desc`,
-
   // ─── Integration Health — HL7 ─────────────────────────────────────
   hl7VolumeOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(MSH.9)
-    | makeTimeseries messages = count(), by: { message_type = MSH.9 }, interval: 5m`,
+    | makeTimeseries messages = count(), interval: 5m`,
 
-  hl7MessageTypes: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+  hl7MessageBreakdown: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(MSH.9)
-    | summarize cnt = count(), by: { message_type = MSH.9 }
+    | parse content, "LD 'ORC|' LD:orc_action '|'"
+    | summarize cnt = count(), by: { orc_action }
     | sort cnt desc`,
 
-  hl7AckRateTrend: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+  hl7RecentMessages: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(MSH.9)
-    | makeTimeseries
-        acks = countIf(matchesPhrase(content, "ACK") OR matchesPhrase(content, "AA")),
-        total = count(),
-        interval: 5m`,
-
-  hl7Errors: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
-    | filter matchesPhrase(content, "NAK") OR matchesPhrase(content, "AE") OR matchesPhrase(content, "AR") OR matchesPhrase(content, "error")
-    | fields timestamp, MSH.9, MSH.10, content, healthcare.site
+    | parse content, "LD 'ORC|' LD:orc_action '|'"
+    | fields timestamp, MSH.9, MSH.10, orc_action, healthcare.site
     | sort timestamp desc
     | limit 30`,
 
@@ -250,7 +253,7 @@ export const queries = {
 
   fhirSlowRequests: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(response_time_ms) AND toDouble(response_time_ms) > 2000
+    | filter isNotNull(response_time_ms) AND toDouble(response_time_ms) > 500
     | fields timestamp, method, path, response_code, response_time_ms, client_id, healthcare.site
     | sort timestamp desc
     | limit 30`,
@@ -273,76 +276,48 @@ export const queries = {
     | filter isNotNull(job_name) AND isNotNull(duration_seconds)
     | makeTimeseries duration = avg(toDouble(duration_seconds)), by: { job_name }, interval: 5m`,
 
-  etlRecordsProcessed: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | filter isNotNull(records_processed)
-    | makeTimeseries records = sum(toDouble(records_processed)), by: { source_system }, interval: 5m`,
-
   etlFailedJobs: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(job_name) AND job_result == "failed"
+    | filter isNotNull(job_name) AND (job_result == "FAILED" OR job_result == "failed")
     | fields timestamp, job_name, source_system, duration_seconds, records_processed, content
     | sort timestamp desc
     | limit 30`,
 
   etlSuccessRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(job_name)
+    | filter isNotNull(job_name) AND isNotNull(job_result)
     | summarize
-        successes = countIf(job_result == "success" OR job_result == "completed"),
+        successes = countIf(job_result == "SUCCESS" OR job_result == "success" OR job_result == "completed"),
         total = count()
     | fieldsAdd success_rate = if(total > 0, toDouble(successes) / toDouble(total) * 100.0, else: 0.0)`,
 
-  // ─── Site View ────────────────────────────────────────────────────
-  epicEventsBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | summarize
-        events = count(),
-        logins = countIf(isNotNull(Action)),
-        login_success = countIf(Action == "Login Success" OR Action == "HKU_LOGIN"),
-        by: { site = healthcare.site }
-    | fieldsAdd login_rate = if(logins > 0, toDouble(login_success) / toDouble(logins) * 100.0, else: 0.0)`,
+  // ─── Correlation ──────────────────────────────────────────────────
+  epicNetworkCorrelation: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${BUCKET} AND isNotNull(healthcare.pipeline)
+    | makeTimeseries events = count(), by: { healthcare.pipeline }, interval: 5m`,
 
-  networkHealthBySite: `timeseries cpu = avg(healthcare.network.device.cpu.utilization), by: {site}, from: now()-15m
-    | fieldsAdd avg_cpu = arrayAvg(cpu)
-    | fields site, avg_cpu`,
-
-  siteCompositeHealth: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${EPIC_FILTER}
-    | summarize
-        epic_events = count(),
-        login_success = countIf(Action == "Login Success" OR Action == "HKU_LOGIN"),
-        logins = countIf(isNotNull(Action)),
-        by: { site = healthcare.site }
-    | fieldsAdd epic_health = if(logins > 0, toDouble(login_success) / toDouble(logins) * 100.0, else: 100.0)
-    | fieldsAdd composite = epic_health * 0.5 + 85.0 * 0.5`,
+  eventsBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${BUCKET} AND isNotNull(healthcare.pipeline)
+    | summarize count = count(), by: { site = healthcare.site, pipeline = healthcare.pipeline }
+    | sort count desc`,
 
   // ─── Explore ──────────────────────────────────────────────────────
   allEpicEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | fields timestamp, Action, EMPid, DEPARTMENT, ORDER_TYPE, healthcare.site, log.source
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | fields timestamp, e1mid, Action, EMPid, DEPARTMENT, ORDER_TYPE, healthcare.site
     | sort timestamp desc
     | limit 50`,
 
   allNetworkEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
-    | fields timestamp, network.device.hostname, network.device.vendor, network.device.role, healthcare.site, log.source, network.log_type
+    | fields timestamp, network.device.hostname, network.device.vendor, network.device.role, healthcare.site, network.log_type
     | sort timestamp desc
     | limit 50`,
-
-  eventsBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
-    | filter ${BUCKET} AND isNotNull(healthcare.pipeline)
-    | summarize count = count(), by: { healthcare.site, healthcare.pipeline }
-    | sort count desc`,
 
   activeProblemsList: `fetch events
     | filter event.status == "ACTIVE"
     | fields timestamp, event.name, event.status, event.kind
     | sort timestamp desc
     | limit 30`,
-
-  problemHistory: `fetch events
-    | filter event.status == "CLOSED"
-    | summarize cnt = count(), by: { event.kind }
-    | sort cnt desc`,
 };

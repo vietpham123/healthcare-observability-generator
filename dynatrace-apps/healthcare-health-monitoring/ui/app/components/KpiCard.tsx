@@ -10,6 +10,7 @@ interface KpiCardProps {
   field: string;
   thresholds?: { green: number; amber: number };
   format?: "number" | "percent" | "bytes";
+  icon?: string;
 }
 
 function formatValue(value: unknown, format?: string): string {
@@ -27,19 +28,26 @@ function formatValue(value: unknown, format?: string): string {
 }
 
 function healthColor(value: unknown, thresholds?: { green: number; amber: number }): string {
-  if (!thresholds) return "inherit";
+  if (!thresholds) return "#fff";
   const num = typeof value === "number" ? value : Number(value);
-  if (isNaN(num)) return "inherit";
-  if (num >= thresholds.green) return "var(--dt-colors-charts-categorical-color-01)";
-  if (num >= thresholds.amber) return "var(--dt-colors-charts-status-warning)";
-  return "var(--dt-colors-charts-status-critical)";
+  if (isNaN(num)) return "#fff";
+  if (num >= thresholds.green) return "#2ab06f";
+  if (num >= thresholds.amber) return "#f5a623";
+  return "#dc3545";
 }
 
-export const KpiCard = ({ query, label, field, thresholds, format }: KpiCardProps) => {
+export const KpiCard = ({ query, label, field, thresholds, format, icon }: KpiCardProps) => {
   const { data, isLoading } = useDql({ query });
   const value = data?.records?.[0]?.[field] ?? 0;
 
-  if (isLoading) return <ProgressCircle size="small" />;
+  if (isLoading)
+    return (
+      <Flex alignItems="center" justifyContent="center" style={{ minWidth: 160, minHeight: 90 }}>
+        <ProgressCircle size="small" />
+      </Flex>
+    );
+
+  const color = healthColor(value, thresholds);
 
   return (
     <Flex
@@ -48,16 +56,19 @@ export const KpiCard = ({ query, label, field, thresholds, format }: KpiCardProp
       justifyContent="center"
       style={{
         background: "var(--dt-colors-surface-default)",
-        borderRadius: 8,
-        padding: 16,
+        borderRadius: 12,
+        padding: "16px 20px",
         minWidth: 160,
         flex: 1,
+        borderLeft: `4px solid ${color}`,
       }}
     >
-      <Text style={{ fontSize: 32, fontWeight: 700, color: healthColor(value, thresholds) }}>
+      <Text style={{ fontSize: 11, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
+        {icon ? `${icon} ` : ""}{label}
+      </Text>
+      <Text style={{ fontSize: 36, fontWeight: 700, color, marginTop: 4 }}>
         {formatValue(value, format)}
       </Text>
-      <Text style={{ fontSize: 13, opacity: 0.7 }}>{label}</Text>
     </Flex>
   );
 };

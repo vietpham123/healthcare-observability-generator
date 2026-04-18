@@ -1,107 +1,88 @@
 import React, { useState } from "react";
-import { Flex } from "@dynatrace/strato-components/layouts";
+import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Heading, Text } from "@dynatrace/strato-components/typography";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 
-const PRESETS: Array<{ label: string; queryKey: keyof typeof queries; description: string }> = [
-  { label: "All Epic Events", queryKey: "allEpicEvents", description: "Recent Epic SIEM events with key fields" },
-  { label: "All Network Events", queryKey: "allNetworkEvents", description: "Recent network infrastructure events" },
-  { label: "Events by Site", queryKey: "eventsBySite", description: "Event counts by healthcare site" },
-  { label: "Login Activity", queryKey: "loginBySite", description: "Login counts per site" },
-  { label: "Device Snapshot", queryKey: "deviceSnapshot", description: "Latest CPU/memory per device (metrics)" },
-  { label: "Network Device List", queryKey: "networkDeviceList", description: "All known network devices" },
-  { label: "HL7 Errors", queryKey: "hl7Errors", description: "HL7 NAK/error messages" },
-  { label: "FHIR Slow Requests", queryKey: "fhirSlowRequests", description: "FHIR API requests >2000ms" },
-  { label: "FHIR Client Usage", queryKey: "fhirClientUsage", description: "Requests by FHIR client" },
-  { label: "ETL Failed Jobs", queryKey: "etlFailedJobs", description: "Failed ETL/integration jobs" },
-  { label: "Active Problems", queryKey: "activeProblemsList", description: "Davis AI active problems" },
-  { label: "Problem History", queryKey: "problemHistory", description: "Closed problems by category" },
-  { label: "Site Composite Health", queryKey: "siteCompositeHealth", description: "Combined Epic health score per site" },
-];
+type PresetKey = "allEpic" | "allNetwork" | "problems";
 
-function QueryResult({ queryKey }: { queryKey: keyof typeof queries }) {
-  const query = queries[queryKey];
-  const { data, isLoading, error } = useDql({ query });
-
-  if (isLoading) return <ProgressCircle />;
-  if (error) return <Text style={{ color: "var(--dt-colors-charts-status-critical)" }}>Error: {String(error)}</Text>;
-  if (!data?.records?.length) return <Text>No results</Text>;
-
-  const columns = Object.keys(data.records[0] as object).map(key => ({
-    id: key,
-    accessor: key,
-    header: key,
-  }));
-
-  return <DataTable data={data.records} columns={columns} />;
-}
+const PRESETS: Record<PresetKey, { label: string; query: string }> = {
+  allEpic: { label: "Epic Events", query: queries.allEpicEvents },
+  allNetwork: { label: "Network Events", query: queries.allNetworkEvents },
+  problems: { label: "Active Problems", query: queries.activeProblemsList },
+};
 
 export const Explore = () => {
-  const [activePreset, setActivePreset] = useState<keyof typeof queries | null>(null);
+  const [active, setActive] = useState<PresetKey>("allEpic");
+  const { data, isLoading } = useDql({ query: PRESETS[active].query });
+  const records = data?.records ?? [];
 
   return (
-    <Flex flexDirection="column" gap={24} padding={24}>
-      <Heading level={1}>Explore Health Data</Heading>
-      <Text>
-        Pre-built DQL queries for healthcare operations analysis. All queries target
-        the dedicated observe_and_troubleshoot_apps_95_days bucket for optimized search.
-      </Text>
+    <Flex flexDirection="column" gap={16} padding={16}>
+      <Heading level={3}>Explore Data</Heading>
 
-      {/* Preset Buttons */}
-      <Flex gap={8} flexWrap="wrap">
-        {PRESETS.map(preset => (
+      <Flex gap={8}>
+        {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
           <button
-            key={preset.queryKey}
-            onClick={() => setActivePreset(
-              activePreset === preset.queryKey ? null : preset.queryKey
-            )}
+            key={key}
+            onClick={() => setActive(key)}
             style={{
-              padding: "8px 16px",
-              borderRadius: 6,
-              border: "1px solid var(--dt-colors-border-neutral-default)",
-              background: activePreset === preset.queryKey
-                ? "var(--dt-colors-surface-highlight)"
-                : "var(--dt-colors-surface-default)",
-              color: "inherit",
-              cursor: "pointer",
+              padding: "8px 18px",
+              borderRadius: 8,
+              border: active === key ? "2px solid var(--dt-colors-charts-categorical-color-01)" : "1px solid var(--dt-colors-border-neutral-default)",
+              background: active === key ? "var(--dt-colors-surface-default)" : "transparent",
+              fontWeight: active === key ? 600 : 400,
               fontSize: 13,
+              cursor: "pointer",
+              color: "var(--dt-colors-text-primary-default)",
             }}
-            title={preset.description}
           >
-            {preset.label}
+            {PRESETS[key].label}
           </button>
         ))}
       </Flex>
 
-      {/* Active Query Info */}
-      {activePreset && (
-        <Flex flexDirection="column" gap={8} style={{
-          background: "var(--dt-colors-surface-default)",
-          borderRadius: 8,
-          padding: 12,
-        }}>
-          <Text style={{ fontSize: 12, fontFamily: "monospace", opacity: 0.7, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-            {queries[activePreset]}
-          </Text>
-        </Flex>
-      )}
+      <Surface style={{ padding: 16, borderRadius: 12 }}>
+        <TitleBar>
+          <TitleBar.Title>{PRESETS[active].label}</TitleBar.Title>
+          <TitleBar.Subtitle>{records.length} records</TitleBar.Subtitle>
+        </TitleBar>
 
-      {/* Results */}
-      {activePreset && (
-        <Flex flexDirection="column" style={{
-          background: "var(--dt-colors-surface-default)",
-          borderRadius: 12,
-          padding: 20,
-        }}>
-          <Heading level={2}>
-            {PRESETS.find(p => p.queryKey === activePreset)?.label || "Results"}
-          </Heading>
-          <QueryResult queryKey={activePreset} />
-        </Flex>
-      )}
+        {isLoading ? (
+          <Flex justifyContent="center" style={{ padding: 40 }}><ProgressCircle /></Flex>
+        ) : records.length === 0 ? (
+          <Text style={{ padding: 20, opacity: 0.5 }}>No records found</Text>
+        ) : (
+          <div style={{ maxHeight: 600, overflow: "auto", fontSize: 12 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  {Object.keys(records[0]).map((key) => (
+                    <th key={key} style={TH}>{key}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((r: any, i: number) => (
+                  <tr key={i}>
+                    {Object.keys(records[0]).map((key) => (
+                      <td key={key} style={TD}>
+                        {r[key] instanceof Date || (typeof r[key] === "string" && r[key].match(/^\d{4}-\d{2}-\d{2}T/))
+                          ? new Date(r[key]).toLocaleString()
+                          : String(r[key] ?? "—")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Surface>
     </Flex>
   );
 };
+
+const TH: React.CSSProperties = { padding: "6px 8px", textAlign: "left", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontWeight: 600, whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };

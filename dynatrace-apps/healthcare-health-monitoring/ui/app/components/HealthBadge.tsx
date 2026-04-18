@@ -41,3 +41,7 @@ export function computeHealthStatus(value: number, greenThreshold: number, amber
   if (value >= amberThreshold) return "warning";
   return "critical";
 }
+
+export function statusColor(status: HealthStatus): string {
+  return STATUS_COLORS[status];
+}

@@ -6,24 +6,25 @@ import { HealthBadge, computeHealthStatus } from "./HealthBadge";
 interface SiteCardProps {
   name: string;
   code: string;
-  epicHealth: number;
-  networkHealth: number;
-  integrationHealth: number;
-  activeProblems: number;
+  events: number;
+  users: number;
+  loginRate: number;
+  avgCpu: number;
+  devices: number;
   onClick?: () => void;
 }
 
 export const SiteCard = ({
   name,
   code,
-  epicHealth,
-  networkHealth,
-  integrationHealth,
-  activeProblems,
+  events,
+  users,
+  loginRate,
+  avgCpu,
+  devices,
   onClick,
 }: SiteCardProps) => {
-  const composite = epicHealth * 0.4 + networkHealth * 0.3 + integrationHealth * 0.3;
-  const status = computeHealthStatus(composite, 90, 70);
+  const status = computeHealthStatus(loginRate, 90, 70);
 
   return (
     <Flex
@@ -34,40 +35,39 @@ export const SiteCard = ({
         background: "var(--dt-colors-surface-default)",
         borderRadius: 12,
         padding: 20,
-        minWidth: 220,
+        minWidth: 240,
         flex: 1,
         cursor: onClick ? "pointer" : "default",
         border: "1px solid var(--dt-colors-border-neutral-default)",
+        transition: "box-shadow 0.2s",
       }}
     >
       <Flex justifyContent="space-between" alignItems="center">
         <Heading level={4}>{name}</Heading>
         <HealthBadge status={status} />
       </Flex>
-      <Text style={{ fontSize: 12, opacity: 0.6 }}>{code}</Text>
-      <Flex gap={16} style={{ marginTop: 8 }}>
+      <Text style={{ fontSize: 12, opacity: 0.5 }}>{code}</Text>
+
+      <Flex gap={20} style={{ marginTop: 8 }}>
         <Flex flexDirection="column" alignItems="center">
-          <Text style={{ fontSize: 20, fontWeight: 600 }}>{composite.toFixed(0)}</Text>
-          <Text style={{ fontSize: 11, opacity: 0.6 }}>Composite</Text>
+          <Text style={{ fontSize: 22, fontWeight: 600, color: "#2ab06f" }}>{events}</Text>
+          <Text style={{ fontSize: 10, opacity: 0.5 }}>Events</Text>
         </Flex>
         <Flex flexDirection="column" alignItems="center">
-          <Text style={{ fontSize: 14 }}>{epicHealth.toFixed(0)}</Text>
-          <Text style={{ fontSize: 11, opacity: 0.6 }}>Epic</Text>
+          <Text style={{ fontSize: 22, fontWeight: 600 }}>{users}</Text>
+          <Text style={{ fontSize: 10, opacity: 0.5 }}>Users</Text>
         </Flex>
         <Flex flexDirection="column" alignItems="center">
-          <Text style={{ fontSize: 14 }}>{networkHealth.toFixed(0)}</Text>
-          <Text style={{ fontSize: 11, opacity: 0.6 }}>Network</Text>
+          <Text style={{ fontSize: 22, fontWeight: 600, color: loginRate >= 90 ? "#2ab06f" : loginRate >= 70 ? "#f5a623" : "#dc3545" }}>
+            {loginRate.toFixed(0)}%
+          </Text>
+          <Text style={{ fontSize: 10, opacity: 0.5 }}>Login</Text>
         </Flex>
         <Flex flexDirection="column" alignItems="center">
-          <Text style={{ fontSize: 14 }}>{integrationHealth.toFixed(0)}</Text>
-          <Text style={{ fontSize: 11, opacity: 0.6 }}>Integration</Text>
+          <Text style={{ fontSize: 22, fontWeight: 600 }}>{devices}</Text>
+          <Text style={{ fontSize: 10, opacity: 0.5 }}>Devices</Text>
         </Flex>
       </Flex>
-      {activeProblems > 0 && (
-        <Text style={{ color: "var(--dt-colors-charts-status-critical)", fontSize: 12, marginTop: 4 }}>
-          {activeProblems} active problem{activeProblems > 1 ? "s" : ""}
-        </Text>
-      )}
     </Flex>
   );
 };

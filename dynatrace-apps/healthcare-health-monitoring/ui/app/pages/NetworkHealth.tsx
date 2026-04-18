@@ -1,213 +1,180 @@
 import React from "react";
-import { Flex } from "@dynatrace/strato-components/layouts";
-import { Heading, Text } from "@dynatrace/strato-components/typography";
-import {
-  TimeseriesChart,
-  PieChart,
-  convertToTimeseries,
-} from "@dynatrace/strato-components-preview/charts";
-import { DataTable } from "@dynatrace/strato-components-preview/tables";
+import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
+import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
+import { TimeseriesChart, CategoricalBarChart, DonutChart, HoneycombChart } from "@dynatrace/strato-components-preview/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <Flex flexDirection="column" gap={12} style={{
-      background: "var(--dt-colors-surface-default)",
-      borderRadius: 12,
-      padding: 20,
-    }}>
-      <Heading level={2}>{title}</Heading>
-      {subtitle && <Text style={{ opacity: 0.7 }}>{subtitle}</Text>}
-      {children}
-    </Flex>
-  );
-}
-
 export const NetworkHealth = () => {
-  const cpuTimeline = useDql({ query: queries.deviceCpuOverTime });
-  const memTimeline = useDql({ query: queries.deviceMemOverTime });
-  const trafficIn = useDql({ query: queries.trafficInOverTime });
-  const trafficOut = useDql({ query: queries.trafficOutOverTime });
-  const deviceSnap = useDql({ query: queries.deviceSnapshot });
-  const deviceList = useDql({ query: queries.networkDeviceList });
-  const logTimeline = useDql({ query: queries.networkLogTimeline });
-  const vendorDist = useDql({ query: queries.networkVendorDistribution });
-  const siteDist = useDql({ query: queries.networkSiteDistribution });
-  const cpuBySite = useDql({ query: queries.deviceCpuBySite });
-
   return (
-    <Flex flexDirection="column" gap={24} padding={24}>
-      <Heading level={1}>Network Infrastructure Health</Heading>
-      <Text>
-        Device health metrics, traffic volume, and log event monitoring across all KCRMC sites.
-        Metrics sourced from healthcare.network.* MINT ingest; logs from OpenPipeline-tagged network events.
-      </Text>
-
-      {/* KPI Row */}
-      <Flex gap={16} flexWrap="wrap">
+    <Flex flexDirection="column" gap={16} padding={16}>
+      {/* KPIs */}
+      <Flex gap={12} flexWrap="wrap">
         <KpiCard
           query={queries.networkDeviceUpRatio}
-          label="Devices Online"
+          label="Devices Up"
           field="up_ratio"
           format="percent"
-          thresholds={{ green: 100, amber: 90 }}
+          thresholds={{ green: 95, amber: 80 }}
+          icon="📡"
         />
         <KpiCard
           query={queries.avgDeviceCpu}
           label="Avg CPU"
           field="avg_cpu"
           format="percent"
+          thresholds={{ green: 80, amber: 60 }}
+          icon="💻"
+        />
+        <KpiCard
+          query={queries.avgDeviceMem}
+          label="Avg Memory"
+          field="avg_mem"
+          format="percent"
+          thresholds={{ green: 85, amber: 70 }}
+          icon="🧠"
+        />
+        <KpiCard
+          query={queries.totalNetworkEvents}
+          label="Network Events"
+          field="total"
+          format="number"
+          icon="📋"
         />
       </Flex>
 
-      {/* Device Health (Metrics) */}
-      <Section title="Device Health Metrics" subtitle="CPU, memory utilization per device from healthcare.network.* metrics">
-        <Flex gap={16}>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>CPU Utilization</Heading>
-            <div style={{ height: 250 }}>
-              {cpuTimeline.isLoading ? <ProgressCircle /> :
-                cpuTimeline.data?.records ? (
-                  <TimeseriesChart
-                    data={convertToTimeseries(cpuTimeline.data.records, cpuTimeline.data.types)}
-                    variant="line"
-                    gapPolicy="connect"
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Memory Utilization</Heading>
-            <div style={{ height: 250 }}>
-              {memTimeline.isLoading ? <ProgressCircle /> :
-                memTimeline.data?.records ? (
-                  <TimeseriesChart
-                    data={convertToTimeseries(memTimeline.data.records, memTimeline.data.types)}
-                    variant="line"
-                    gapPolicy="connect"
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-        </Flex>
+      {/* Honeycomb Fleet */}
+      <Surface style={{ padding: 16, borderRadius: 12 }}>
+        <TitleBar>
+          <TitleBar.Title>Device Fleet — CPU Utilization</TitleBar.Title>
+          <TitleBar.Subtitle>Honeycomb view of all network devices by average CPU load</TitleBar.Subtitle>
+        </TitleBar>
+        <DeviceHoneycomb />
+      </Surface>
 
-        <Heading level={3}>CPU by Site</Heading>
-        <div style={{ height: 250 }}>
-          {cpuBySite.isLoading ? <ProgressCircle /> :
-            cpuBySite.data?.records ? (
-              <TimeseriesChart
-                data={convertToTimeseries(cpuBySite.data.records, cpuBySite.data.types)}
-                variant="line"
-                gapPolicy="connect"
-              />
-            ) : <Text>No data</Text>}
-        </div>
+      {/* CPU & Memory timeseries */}
+      <Flex gap={16}>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>CPU by Device</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.deviceCpuOverTime} type="timeseries" />
+        </Surface>
 
-        <Heading level={3}>Device Snapshot</Heading>
-        {deviceSnap.isLoading ? <ProgressCircle /> :
-          deviceSnap.data?.records?.length ? (
-            <DataTable data={deviceSnap.data.records} columns={[
-              { id: "device", accessor: "device", header: "Device" },
-              { id: "vendor", accessor: "vendor", header: "Vendor" },
-              { id: "site", accessor: "site", header: "Site" },
-              { id: "avg_cpu", accessor: "avg_cpu", header: "CPU %" },
-              { id: "avg_mem", accessor: "avg_mem", header: "Memory %" },
-            ]} />
-          ) : <Text>No data</Text>}
-      </Section>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>Memory by Device</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.deviceMemOverTime} type="timeseries" />
+        </Surface>
+      </Flex>
 
-      {/* Traffic Volume */}
-      <Section title="Interface Traffic" subtitle="Bytes in/out per device">
-        <Flex gap={16}>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Traffic In (bytes)</Heading>
-            <div style={{ height: 250 }}>
-              {trafficIn.isLoading ? <ProgressCircle /> :
-                trafficIn.data?.records ? (
-                  <TimeseriesChart
-                    data={convertToTimeseries(trafficIn.data.records, trafficIn.data.types)}
-                    variant="area"
-                    gapPolicy="connect"
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Traffic Out (bytes)</Heading>
-            <div style={{ height: 250 }}>
-              {trafficOut.isLoading ? <ProgressCircle /> :
-                trafficOut.data?.records ? (
-                  <TimeseriesChart
-                    data={convertToTimeseries(trafficOut.data.records, trafficOut.data.types)}
-                    variant="area"
-                    gapPolicy="connect"
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-        </Flex>
-      </Section>
+      {/* Traffic */}
+      <Flex gap={16}>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>Traffic In</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.trafficInOverTime} type="timeseries" />
+        </Surface>
 
-      {/* Log Events */}
-      <Section title="Network Log Events" subtitle="Log volume and device inventory from OpenPipeline-tagged events">
-        <Flex gap={16}>
-          <Flex flexDirection="column" style={{ flex: 2 }}>
-            <Heading level={3}>Log Event Timeline</Heading>
-            <div style={{ height: 250 }}>
-              {logTimeline.isLoading ? <ProgressCircle /> :
-                logTimeline.data?.records ? (
-                  <TimeseriesChart
-                    data={convertToTimeseries(logTimeline.data.records, logTimeline.data.types)}
-                    variant="bar"
-                    gapPolicy="connect"
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Vendor Distribution</Heading>
-            <div style={{ height: 250 }}>
-              {vendorDist.isLoading ? <ProgressCircle /> :
-                vendorDist.data?.records?.length ? (
-                  <PieChart
-                    data={{ slices: vendorDist.data.records.map((r: any) => ({ category: r.vendor || "Unknown", value: r.cnt || 0 })) }}
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-        </Flex>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>Traffic Out</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.trafficOutOverTime} type="timeseries" />
+        </Surface>
+      </Flex>
 
-        <Flex gap={16}>
-          <Flex flexDirection="column" style={{ flex: 1 }}>
-            <Heading level={3}>Site Distribution</Heading>
-            <div style={{ height: 250 }}>
-              {siteDist.isLoading ? <ProgressCircle /> :
-                siteDist.data?.records?.length ? (
-                  <PieChart
-                    data={{ slices: siteDist.data.records.map((r: any) => ({ category: r.site || "Unknown", value: r.cnt || 0 })) }}
-                  />
-                ) : <Text>No data</Text>}
-            </div>
-          </Flex>
-          <Flex flexDirection="column" style={{ flex: 2 }}>
-            <Heading level={3}>Device Inventory</Heading>
-            {deviceList.isLoading ? <ProgressCircle /> :
-              deviceList.data?.records?.length ? (
-                <DataTable data={deviceList.data.records} columns={[
-                  { id: "hostname", accessor: "hostname", header: "Hostname" },
-                  { id: "vendor", accessor: "vendor", header: "Vendor" },
-                  { id: "role", accessor: "role", header: "Role" },
-                  { id: "model", accessor: "model", header: "Model" },
-                  { id: "site", accessor: "site", header: "Site" },
-                  { id: "events", accessor: "events", header: "Events" },
-                ]} />
-              ) : <Text>No devices</Text>}
-          </Flex>
-        </Flex>
-      </Section>
+      {/* Log events + vendor distribution */}
+      <Flex gap={16}>
+        <Surface style={{ flex: 2, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>Network Log Timeline</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.networkLogTimeline} type="timeseries" />
+        </Surface>
+
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar>
+            <TitleBar.Title>Vendor Distribution</TitleBar.Title>
+          </TitleBar>
+          <ChartW query={queries.networkVendorDistribution} type="donut" />
+        </Surface>
+      </Flex>
+
+      {/* Device inventory table */}
+      <Surface style={{ padding: 16, borderRadius: 12 }}>
+        <TitleBar>
+          <TitleBar.Title>Device Inventory</TitleBar.Title>
+        </TitleBar>
+        <DeviceTable />
+      </Surface>
     </Flex>
   );
 };
+
+const ChartW = ({ query, type }: { query: string; type: "timeseries" | "bar" | "donut" }) => {
+  const { data, isLoading } = useDql({ query });
+  if (isLoading) return <ProgressCircle />;
+  const records = data?.records ?? [];
+  if (type === "timeseries") return <TimeseriesChart data={records as any} />;
+  if (type === "bar") return <CategoricalBarChart data={records as any} />;
+  return <DonutChart data={records as any} />;
+};
+
+const DeviceHoneycomb = () => {
+  const { data, isLoading } = useDql({ query: queries.deviceSnapshot });
+  if (isLoading) return <Flex justifyContent="center" style={{ height: 200 }}><ProgressCircle /></Flex>;
+  const records = data?.records ?? [];
+  if (records.length === 0) return <Text>No device data</Text>;
+
+  // Build honeycomb-friendly data: just CPU values
+  const cpuValues = records.map((r: any) => Number(r.avg_cpu) || 0);
+
+  return (
+    <div style={{ height: 280 }}>
+      <HoneycombChart data={cpuValues} />
+    </div>
+  );
+};
+
+const DeviceTable = () => {
+  const { data, isLoading } = useDql({ query: queries.networkDeviceList });
+  if (isLoading) return <ProgressCircle />;
+  const records = data?.records ?? [];
+
+  return (
+    <div style={{ maxHeight: 400, overflow: "auto", fontSize: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={TH}>Hostname</th>
+            <th style={TH}>Vendor</th>
+            <th style={TH}>Role</th>
+            <th style={TH}>Site</th>
+            <th style={TH}>Events</th>
+            <th style={TH}>Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((r: any, i: number) => (
+            <tr key={i}>
+              <td style={TD}>{r.hostname}</td>
+              <td style={TD}>{r.vendor}</td>
+              <td style={TD}>{r.role}</td>
+              <td style={TD}>{r.site}</td>
+              <td style={TD}>{r.events}</td>
+              <td style={TD}>{r.last_seen ? new Date(r.last_seen).toLocaleString() : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const TH: React.CSSProperties = { padding: "6px 8px", textAlign: "left", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontWeight: 600 };
+const TD: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)" };
