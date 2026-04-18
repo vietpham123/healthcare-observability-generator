@@ -1,5 +1,5 @@
 // ============================================================================
-// Healthcare Health Monitoring — Shared DQL Queries  (v1.3.0)
+// Healthcare Health Monitoring — Shared DQL Queries  (v1.4.0)
 // ============================================================================
 // All queries target the dedicated healthcare bucket.
 // Sites: kcrmc-main (KC), oak-clinic (Oakley), wel-clinic (Wellington),
@@ -9,7 +9,41 @@
 const BUCKET = 'dt.system.bucket == "observe_and_troubleshoot_apps_95_days"';
 export const EPIC_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-epic"`;
 export const NETWORK_FILTER = `${BUCKET} AND healthcare.pipeline == "healthcare-network"`;
-export const NETFLOW_FILTER = `${BUCKET} AND log.source == "netflow"`;
+export const NETFLOW_FILTER = `log.source == "netflow"`;
+
+// Site alias map: old codes → new codes (for filter matching)
+export const SITE_ALIAS: Record<string, string> = {
+  "tpk-clinic": "oak-clinic",
+  "wch-clinic": "wel-clinic",
+  "lwr-clinic": "bel-clinic",
+};
+
+export const ALL_SITES = [
+  { code: "kcrmc-main", name: "KC Regional Medical Center" },
+  { code: "oak-clinic", name: "Oakley Rural Health" },
+  { code: "wel-clinic", name: "Wellington Care Center" },
+  { code: "bel-clinic", name: "Belleville Family Medicine" },
+];
+
+// Build a DQL site filter clause for Epic logs (healthcare.site field)
+// Includes old alias codes so historical data matches
+export function epicSiteFilter(siteCode: string): string {
+  const aliases = Object.entries(SITE_ALIAS).filter(([, v]) => v === siteCode).map(([k]) => k);
+  const codes = [siteCode, ...aliases].map((c) => `healthcare.site == "${c}"`).join(" OR ");
+  return `(${codes})`;
+}
+
+// Build a DQL site filter clause for Network logs (healthcare.site field)
+export function networkSiteFilter(siteCode: string): string {
+  return epicSiteFilter(siteCode); // same field
+}
+
+// Build a DQL site filter for NetFlow (network.device.site field)
+export function netflowSiteFilter(siteCode: string): string {
+  const aliases = Object.entries(SITE_ALIAS).filter(([, v]) => v === siteCode).map(([k]) => k);
+  const codes = [siteCode, ...aliases].map((c) => `network.device.site == "${c}"`).join(" OR ");
+  return `(${codes})`;
+}
 
 export const queries = {
 
@@ -367,4 +401,45 @@ export const queries = {
     | fields timestamp, event.name, event.status, event.kind
     | sort timestamp desc
     | limit 30`,
+
+  // ─── Site Drill-Down — Tier 1 Data ────────────────────────────────
+  // These are parameterised per-site; call with template literals
+  siteHL7Volume: (siteFilter: string) => `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | filter ${siteFilter}
+    | filter isNotNull(MSH.9)
+    | summarize total = count()`,
+
+  siteErrorRate: (siteFilter: string) => `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | filter ${siteFilter}
+    | summarize
+        errors = countIf(severity == "ERROR" OR severity == "WARN"),
+        total = count()
+    | fieldsAdd error_rate = if(total > 0, toDouble(errors) / toDouble(total) * 100.0, else: 0.0)`,
+
+  siteNetflowVolume: (siteFilter: string) => `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | filter ${siteFilter}
+    | summarize total = count()`,
+
+  siteNetflowTimeline: (siteFilter: string) => `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${NETFLOW_FILTER}
+    | filter ${siteFilter}
+    | makeTimeseries flows = count(), interval: 5m`,
+
+  siteTopEventTypes: (siteFilter: string) => `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
+    | filter ${EPIC_FILTER}
+    | filter ${siteFilter}
+    | parse content, "LD '<E1Mid>' LD:e1mid '<'"
+    | filter isNotNull(e1mid)
+    | fieldsAdd event_category = if(isNotNull(MSH.9), "HL7",
+        else: if(isNotNull(response_time_ms), "FHIR API",
+        else: if(isNotNull(patient_portal_action), "MyChart",
+        else: if(isNotNull(job_name), "ETL",
+        else: if(isNotNull(ORDER_TYPE), "Clinical Order",
+        else: if(e1mid == "HKU_LOGIN" OR e1mid == "CTO_LOGIN" OR e1mid == "FAILEDLOGIN", "Login/Auth",
+        else: "SIEM Audit"))))))
+    | summarize cnt = count(), by: { event_category }
+    | sort cnt desc`,
 };

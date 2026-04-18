@@ -4,18 +4,14 @@ import { Heading, Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { TimeseriesChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
-import { queries, EPIC_FILTER, NETWORK_FILTER } from "../queries";
+import { queries, EPIC_FILTER, NETWORK_FILTER, NETFLOW_FILTER, epicSiteFilter, netflowSiteFilter, SITE_ALIAS as SITE_ALIAS_Q } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 import { SiteCard } from "../components/SiteCard";
 import { computeHealthStatus, statusColor } from "../components/HealthBadge";
-import { toTimeseries, toBarData } from "../utils/chartHelpers";
+import { toTimeseries, toBarData, toDonutData } from "../utils/chartHelpers";
 
-// Alias old site codes to new ones so historical Grail data merges correctly
-const SITE_ALIAS: Record<string, string> = {
-  "tpk-clinic": "oak-clinic",
-  "wch-clinic": "wel-clinic",
-  "lwr-clinic": "bel-clinic",
-};
+// Re-use the shared alias map
+const SITE_ALIAS = SITE_ALIAS_Q;
 
 function mergeRecords(records: any[], aliasMap: Record<string, string>, siteField: string, numericFields: string[]): any[] {
   const merged: Record<string, any> = {};
@@ -114,9 +110,12 @@ export const SiteView = () => {
 interface DrillSite { code: string; name: string; profile: string; beds: number; events: number; users: number; loginRate: number; avgCpu: number; devices: number; }
 
 const SiteDrillDown = ({ site, onBack }: { site: DrillSite; onBack: () => void }) => {
+  const sf = epicSiteFilter(site.code);
+  const nf = netflowSiteFilter(site.code);
+
   const siteEpicQuery = `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter healthcare.site == "${site.code}"
+    | filter ${sf}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter isNotNull(e1mid)
     | summarize cnt = count(), by: { e1mid }
@@ -124,8 +123,19 @@ const SiteDrillDown = ({ site, onBack }: { site: DrillSite; onBack: () => void }
 
   const siteNetLogsQuery = `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
-    | filter healthcare.site == "${site.code}"
+    | filter ${sf}
     | makeTimeseries events = count(), by: { vendor = network.device.vendor }, interval: 5m`;
+
+  // Tier 1 queries
+  const hl7Result = useDql({ query: queries.siteHL7Volume(sf) });
+  const errorResult = useDql({ query: queries.siteErrorRate(sf) });
+  const flowResult = useDql({ query: queries.siteNetflowVolume(nf) });
+  const catResult = useDql({ query: queries.siteTopEventTypes(sf) });
+  const flowTlResult = useDql({ query: queries.siteNetflowTimeline(nf) });
+
+  const hl7Count = Number(hl7Result.data?.records?.[0]?.total) || 0;
+  const errorRate = Number(errorResult.data?.records?.[0]?.error_rate) || 0;
+  const flowCount = Number(flowResult.data?.records?.[0]?.total) || 0;
 
   const status = computeHealthStatus(site.loginRate, 90, 70);
 
@@ -145,22 +155,36 @@ const SiteDrillDown = ({ site, onBack }: { site: DrillSite; onBack: () => void }
           { label: "Login Rate", value: `${site.loginRate.toFixed(0)}%`, color: statusColor(status) },
           { label: "Devices", value: site.devices },
           { label: "Avg CPU", value: `${site.avgCpu.toFixed(1)}%` },
+          { label: "HL7 Msgs", value: hl7Count },
+          { label: "Error Rate", value: `${errorRate.toFixed(1)}%`, color: errorRate > 10 ? "#dc3545" : errorRate > 5 ? "#f5a623" : "#2ab06f" },
+          { label: "NetFlows", value: flowCount },
         ].map((m) => (
-          <Flex key={m.label} flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 130, flex: 1 }}>
+          <Flex key={m.label} flexDirection="column" alignItems="center" style={{ background: "var(--dt-colors-surface-default)", borderRadius: 12, padding: 16, minWidth: 110, flex: 1 }}>
             <Text style={{ fontSize: 10, opacity: 0.5, textTransform: "uppercase" }}>{m.label}</Text>
-            <Text style={{ fontSize: 28, fontWeight: 700, color: (m as any).color }}>{m.value}</Text>
+            <Text style={{ fontSize: 24, fontWeight: 700, color: (m as any).color }}>{m.value}</Text>
           </Flex>
         ))}
       </Flex>
 
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar><TitleBar.Title>Epic Event Types</TitleBar.Title></TitleBar>
-          <BarChart query={siteEpicQuery} />
+          <TitleBar><TitleBar.Title>Event Categories</TitleBar.Title><TitleBar.Subtitle>HL7, FHIR, Clinical, Login, ETL breakdown</TitleBar.Subtitle></TitleBar>
+          <BarChart query={queries.siteTopEventTypes(sf)} />
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
-          <TitleBar><TitleBar.Title>Network Events</TitleBar.Title></TitleBar>
+          <TitleBar><TitleBar.Title>Epic Audit Events (E1Mid)</TitleBar.Title></TitleBar>
+          <BarChart query={siteEpicQuery} />
+        </Surface>
+      </Flex>
+
+      <Flex gap={16}>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar><TitleBar.Title>Network Events by Vendor</TitleBar.Title></TitleBar>
           <TsChart query={siteNetLogsQuery} />
+        </Surface>
+        <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
+          <TitleBar><TitleBar.Title>NetFlow Traffic</TitleBar.Title><TitleBar.Subtitle>Flow records over time for this site</TitleBar.Subtitle></TitleBar>
+          <TsChart query={queries.siteNetflowTimeline(nf)} />
         </Surface>
       </Flex>
     </Flex>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
@@ -6,28 +6,35 @@ import { TimeseriesChart, CategoricalBarChart, DonutChart } from "@dynatrace/str
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
+import { SiteFilter } from "../components/SiteFilter";
 import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
+import { withSiteFilter } from "../utils/queryHelpers";
 
-export const IntegrationHealth = () => (
+export const IntegrationHealth = () => {
+  const [site, setSite] = useState<string | null>(null);
+  const f = (q: string) => withSiteFilter(q, site, "epic");
+
+  return (
   <Flex flexDirection="column" gap={16} padding={16}>
     <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
       Integration pipeline health — HL7 message delivery and ORC action types, FHIR REST API request rates with response time percentiles, and ETL batch job status with failure tracking.
     </Text>
+    <SiteFilter value={site} onChange={setSite} />
     <Flex gap={12} flexWrap="wrap">
-      <KpiCard query={queries.hl7DeliveryRate} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
-      <KpiCard query={queries.fhirHealthRate} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
-      <KpiCard query={queries.fhirErrorRate} label="FHIR Error Rate" field="error_rate" format="percent" thresholds={{ green: 5, amber: 10 }} icon="⚠️" />
-      <KpiCard query={queries.etlSuccessRate} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
+      <KpiCard query={f(queries.hl7DeliveryRate)} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
+      <KpiCard query={f(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
+      <KpiCard query={f(queries.fhirErrorRate)} label="FHIR Error Rate" field="error_rate" format="percent" thresholds={{ green: 5, amber: 10 }} icon="⚠️" />
+      <KpiCard query={f(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
     </Flex>
 
     {/* HL7 Section */}
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <TitleBar><TitleBar.Title>HL7 Interface</TitleBar.Title><TitleBar.Subtitle>Message volume and ORC action types</TitleBar.Subtitle></TitleBar>
       <Flex gap={16} style={{ marginTop: 12 }}>
-        <div style={{ flex: 2 }}><TsChart query={queries.hl7VolumeOverTime} /></div>
-        <div style={{ flex: 1 }}><PieChart query={queries.hl7MessageBreakdown} /></div>
+        <div style={{ flex: 2 }}><TsChart query={f(queries.hl7VolumeOverTime)} /></div>
+        <div style={{ flex: 1 }}><PieChart query={f(queries.hl7MessageBreakdown)} /></div>
       </Flex>
-      <HL7Table />
+      <HL7Table site={site} />
     </Surface>
 
     {/* FHIR Section */}
@@ -36,21 +43,21 @@ export const IntegrationHealth = () => (
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Request Rate</Text>
-          <TsChart query={queries.fhirRequestRateOverTime} />
+          <TsChart query={f(queries.fhirRequestRateOverTime)} />
         </div>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Response Percentiles</Text>
-          <TsChart query={queries.fhirResponseTimePercentiles} />
+          <TsChart query={f(queries.fhirResponseTimePercentiles)} />
         </div>
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Status Codes</Text>
-          <PieChart query={queries.fhirStatusDistribution} />
+          <PieChart query={f(queries.fhirStatusDistribution)} />
         </div>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Client Usage</Text>
-          <BarChart query={queries.fhirClientUsage} />
+          <BarChart query={f(queries.fhirClientUsage)} />
         </div>
       </Flex>
     </Surface>
@@ -59,13 +66,14 @@ export const IntegrationHealth = () => (
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <TitleBar><TitleBar.Title>ETL Pipelines</TitleBar.Title><TitleBar.Subtitle>Batch job status and duration trends</TitleBar.Subtitle></TitleBar>
       <Flex gap={16} style={{ marginTop: 12 }}>
-        <div style={{ flex: 1 }}><TsChart query={queries.etlJobStatusOverTime} /></div>
-        <div style={{ flex: 1 }}><TsChart query={queries.etlJobDurationTrends} /></div>
+        <div style={{ flex: 1 }}><TsChart query={f(queries.etlJobStatusOverTime)} /></div>
+        <div style={{ flex: 1 }}><TsChart query={f(queries.etlJobDurationTrends)} /></div>
       </Flex>
-      <ETLFailedTable />
+      <ETLFailedTable site={site} />
     </Surface>
   </Flex>
-);
+  );
+};
 
 const TsChart = ({ query }: { query: string }) => {
   const result = useDql({ query });
@@ -85,8 +93,8 @@ const PieChart = ({ query }: { query: string }) => {
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
 
-const HL7Table = () => {
-  const { data, isLoading } = useDql({ query: queries.hl7RecentMessages });
+const HL7Table = ({ site }: { site: string | null }) => {
+  const { data, isLoading } = useDql({ query: withSiteFilter(queries.hl7RecentMessages, site, "epic") });
   if (isLoading) return <ProgressCircle />;
   const records = data?.records ?? [];
   if (records.length === 0) return <Text style={{ padding: 16, opacity: 0.5 }}>No HL7 messages</Text>;
@@ -110,8 +118,8 @@ const HL7Table = () => {
   );
 };
 
-const ETLFailedTable = () => {
-  const { data, isLoading } = useDql({ query: queries.etlFailedJobs });
+const ETLFailedTable = ({ site }: { site: string | null }) => {
+  const { data, isLoading } = useDql({ query: withSiteFilter(queries.etlFailedJobs, site, "epic") });
   if (isLoading) return <ProgressCircle />;
   const records = data?.records ?? [];
   if (records.length === 0) return <Text style={{ padding: 16, opacity: 0.5, display: "block", marginTop: 12 }}>No failed ETL jobs — all passing ✓</Text>;

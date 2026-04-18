@@ -4,19 +4,24 @@ import { Heading, Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
+import { SiteFilter } from "../components/SiteFilter";
+import { withSiteFilter } from "../utils/queryHelpers";
 
 type PresetKey = "allEpic" | "allNetwork" | "allNetflow" | "problems";
 
-const PRESETS: Record<PresetKey, { label: string; query: string }> = {
-  allEpic: { label: "Epic Events", query: queries.allEpicEvents },
-  allNetwork: { label: "Network Events", query: queries.allNetworkEvents },
-  allNetflow: { label: "NetFlow Records", query: queries.allNetflowEvents },
-  problems: { label: "Active Problems", query: queries.activeProblemsList },
+const PRESETS: Record<PresetKey, { label: string; query: string; kind: "epic" | "network" | "netflow" | "none" }> = {
+  allEpic: { label: "Epic Events", query: queries.allEpicEvents, kind: "epic" },
+  allNetwork: { label: "Network Events", query: queries.allNetworkEvents, kind: "network" },
+  allNetflow: { label: "NetFlow Records", query: queries.allNetflowEvents, kind: "netflow" },
+  problems: { label: "Active Problems", query: queries.activeProblemsList, kind: "none" },
 };
 
 export const Explore = () => {
   const [active, setActive] = useState<PresetKey>("allEpic");
-  const { data, isLoading } = useDql({ query: PRESETS[active].query });
+  const [site, setSite] = useState<string | null>(null);
+  const preset = PRESETS[active];
+  const q = preset.kind === "none" ? preset.query : withSiteFilter(preset.query, site, preset.kind);
+  const { data, isLoading } = useDql({ query: q });
   const records = data?.records ?? [];
 
   return (
@@ -25,6 +30,7 @@ export const Explore = () => {
         Raw data explorer — browse Epic SIEM events, network device logs, NetFlow traffic records, and active Dynatrace problems. Use the preset buttons to switch between data sources.
       </Text>
       <Heading level={3}>Explore Data</Heading>
+      <SiteFilter value={site} onChange={setSite} />
       <Flex gap={8}>
         {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
           <button key={key} onClick={() => setActive(key)} style={{ padding: "8px 18px", borderRadius: 8, border: active === key ? "2px solid var(--dt-colors-charts-categorical-color-01)" : "1px solid var(--dt-colors-border-neutral-default)", background: active === key ? "var(--dt-colors-surface-default)" : "transparent", fontWeight: active === key ? 600 : 400, fontSize: 13, cursor: "pointer", color: "var(--dt-colors-text-primary-default)" }}>

@@ -63,9 +63,12 @@ function curvedPath(x1: number, y1: number, x2: number, y2: number): string {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
-  const offset = Math.min(len * 0.18, 45);
-  const mx = (x1 + x2) / 2 + (-dy / len) * offset;
-  const my = (y1 + y2) / 2 + (dx / len) * offset;
+  const offset = Math.min(len * 0.12, 28);
+  let mx = (x1 + x2) / 2 + (-dy / len) * offset;
+  let my = (y1 + y2) / 2 + (dx / len) * offset;
+  // Clamp control point inside the state outline
+  mx = Math.max(70, Math.min(640, mx));
+  my = Math.max(58, Math.min(362, my));
   return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
 }
 
@@ -130,8 +133,10 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
         if (!a || !b) continue;
         const x1 = a.gx * sx, y1 = a.gy * sy, x2 = b.gx * sx, y2 = b.gy * sy;
         const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
-        const off = Math.min(len * 0.18, 45 * sx);
-        const cx = (x1 + x2) / 2 + (-dy / len) * off, cy = (y1 + y2) / 2 + (dx / len) * off;
+        const off = Math.min(len * 0.12, 28 * sx);
+        let cx = (x1 + x2) / 2 + (-dy / len) * off, cy = (y1 + y2) / 2 + (dx / len) * off;
+        cx = Math.max(70 * sx, Math.min(640 * sx, cx));
+        cy = Math.max(58 * sy, Math.min(362 * sy, cy));
         const pt = bezierAt(x1, y1, cx, cy, x2, y2, p.t);
         ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz * 3.5, 0, Math.PI * 2); ctx.fillStyle = "rgba(91,143,249,0.12)"; ctx.fill();
         ctx.beginPath(); ctx.arc(pt.x, pt.y, p.sz, 0, Math.PI * 2); ctx.fillStyle = "rgba(120,170,255,0.9)"; ctx.fill();
@@ -191,9 +196,11 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
           const op = 0.15 + (flow.volume / maxVol) * 0.35;
           const d = curvedPath(a.gx, a.gy, b.gx, b.gy);
           const dx = b.gx - a.gx, dy = b.gy - a.gy, len = Math.sqrt(dx * dx + dy * dy);
-          const off = Math.min(len * 0.18, 45);
-          const lx = (a.gx + b.gx) / 2 + (-dy / len) * off;
-          const ly = (a.gy + b.gy) / 2 + (dx / len) * off;
+          const off = Math.min(len * 0.12, 28);
+          let lx = (a.gx + b.gx) / 2 + (-dy / len) * off;
+          let ly = (a.gy + b.gy) / 2 + (dx / len) * off;
+          lx = Math.max(70, Math.min(640, lx));
+          ly = Math.max(58, Math.min(362, ly));
           return (
             <g key={i}>
               <path d={d} fill="none" stroke="rgba(91,143,249,0.1)" strokeWidth={w + 6} filter="url(#fglow)" />

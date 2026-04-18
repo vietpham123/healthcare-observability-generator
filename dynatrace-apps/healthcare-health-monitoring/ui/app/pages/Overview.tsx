@@ -1,20 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { TimeseriesChart, DonutChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
-import { queries } from "../queries";
+import { queries, SITE_ALIAS as SITE_ALIAS_Q } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 import { CampusMap } from "../components/CampusMap";
+import { SiteFilter } from "../components/SiteFilter";
 import { toTimeseries, toDonutData, toBarData } from "../utils/chartHelpers";
+import { withSiteFilter } from "../utils/queryHelpers";
 
-// Alias old site codes to new ones so historical Grail data merges correctly
-const SITE_ALIAS: Record<string, string> = {
-  "tpk-clinic": "oak-clinic",
-  "wch-clinic": "wel-clinic",
-  "lwr-clinic": "bel-clinic",
-};
+// Re-use the shared alias map
+const SITE_ALIAS = SITE_ALIAS_Q;
 
 const SITE_META: Record<string, { name: string; label: string; x: number; y: number }> = {
   "kcrmc-main": { name: "KC Regional Medical Center", label: "KC Main Campus", x: 450, y: 130 },
@@ -51,6 +49,8 @@ function mergeDeviceRecords(records: any[], aliasMap: Record<string, string>): a
 }
 
 export const Overview = () => {
+  const [site, setSite] = useState<string | null>(null);
+  const fe = (q: string) => withSiteFilter(q, site, "epic");
   const siteHealth = useDql({ query: queries.siteHealthSummary });
   const netDevices = useDql({ query: queries.networkDevicesBySite });
   const siteRecords = mergeSiteRecords(siteHealth.data?.records ?? [], SITE_ALIAS);
@@ -76,13 +76,14 @@ export const Overview = () => {
       <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
         System-wide view of Kansas City Regional Medical Center and satellite clinics — login health, device status, event distribution, and cross-system correlation.
       </Text>
+      <SiteFilter value={site} onChange={setSite} />
       <Flex gap={12} flexWrap="wrap">
-        <KpiCard query={queries.epicLoginSuccessRate} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 90, amber: 70 }} icon="🔐" />
-        <KpiCard query={queries.hl7DeliveryRate} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
-        <KpiCard query={queries.fhirHealthRate} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
-        <KpiCard query={queries.etlSuccessRate} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
-        <KpiCard query={queries.avgDeviceCpu} label="Avg Device CPU" field="avg_cpu" format="percent" thresholds={{ green: 80, amber: 60 }} icon="💻" />
-        <KpiCard query={queries.activeUsers} label="Active Users" field="unique_users" format="number" icon="👥" />
+        <KpiCard query={fe(queries.epicLoginSuccessRate)} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 90, amber: 70 }} icon="🔐" />
+        <KpiCard query={fe(queries.hl7DeliveryRate)} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
+        <KpiCard query={fe(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
+        <KpiCard query={fe(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
+        <KpiCard query={fe(queries.avgDeviceCpu)} label="Avg Device CPU" field="avg_cpu" format="percent" thresholds={{ green: 80, amber: 60 }} icon="💻" />
+        <KpiCard query={fe(queries.activeUsers)} label="Active Users" field="unique_users" format="number" icon="👥" />
       </Flex>
 
       <Flex gap={16}>
@@ -94,49 +95,49 @@ export const Overview = () => {
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
           <TitleBar><TitleBar.Title>Epic Event Distribution</TitleBar.Title></TitleBar>
-          <EventDistChart />
+          <EventDistChart site={site} />
         </Surface>
       </Flex>
 
       <Flex gap={16}>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
           <TitleBar><TitleBar.Title>System Activity</TitleBar.Title><TitleBar.Subtitle>Epic vs Network event volume</TitleBar.Subtitle></TitleBar>
-          <ActivityTimelineChart />
+          <ActivityTimelineChart site={site} />
         </Surface>
         <Surface style={{ flex: 1, padding: 16, borderRadius: 12 }}>
           <TitleBar><TitleBar.Title>Events by Site & Pipeline</TitleBar.Title></TitleBar>
-          <EventsBySiteChart />
+          <EventsBySiteChart site={site} />
         </Surface>
       </Flex>
 
       <Surface style={{ padding: 16, borderRadius: 12 }}>
         <TitleBar><TitleBar.Title>Epic ↔ Network Correlation</TitleBar.Title><TitleBar.Subtitle>Overlay of Epic workflow events with network infrastructure events</TitleBar.Subtitle></TitleBar>
-        <CorrelationChart />
+        <CorrelationChart site={site} />
       </Surface>
     </Flex>
   );
 };
 
-const EventDistChart = () => {
-  const { data, isLoading } = useDql({ query: queries.epicEventDistribution });
+const EventDistChart = ({ site }: { site: string | null }) => {
+  const { data, isLoading } = useDql({ query: withSiteFilter(queries.epicEventDistribution, site, "epic") });
   if (isLoading) return <ProgressCircle />;
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
 
-const ActivityTimelineChart = () => {
-  const result = useDql({ query: queries.systemActivityTimeline });
+const ActivityTimelineChart = ({ site }: { site: string | null }) => {
+  const result = useDql({ query: withSiteFilter(queries.systemActivityTimeline, site, "epic") });
   if (result.isLoading) return <ProgressCircle />;
   return <TimeseriesChart data={toTimeseries(result.data)} />;
 };
 
-const EventsBySiteChart = () => {
-  const { data, isLoading } = useDql({ query: queries.eventsBySite });
+const EventsBySiteChart = ({ site }: { site: string | null }) => {
+  const { data, isLoading } = useDql({ query: withSiteFilter(queries.eventsBySite, site, "epic") });
   if (isLoading) return <ProgressCircle />;
   return <CategoricalBarChart data={toBarData(data?.records ?? [])} />;
 };
 
-const CorrelationChart = () => {
-  const result = useDql({ query: queries.epicNetworkCorrelation });
+const CorrelationChart = ({ site }: { site: string | null }) => {
+  const result = useDql({ query: withSiteFilter(queries.epicNetworkCorrelation, site, "epic") });
   if (result.isLoading) return <ProgressCircle />;
   return <TimeseriesChart data={toTimeseries(result.data)} variant="area" />;
 };
