@@ -10,6 +10,8 @@ import { NetworkHealth } from "./pages/NetworkHealth";
 import { IntegrationHealth } from "./pages/IntegrationHealth";
 import { SiteView } from "./pages/SiteView";
 import { Explore } from "./pages/Explore";
+import { SecurityCompliance } from "./pages/SecurityCompliance";
+import { MyChartPortal } from "./pages/MyChartPortal";
 
 function createInitialTimeframe(): Timeframe {
   const now = new Date();
@@ -29,11 +31,10 @@ export const App = () => {
   return (
     <Page>
       <Page.Header>
-        <Header timeframe={timeframe} onTimeframeChange={setTimeframe} />
+        <Header timeframe={timeframe} onTimeframeChange={(tf) => { if (tf) setTimeframe(tf); }} />
       </Page.Header>
       <Page.Main>
         <DqlQueryParamsProvider
-          key={`${toGrailTimeframe(timeframe.from)}__${toGrailTimeframe(timeframe.to)}`}
           defaultTimeframeStart={toGrailTimeframe(timeframe.from)}
           defaultTimeframeEnd={toGrailTimeframe(timeframe.to)}
         >
@@ -41,8 +42,10 @@ export const App = () => {
             <Route path="/" element={<Overview />} />
             <Route path="/epic" element={<EpicHealth />} />
             <Route path="/network" element={<NetworkHealth />} />
-            <Route path="/integrations" element={<IntegrationHealth />} />
+            <Route path="/integration" element={<IntegrationHealth />} />
             <Route path="/sites" element={<SiteView />} />
+            <Route path="/security" element={<SecurityCompliance />} />
+            <Route path="/mychart" element={<MyChartPortal />} />
             <Route path="/explore" element={<Explore />} />
           </Routes>
         </DqlQueryParamsProvider>

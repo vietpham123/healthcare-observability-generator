@@ -254,6 +254,11 @@ class DynatraceOutput(BaseOutput):
                 "network.flow.dst.country": f.dst_country,
                 "network.device.hostname": f.device,
                 "network.device.site": f.site,
+                "healthcare.pipeline": "healthcare-network",
+                "healthcare.site": f.site or "unknown",
+                "dt.source.generator": "healthcare-obs-gen-v2",
+                "generator.type": "network",
+                "generator.version": "2.0.0",
             })
 
         total_sent = 0

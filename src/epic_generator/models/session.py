@@ -20,15 +20,22 @@ STATE_TRANSITIONS = {
         ("LOGGED_OUT", 0.15),
     ],
     "IN_CHART": [
-        ("IN_CHART", 0.50),     # Stay in chart (next action on same patient)
-        ("LOGGED_IN", 0.30),    # Close chart, back to logged in
+        ("IN_CHART", 0.45),     # Stay in chart (next action on same patient)
+        ("LOGGED_IN", 0.25),    # Close chart, back to logged in
         ("IDLE", 0.10),
         ("LOGGED_OUT", 0.10),
+        ("DISCHARGE", 0.10),    # Discharge patient (triggers ADT^A03)
     ],
     "IDLE": [
         ("IN_CHART", 0.50),
         ("LOGGED_IN", 0.30),
         ("LOGGED_OUT", 0.20),
+    ],
+    "DISCHARGE": [
+        ("IN_CHART", 0.50),
+        ("LOGGED_IN", 0.30),
+        ("IDLE", 0.10),
+        ("LOGGED_OUT", 0.10),
     ],
 }
 
@@ -85,6 +92,11 @@ class UserSession:
 
     def _determine_event_type(self, next_state, patient_pool):
         """Determine which SIEM event type to generate based on state transition."""
+        if next_state == "DISCHARGE":
+            # Discharge the current patient; DISCHARGE state has its own transitions
+            self.current_patient = None
+            return "discharge"
+
         if next_state == "LOGGED_OUT":
             self.current_patient = None
             return "LOGOUT"

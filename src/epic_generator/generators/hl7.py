@@ -31,7 +31,12 @@ EVENT_TO_HL7 = {
     "result_review": "ORU_R01",
     "chart_review": "ADT_A08",
     "med_admin": "ORM_O01",
+    "admit": "ADT_A01",
+    "transfer": "ADT_A02",
 }
+
+# Standalone HL7 message types (not correlated to clinical sessions)
+STANDALONE_HL7_TYPES = ["ADT_A01", "ADT_A01", "ADT_A01", "ADT_A02", "ADT_A03", "ORU_R01"]
 
 RECEIVING_FACILITIES = [
     "LAB_SYSTEM",
@@ -173,6 +178,33 @@ class HL7Generator(BaseGenerator):
             f"OBX|{random.randint(1, 10)}|NM|{obs['id']}^{obs['name']}^LN||"
             f"{value}|{obs['unit']}|||||F|||{_ts()}"
         )
+
+    def generate_standalone(self, session=None, config=None):
+        """Generate a standalone HL7 message with random type from STANDALONE_HL7_TYPES.
+
+        Used for producing ADT admits, transfers, discharges independently
+        of the clinical session state machine.
+        """
+        hl7_type_key = random.choice(STANDALONE_HL7_TYPES)
+        msg_info = MESSAGE_TYPES[hl7_type_key]
+
+        segments = [self._build_msh(msg_info)]
+
+        if session and session.current_patient:
+            segments.append(self._build_pid(session.current_patient))
+            segments.append(self._build_pv1(session))
+
+        if hl7_type_key == "ORM_O01":
+            segments.append(self._build_orc(session))
+            segments.append(self._build_obr())
+
+        if hl7_type_key == "ORU_R01":
+            segments.append(self._build_orc(session))
+            segments.append(self._build_obr())
+            for _ in range(random.randint(1, 3)):
+                segments.append(self._build_obx())
+
+        return SEGMENT_SEPARATOR.join(segments)
 
     def generate_sample(self, n=10, config=None):
         for msg_type_key in list(MESSAGE_TYPES.keys()):

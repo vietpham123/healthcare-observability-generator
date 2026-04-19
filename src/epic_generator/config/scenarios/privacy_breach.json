@@ -1,5 +1,5 @@
 {
-  "name": "Privacy Breach — Break the Glass Abuse",
+  "name": "Privacy Breach \u2014 Break the Glass Abuse",
   "description": "Simulates unauthorized record access via break-the-glass pattern. Single user accessing multiple high-profile patient records after hours.",
   "volume_multiplier": 0.3,
   "mychart_multiplier": 0.5,
@@ -15,7 +15,7 @@
     "type": "privacy_breach",
     "description": "Single user performing excessive break-the-glass access after hours",
     "perpetrator_username": "NTESTADMIN",
-    "events_per_tick": 3,
+    "events_per_tick": 5,
     "event_sequence": [
       "AC_BREAK_THE_GLASS_ACCESS",
       "CHART_ACCESS",
@@ -23,8 +23,12 @@
       "AC_BREAK_THE_GLASS_ACCESS",
       "CHART_ACCESS"
     ],
-    "target_departments": ["PSYCHIATRY", "L&D", "ONCOLOGY"],
+    "target_departments": [
+      "PSYCHIATRY",
+      "L&D",
+      "ONCOLOGY"
+    ],
     "access_reason_override": "Administrative Review",
-    "duration_ticks": 20
+    "duration_ticks": 300
   }
 }

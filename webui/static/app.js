@@ -34,31 +34,6 @@ async function api(method, path, body = null) {
   }
 }
 
-// ── Generator controls ───────────────────────────────────────────
-
-async function controlGenerator(name, action) {
-  log(`${action === "start" ? "Starting" : "Stopping"} ${name} generator…`);
-  try {
-    const result = await api("POST", `/api/generators/${name}/${action}`);
-    log(`${name}: ${result.running ? "running" : "stopped"}`, result.running ? "success" : "warn");
-    refreshStatus();
-  } catch (e) { /* logged in api() */ }
-}
-
-async function startAll() {
-  log("Starting all generators…");
-  await api("POST", "/api/generators/start-all");
-  log("All generators started", "success");
-  refreshStatus();
-}
-
-async function stopAll() {
-  log("Stopping all generators…");
-  await api("POST", "/api/generators/stop-all");
-  log("All generators stopped", "warn");
-  refreshStatus();
-}
-
 // ── Scenario controls ────────────────────────────────────────────
 
 async function toggleScenario(key, checked) {
@@ -88,13 +63,6 @@ async function reloadScenarios() {
 }
 
 // ── Status updates ───────────────────────────────────────────────
-
-function updateGeneratorBadge(name, running) {
-  const badge = document.getElementById(`${name}-status`);
-  if (!badge) return;
-  badge.textContent = running ? "Running" : "Stopped";
-  badge.className = `status-badge ${running ? "running" : ""}`;
-}
 
 function renderScenarios(scenarios) {
   const grid = document.getElementById("scenarios-grid");
@@ -131,8 +99,6 @@ function escHtml(str) {
 async function refreshStatus() {
   try {
     const data = await api("GET", "/api/status");
-    updateGeneratorBadge("epic", data.generators.epic.running);
-    updateGeneratorBadge("network", data.generators.network.running);
     renderScenarios(data.scenarios);
   } catch (e) { /* logged */ }
 }

@@ -6,16 +6,16 @@ from datetime import datetime
 
 # Default shift-based volume curve: hour -> multiplier (0.0 - 1.0)
 DEFAULT_SHIFT_CURVE = {
-    0: 0.10, 1: 0.10, 2: 0.10, 3: 0.10, 4: 0.10, 5: 0.10,
-    6: 0.50,
+    0: 0.30, 1: 0.30, 2: 0.30, 3: 0.30, 4: 0.30, 5: 0.35,
+    6: 0.60,
     7: 1.00, 8: 1.00,
-    9: 0.80, 10: 0.80, 11: 0.80,
-    12: 0.60,
-    13: 0.80, 14: 0.80,
+    9: 0.85, 10: 0.85, 11: 0.85,
+    12: 0.70,
+    13: 0.85, 14: 0.85,
     15: 1.00,
-    16: 0.60, 17: 0.60, 18: 0.60,
-    19: 0.30, 20: 0.30, 21: 0.30, 22: 0.30,
-    23: 0.15,
+    16: 0.70, 17: 0.70, 18: 0.70,
+    19: 0.50, 20: 0.50, 21: 0.50, 22: 0.45,
+    23: 0.35,
 }
 
 
@@ -43,9 +43,23 @@ class Scheduler:
             self._load_scenario(scenario, scenario_dir)
 
     def _load_scenario(self, scenario_name, scenario_dir):
-        """Load scenario overrides from a JSON file."""
-        # Try .json first, then .yaml stub
+        """Load scenario overrides from a JSON file.
+
+        Checks the given scenario_dir first, then falls back to the shared
+        config/scenarios/ directory (used by the coordinator/WebUI).
+        """
         json_path = os.path.join(scenario_dir, f"{scenario_name}.json")
+
+        # Fallback: check the shared config/scenarios dir
+        if not os.path.exists(json_path):
+            shared_dir = os.environ.get(
+                "SHARED_SCENARIO_DIR",
+                "/app/config/scenarios",
+            )
+            alt_path = os.path.join(shared_dir, f"{scenario_name}.json")
+            if os.path.exists(alt_path):
+                json_path = alt_path
+
         if os.path.exists(json_path):
             with open(json_path, "r") as f:
                 self.scenario_config = json.load(f)
@@ -110,7 +124,7 @@ class Scheduler:
 
         return random.random() < prob
 
-    def should_generate_mychart_event(self, base_probability=0.15):
+    def should_generate_mychart_event(self, base_probability=0.25):
         """Decide if a MyChart portal event should fire this tick.
 
         MyChart traffic peaks in evening hours (patients checking results
@@ -118,29 +132,38 @@ class Scheduler:
         """
         hour = datetime.now().hour
         mychart_curve = {
-            0: 0.05, 1: 0.03, 2: 0.02, 3: 0.02, 4: 0.02, 5: 0.05,
-            6: 0.15, 7: 0.20, 8: 0.25,
-            9: 0.30, 10: 0.30, 11: 0.30,
-            12: 0.40, 13: 0.35, 14: 0.30,
-            15: 0.30, 16: 0.40, 17: 0.50,
-            18: 0.70, 19: 0.80, 20: 1.00,  # Peak — patients home from work
-            21: 0.80, 22: 0.50,
-            23: 0.20,
+            0: 0.25, 1: 0.25, 2: 0.20, 3: 0.20, 4: 0.20, 5: 0.25,
+            6: 0.35, 7: 0.40, 8: 0.45,
+            9: 0.50, 10: 0.50, 11: 0.50,
+            12: 0.55, 13: 0.50, 14: 0.50,
+            15: 0.50, 16: 0.60, 17: 0.70,
+            18: 0.85, 19: 0.90, 20: 1.00,  # Peak — patients home from work
+            21: 0.90, 22: 0.70,
+            23: 0.40,
         }
         mult = mychart_curve.get(hour, 0.3)
         scenario_mult = self.scenario_config.get("mychart_multiplier", 1.0)
         return random.random() < (base_probability * mult * scenario_mult)
 
-    def should_generate_fhir_event(self, base_probability=0.25):
+    def should_generate_fhir_event(self, base_probability=0.45):
         """Decide if a FHIR/Interconnect API event should fire this tick."""
         multiplier = self.get_volume_multiplier()
         return random.random() < (base_probability * multiplier)
 
-    def should_generate_hl7_event(self, base_probability=0.10):
+    def should_generate_hl7_event(self, base_probability=0.35):
         """Decide if an HL7 message should be generated this tick.
 
         HL7 messages correlate with clinical actions (admits, orders,
         results) so they follow the clinical curve.
+        """
+        multiplier = self.get_volume_multiplier()
+        return random.random() < (base_probability * multiplier)
+
+    def should_generate_standalone_hl7(self, base_probability=0.20):
+        """Decide if a standalone HL7 message (ADT admit/transfer/discharge) should fire.
+
+        These are independent of clinical session events and produce ADT^A01,
+        ADT^A02, ADT^A03 messages to add message type variety.
         """
         multiplier = self.get_volume_multiplier()
         return random.random() < (base_probability * multiplier)

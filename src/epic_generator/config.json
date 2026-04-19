@@ -1,22 +1,186 @@
 {
-    "E1Mid": ["IC_SERVICE_AUDIT", "AC_BREAK_THE_GLASS_FAILED_ACCESS", "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT", "AC_BREAK_THE_GLASS_ACCESS", "MCMEMEDISA", "WPSEC_LOGIN_FAIL", "HKU_LOGIN","LOGIN_BLOCKED","FAILEDLOGIN","PUL_SEARCH_AUDIT","WPSEC_2FACTOR_AUTHENTICATION","CONTEXTCHANGE","SECURE","WPSEC_PATIENT_LOOKUP_ATTEMPT","WPSEC_USER_PASSWORD_CHANGE","CTO_LOGIN"],
-    "EMPid": ["99001^EPIC, HYPERSPACE^EPICHYPERSPACE", "1001^PHAM, VIET^VPHAM", "1002^CANNON, DENNY^DCANNON","1003^CUNEAZ, LAWRENCE, LCUNEAZ","1004^STOJAN, ROBERT^RSTOJAN","1005^VLAMAKIS, EMMANUEL^EVLAMAKIS","1006^BRYANT, SHANNON^SBRYANT","1007^REIN, MATT^MREIN","1008^KELLY, JOHN^JKELLY","1009^STYX, BEN^BSTYX"],
-    "Source": ["PROD"],
-    "LWSid": ["CLISUP"],
-    "Action": ["Query"],
-    "Flag": ["Access History"], 
-    "Mnemonics": {
-        "APIID":[""],
-        "APPLICATIONID":[""],
-        "CLIENTNAME":[""],
-        "INSTANCEURN": ["urn:DTU:PRD:FHIR","urn:DTU:MyChartMobile", "urn:VPC:RoverPRD", "urn:VPC:PRD:FHIR","urn:VPC:MyChartMobile", "urn:CHI-PRD"],
-        "IP":[""],
-        "SERVICECATEGORY": ["Common","MyChartMobile"],
-        "SERVICEID":[""],
-        "SERVICEMSGID": [" "],
-        "SERVICENAME": ["urn:epic-com:Common.2015.Services.Patient.v2015_GetPatientIdentifiers","urn:Epic-com:MyChartMobile.2018.Services.GetMyChartUrlOperation","urn:Epic-com:MyChartMobile.2016.Services.SaveDeviceOperation","urn:Epic-com:MyChartMobile.2016.Services.AuthorizeCommunityTokenOperation","urn:Epic-com:MyChartMobile.2019.Services.AuditExploreMoreView","urn:Epic-com:MyChartMobile.2019.Services.GetSubjectItemFeedOperation","urn:Epic-com:MyChartMobile.2019.Services.GetMixedItemFeedOperation"],
-        "SERVICETYPE": ["REST-WebAPI","REST"],
-        "SERVICE_USER": ["RESIDENT", "PHYSICIAN","OR SURGEON", "OR NURSE", "ICU NURSE", "ICU PHYSICIAN", "RIS IPTECH", "ONCBCN INFUSION NURSE"],
-        "SERVICE_USERTYP": ["Physician", "Nurse", "Admin"]
-    }
+  "E1Mid": [
+    "BCA_LOGIN_SUCCESS",
+    "IC_SERVICE_AUDIT",
+    "AC_BREAK_THE_GLASS_FAILED_ACCESS",
+    "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT",
+    "AC_BREAK_THE_GLASS_ACCESS",
+    "MCMEMEDISA",
+    "WPSEC_LOGIN_FAIL",
+    "HKU_LOGIN",
+    "LOGIN_BLOCKED",
+    "FAILEDLOGIN",
+    "PUL_SEARCH_AUDIT",
+    "WPSEC_2FACTOR_AUTHENTICATION",
+    "CONTEXTCHANGE",
+    "SECURE",
+    "WPSEC_PATIENT_LOOKUP_ATTEMPT",
+    "WPSEC_USER_PASSWORD_CHANGE",
+    "CTO_LOGIN"
+  ],
+  "EMPid": [
+    "990001^EPIC, HYPERSPACE^EPICHYPERSPACE",
+    "901266^MOBILE, EPIC MY CHART^EPICMCMOBILE",
+    "50102^MARTINEZ, ELENA R^EMARTINEZ",
+    "50205^CHEN, DAVID W^DWCHEN",
+    "50318^OKAFOR, AMARA J^AOKAFOR",
+    "50421^LARSON, KARL P^KLARSON",
+    "50534^REYES, MARIA C^MCREYES",
+    "50647^PATEL, RAVI S^RSPATEL",
+    "50760^BROOKS, TANYA L^TLBROOKS",
+    "50873^WEBER, HANS M^HMWEBER",
+    "50986^NASH, LORI A^LANASH",
+    "51099^DUNN, JAMES F^JFDUNN",
+    "51202^FOSTER, SARAH K^SKFOSTER",
+    "51315^GRANT, MICHAEL T^MTGRANT",
+    "61428^HOFFMAN, LISA M^LMHOFFMAN",
+    "61541^JENSEN, PAUL D^PDJENSEN"
+  ],
+  "Source": [
+    "prd",
+    "prd",
+    "prd",
+    "prd",
+    "SUP"
+  ],
+  "LWSid": [
+    "CLISUP",
+    "GHM4021MED3",
+    "GHM2015SURG1",
+    "GHM6032ICU2",
+    "GHM1108RAD1",
+    "GHM3244ORTH2",
+    "GHM7401ENDO1",
+    "GHM5518PEDS4",
+    "RSC9003FAM1",
+    "RSC8100ONC2",
+    "RSC1215CARD1",
+    "VPN80032INF1",
+    "HFM6024NURS3",
+    "HFM4417PSYC1",
+    "DOC3302PFS1",
+    "DOC5501HIM2",
+    "WHC1108CLIN4",
+    "WHC2030FRON1",
+    "LAB6010PATH1",
+    "LAB7201MICRO2",
+    "PHR4415DISP1",
+    "EMR9900ADMIN",
+    "OPS5510TECH3",
+    "BIO2233PULM1"
+  ],
+  "Action": [
+    "Query"
+  ],
+  "Flag": [
+    "Access History^^",
+    "^^Workflow Logging"
+  ],
+  "Mnemonics": {
+    "APIID": [
+      ""
+    ],
+    "APPLICATIONID": [
+      ""
+    ],
+    "CLIENTNAME": [
+      ""
+    ],
+    "INSTANCEURN": [
+      "urn:GHM:PRD:FHIR",
+      "urn:GHM:MyChartMobile",
+      "urn:GHM:RoverPRD",
+      "urn:RSC:PRD:FHIR",
+      "urn:RSC:MyChartMobile",
+      "urn:HFM-PRD",
+      "urn:WHC:PRD:FHIR",
+      "urn:GHM:PRD"
+    ],
+    "IP": [
+      ""
+    ],
+    "SERVICECATEGORY": [
+      "Common",
+      "MyChartMobile",
+      "FHIR",
+      "Access",
+      "Conformance",
+      "Interconnect",
+      "Mobile",
+      "OAuth2",
+      "Telehealth"
+    ],
+    "SERVICEID": [
+      ""
+    ],
+    "SERVICEMSGID": [
+      " "
+    ],
+    "SERVICENAME": [
+      "urn:epic-com:Common.2015.Services.Patient.v2015_GetPatientIdentifiers",
+      "urn:epic-com:Common.2019.Services.InBasket.v2019_GetMessageCounts",
+      "urn:Epic-com:MyChartMobile.2010.Services.AuthenticateOperation",
+      "urn:Epic-com:MyChartMobile.2010.Services.LogAuditOperation",
+      "urn:Epic-com:MyChartMobile.2015.Services.AuthenticateDeviceOperation",
+      "urn:Epic-com:MyChartMobile.2015.Services.GetMyChartLoginTokenOperation",
+      "urn:Epic-com:MyChartMobile.2015.Services.SendTwoFactorCodeOperation",
+      "urn:Epic-com:MyChartMobile.2016.Services.AuthorizeCommunityTokenOperation",
+      "urn:Epic-com:MyChartMobile.2016.Services.GetProvidersOperation",
+      "urn:Epic-com:MyChartMobile.2016.Services.SaveDeviceOperation",
+      "urn:Epic-com:MyChartMobile.2017.Services.GetFutureAppointmentsOperation",
+      "urn:Epic-com:MyChartMobile.2017.Services.GetPastAppointmentsOperation",
+      "urn:Epic-com:MyChartMobile.2018.Services.GetMyChartUrlOperation",
+      "urn:Epic-com:MyChartMobile.2018.Services.LogoutOperation",
+      "urn:Epic-com:MyChartMobile.2019.Services.GetMixedItemFeedOperation",
+      "urn:Epic-com:MyChartMobile.2019.Services.AuditExploreMoreView",
+      "urn:Epic-com:MyChartMobile.2020.Services.GetConversationListOperation",
+      "urn:Epic-com:MyChartMobile.2022.Services.GetTestResultsOperation",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4PatientSearch",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4EncounterRead",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4ObservationSearch",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4ConditionSearch",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4MedicationRead",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4ImmunizationSearch",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4DiagnosticReportSearch",
+      "urn:epic-com:FHIR.2017.Services.R4.v2017_R4PractitionerRead",
+      "urn:epic-com:Conformance.2017.Services.Conformance.v2017_STU3Capabilities",
+      "urn:epic-com:Security.unversioned.Services.OAuth2.OAuth2/Authorize - launch",
+      "urn:epic-com:Security.unversioned.Services.OAuth2.OAuth2/Token - Code Grant",
+      "urn:epic-com:Security.unversioned.Services.OAuth2.OAuth2/Token - refresh",
+      "urn:epic-com:Mobile.unversioned.Services.Internal.GetPatientPhoto",
+      "urn:epic-com:Mobile.unversioned.Services.Internal.v_Epic_Mobile_Core_Audit_ClientEvent",
+      "urn:epic-com:Interconnect.2019.Services.Diagnostics.StatusOverview",
+      "urn:Epic-com:Access.2017.Services.Patient.UpdateRelease2",
+      "urn:epic-com:Telehealth.2020.Services.External.v2020_Disconnect"
+    ],
+    "SERVICETYPE": [
+      "REST-WebAPI",
+      "REST",
+      "SOAP 1.1"
+    ],
+    "SERVICE_USER": [
+      "EMARTINEZ",
+      "DWCHEN",
+      "AOKAFOR",
+      "KLARSON",
+      "MCREYES",
+      "RSPATEL",
+      "TLBROOKS",
+      "HMWEBER",
+      "LANASH",
+      "JFDUNN",
+      "SKFOSTER",
+      "MTGRANT",
+      "LMHOFFMAN",
+      "PDJENSEN",
+      "HIMPORTAL",
+      "EPICMCMOBILE"
+    ],
+    "SERVICE_USERTYP": [
+      "emp",
+      "emp",
+      "emp",
+      "sys"
+    ]
+  }
 }

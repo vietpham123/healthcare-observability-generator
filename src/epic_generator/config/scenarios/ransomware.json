@@ -20,27 +20,46 @@
     "phases": [
       {
         "name": "Reconnaissance",
-        "duration_ticks": 10,
-        "event_types": ["FAILEDLOGIN", "WPSEC_LOGIN_FAIL", "IC_SERVICE_AUDIT"],
-        "target_usernames": ["EPICHYPERSPACE", "EPICINTERCONNECT", "VPHAM", "DCANNON"]
+        "duration_ticks": 120,
+        "event_types": [
+          "FAILEDLOGIN",
+          "WPSEC_LOGIN_FAIL",
+          "IC_SERVICE_AUDIT"
+        ],
+        "target_usernames": [
+          "EPICHYPERSPACE",
+          "EPICINTERCONNECT",
+          "VPHAM",
+          "DCANNON"
+        ]
       },
       {
         "name": "Credential Harvesting",
-        "duration_ticks": 5,
-        "event_types": ["CTO_LOGIN", "HKU_LOGIN", "WPSEC_2FACTOR_AUTHENTICATION"],
-        "note": "Successful logins after brute force phase"
+        "duration_ticks": 60,
+        "event_types": [
+          "CTO_LOGIN",
+          "HKU_LOGIN",
+          "WPSEC_2FACTOR_AUTHENTICATION"
+        ]
       },
       {
         "name": "Lateral Movement",
-        "duration_ticks": 15,
-        "event_types": ["CHART_ACCESS", "PUL_SEARCH_AUDIT", "IC_SERVICE_AUDIT", "SECURE"],
-        "note": "Mass record access across all departments"
+        "duration_ticks": 120,
+        "event_types": [
+          "CHART_ACCESS",
+          "PUL_SEARCH_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "SECURE"
+        ]
       },
       {
         "name": "Exfiltration",
-        "duration_ticks": 10,
-        "event_types": ["IC_SERVICE_AUDIT", "IC_SERVICE_AUDIT", "IC_SERVICE_AUDIT"],
-        "note": "High-volume API calls indicating data exfiltration"
+        "duration_ticks": 60,
+        "event_types": [
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT"
+        ]
       }
     ],
     "indicators": [

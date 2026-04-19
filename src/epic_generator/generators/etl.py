@@ -95,6 +95,8 @@ class ETLGenerator(BaseGenerator):
             "extract_type": job["type"],
             "data_source": self.data_source,
             "instance": f"ETL-{self.data_source.upper()}-01",
+            "status": "RUNNING",
+            "job_status": "RUNNING",
         }
         return json.dumps(entry)
 
@@ -137,6 +139,7 @@ class ETLGenerator(BaseGenerator):
             "data_source": self.data_source,
             "instance": f"ETL-{self.data_source.upper()}-01",
             "status": status,
+            "job_status": status,
             "rows_processed": actual_rows,
             "rows_inserted": actual_rows if status.startswith("SUCCESS") else 0,
             "rows_updated": int(actual_rows * 0.1) if status.startswith("SUCCESS") else 0,

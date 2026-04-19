@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scenario Walkthrough — KCRMC</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/walkthrough.css">
+</head>
+<body>
+  <header>
+    <h1>🏥 Kansas City Regional Medical Center</h1>
+    <p class="subtitle">Scenario Demo Walkthrough</p>
+    <nav class="header-nav">
+      <a href="/" class="nav-link">← Control Panel</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Demo Scenarios</h2>
+      <p class="section-desc">Select a scenario to view the demo walkthrough — what to look for, which DT app pages to check, and key indicators.</p>
+      <div id="scenario-selector" class="scenario-selector">
+        <p class="loading">Loading scenarios…</p>
+      </div>
+    </section>
+
+    <div id="walkthrough-content" class="walkthrough-content" style="display:none;">
+      <section class="card walkthrough-hero">
+        <div class="wt-header">
+          <span class="wt-icon" id="wt-icon">🔍</span>
+          <div>
+            <h2 id="wt-name"></h2>
+            <p class="wt-desc" id="wt-desc"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>🎯 Key Indicators to Find</h2>
+        <div id="wt-indicators" class="indicator-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>📊 Where to Look in the DT App</h2>
+        <div id="wt-dtpages" class="dt-pages-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>🔎 Demo Script</h2>
+        <div id="wt-steps" class="demo-steps"></div>
+      </section>
+
+      <section class="card">
+        <h2>💡 Talking Points</h2>
+        <div id="wt-talking" class="talking-points"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Kansas City Regional Medical Center — Synthetic Observability Data for Dynatrace</p>
+  </footer>
+
+  <script src="/static/walkthrough.js"></script>
+</body>
+</html>

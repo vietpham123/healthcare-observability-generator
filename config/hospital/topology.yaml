@@ -5,15 +5,15 @@
 #
 # Sites:
 #   kcrmc-main  — Kansas City Regional Medical Center (Main Campus)
-#   tpk-clinic  — Topeka Specialty Clinic (Cardiology/Oncology)
-#   wch-clinic  — Wichita Urgent Care & Family Medicine
-#   lwr-clinic  — Lawrence Primary Care & Pediatrics
+#   oak-clinic  — Oakley Rural Health & Specialty Outreach
+#   wel-clinic  — Wellington Urgent Care & Family Medicine
+#   bel-clinic  — Belleville Primary Care & Pediatrics
 #
 # IP Scheme (designed for consistent trending & anomaly detection):
 #   10.10.x.x   = Main Campus (KCRMC — Kansas City)
-#   10.20.x.x   = Topeka Clinic
-#   10.30.x.x   = Wichita Clinic
-#   10.40.x.x   = Lawrence Clinic
+#   10.20.x.x   = Oakley Clinic
+#   10.30.x.x   = Wellington Clinic
+#   10.40.x.x   = Belleville Clinic
 #   172.16.0.x   = WAN transit links (MPLS/SD-WAN)
 #   203.0.113.x  = Public-facing (MyChart, Interconnect, VPN)
 #
@@ -33,16 +33,16 @@
 #   VLAN 250 = Remote Access / VPN
 # ============================================================================
 
-name: kansas-city-regional-medical-center
+name: lawrence-regional-medical-center
 
 sites:
   - name: kcrmc-main
-    location: "Kansas City Regional Medical Center — Main Campus"
-    address: "2301 Holmes Street, Kansas City, MO 64108"
-    latitude: "39.0997"
-    longitude: "-94.5786"
+    location: "Lawrence Regional Medical Center — Main Campus"
+    address: "1000 Main Street, Lawrence, KS 66044"
+    latitude: "38.9717"
+    longitude: "-95.2353"
     region: "Greater Kansas City"
-    state: "MO"
+    state: "KS"
     country: "United States"
     timezone: "America/Chicago"
     bed_count: 500
@@ -61,17 +61,17 @@ sites:
       - Rehabilitation
       - Administration
 
-  - name: tpk-clinic
-    location: "KCRMC Topeka — Cardiology & Oncology Center"
-    address: "1500 SW Topeka Blvd, Topeka, KS 66612"
-    latitude: "39.0473"
-    longitude: "-95.6752"
-    region: "Northeast Kansas"
+  - name: oak-clinic
+    location: "KCRMC Oakley — Rural Health & Specialty Outreach"
+    address: "501 Center Ave, Oakley, KS 67748"
+    latitude: "39.1333"
+    longitude: "-100.8528"
+    region: "Western Kansas"
     state: "KS"
     country: "United States"
     timezone: "America/Chicago"
     bed_count: 0
-    wan_distance_miles: 62
+    wan_distance_miles: 330
     departments:
       - Cardiology Clinic
       - Oncology Clinic
@@ -79,29 +79,29 @@ sites:
       - Cardiac Rehab
       - Lab Draw Station
 
-  - name: wch-clinic
-    location: "KCRMC Wichita — Urgent Care & Family Medicine"
-    address: "550 N Hillside Ave, Wichita, KS 67214"
-    latitude: "37.6872"
-    longitude: "-97.3301"
+  - name: wel-clinic
+    location: "KCRMC Wellington — Urgent Care & Family Medicine"
+    address: "1500 N Washington Ave, Wellington, KS 67152"
+    latitude: "37.2650"
+    longitude: "-97.3714"
     region: "South-Central Kansas"
     state: "KS"
     country: "United States"
     timezone: "America/Chicago"
     bed_count: 0
-    wan_distance_miles: 196
+    wan_distance_miles: 212
     departments:
       - Urgent Care
       - Family Medicine
       - Lab Draw Station
       - Imaging (X-Ray only)
 
-  - name: lwr-clinic
-    location: "KCRMC Lawrence — Primary Care & Pediatrics"
-    address: "330 Arkansas Street, Lawrence, KS 66044"
-    latitude: "38.9717"
-    longitude: "-95.2353"
-    region: "Northeast Kansas"
+  - name: bel-clinic
+    location: "KCRMC Belleville — Primary Care & Pediatrics"
+    address: "810 19th St, Belleville, KS 66935"
+    latitude: "39.8258"
+    longitude: "-97.6322"
+    region: "Western Kansas"
     state: "KS"
     country: "United States"
     timezone: "America/Chicago"
@@ -729,19 +729,19 @@ devices:
         ip: 172.16.0.1/30
         speed: 1G
         if_index: 2
-        connected_to: [tpk-fw-01, port1]
+        connected_to: [oak-fw-01, port1]
         description: "MPLS to Topeka (62mi)"
       - name: GigabitEthernet0/0/2
         ip: 172.16.0.5/30
         speed: 1G
         if_index: 3
-        connected_to: [wch-fw-01, port1]
+        connected_to: [wel-fw-01, port1]
         description: "MPLS to Wichita (196mi)"
       - name: GigabitEthernet0/0/3
         ip: 172.16.0.9/30
         speed: 1G
         if_index: 4
-        connected_to: [lwr-fw-01, port1]
+        connected_to: [bel-fw-01, port1]
         description: "MPLS to Lawrence (40mi)"
       - name: Loopback0
         ip: 10.10.255.50/32
@@ -780,14 +780,14 @@ devices:
         description: "Management"
 
   # =========================================================================
-  #  TOPEKA CLINIC — Cardiology & Oncology Center
+  #  OAKLEY CLINIC — Cardiology & Oncology Center
   # =========================================================================
-  - hostname: tpk-fw-01
+  - hostname: oak-fw-01
     vendor: fortinet
     model: FortiGate-100F
     os_version: "7.4.3"
     role: firewall
-    site: tpk-clinic
+    site: oak-clinic
     management_ip: 10.20.0.1
     serial_number: FGT100FTK20240001
     interfaces:
@@ -826,12 +826,12 @@ devices:
       - name: guest
         interfaces: [port4]
 
-  - hostname: tpk-sw-01
+  - hostname: oak-sw-01
     vendor: cisco_ios
     model: Catalyst 9200L-24P
     os_version: "17.09.04"
     role: access
-    site: tpk-clinic
+    site: oak-clinic
     management_ip: 10.20.100.1
     serial_number: FOC2612MTPK
     interfaces:
@@ -839,7 +839,7 @@ devices:
         ip: 10.20.20.254/24
         speed: 1G
         if_index: 1
-        connected_to: [tpk-fw-01, port2]
+        connected_to: [oak-fw-01, port2]
         vlan: 20
         description: "Uplink to FortiGate — Clinical"
       - name: GigabitEthernet0/2
@@ -869,14 +869,14 @@ devices:
         description: "Lab Draw Station"
 
   # =========================================================================
-  #  WICHITA CLINIC — Urgent Care & Family Medicine
+  #  WELLINGTON CLINIC — Urgent Care & Family Medicine
   # =========================================================================
-  - hostname: wch-fw-01
+  - hostname: wel-fw-01
     vendor: fortinet
     model: FortiGate-100F
     os_version: "7.4.3"
     role: firewall
-    site: wch-clinic
+    site: wel-clinic
     management_ip: 10.30.0.1
     serial_number: FGT100FTK20240002
     interfaces:
@@ -923,12 +923,12 @@ devices:
       - name: guest
         interfaces: [port5]
 
-  - hostname: wch-sw-01
+  - hostname: wel-sw-01
     vendor: cisco_ios
     model: Catalyst 9200L-24P
     os_version: "17.09.04"
     role: access
-    site: wch-clinic
+    site: wel-clinic
     management_ip: 10.30.100.1
     serial_number: FOC2612MWCH
     interfaces:
@@ -936,7 +936,7 @@ devices:
         ip: 10.30.20.254/24
         speed: 1G
         if_index: 1
-        connected_to: [wch-fw-01, port2]
+        connected_to: [wel-fw-01, port2]
         vlan: 20
         description: "Uplink to FortiGate — Clinical"
       - name: GigabitEthernet0/2
@@ -961,14 +961,14 @@ devices:
         description: "Lab Draw Station"
 
   # =========================================================================
-  #  LAWRENCE CLINIC — Primary Care & Pediatrics
+  #  BELLEVILLE CLINIC — Primary Care & Pediatrics
   # =========================================================================
-  - hostname: lwr-fw-01
+  - hostname: bel-fw-01
     vendor: fortinet
     model: FortiGate-60F
     os_version: "7.4.3"
     role: firewall
-    site: lwr-clinic
+    site: bel-clinic
     management_ip: 10.40.0.1
     serial_number: FGT60FTK20240003
     interfaces:
@@ -999,12 +999,12 @@ devices:
       - name: guest
         interfaces: [port3]
 
-  - hostname: lwr-sw-01
+  - hostname: bel-sw-01
     vendor: cisco_ios
     model: Catalyst 9200L-24P
     os_version: "17.09.04"
     role: access
-    site: lwr-clinic
+    site: bel-clinic
     management_ip: 10.40.100.1
     serial_number: FOC2612MLWR
     interfaces:
@@ -1012,7 +1012,7 @@ devices:
         ip: 10.40.20.254/24
         speed: 1G
         if_index: 1
-        connected_to: [lwr-fw-01, port2]
+        connected_to: [bel-fw-01, port2]
         vlan: 20
         description: "Uplink to FortiGate — Clinical"
       - name: GigabitEthernet0/2

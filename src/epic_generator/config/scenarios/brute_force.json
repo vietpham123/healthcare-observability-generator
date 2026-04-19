@@ -9,9 +9,18 @@
     "type": "brute_force",
     "description": "Repeated FAILEDLOGIN and LOGIN_BLOCKED from concentrated IP range",
     "attacker_ip_range": "192.168.99.0/24",
-    "target_usernames": ["VPHAM", "DCANNON", "LCUNEAZ", "RSTOJAN"],
-    "events_per_tick": 5,
-    "event_types": ["FAILEDLOGIN", "LOGIN_BLOCKED", "WPSEC_LOGIN_FAIL"],
-    "duration_ticks": 30
+    "target_usernames": [
+      "VPHAM",
+      "DCANNON",
+      "LCUNEAZ",
+      "RSTOJAN"
+    ],
+    "events_per_tick": 8,
+    "event_types": [
+      "FAILEDLOGIN",
+      "LOGIN_BLOCKED",
+      "WPSEC_LOGIN_FAIL"
+    ],
+    "duration_ticks": 360
   }
 }

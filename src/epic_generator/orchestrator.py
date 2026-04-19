@@ -24,7 +24,7 @@ BASE_NEW_SESSION_PROBABILITY = 0.3
 SERVICE_EVENT_PROBABILITY = 0.2
 
 # Clinical event types that should also produce correlated HL7 messages
-HL7_CORRELATED_EVENTS = {"order_entry", "med_admin", "result_review", "discharge"}
+HL7_CORRELATED_EVENTS = {"order_entry", "med_admin", "result_review", "discharge", "PATIENT_LOOKUP", "chart_review", "LOGIN"}
 # Clinical event types that should also produce FHIR resources
 FHIR_CORRELATED_EVENTS = {"PATIENT_LOOKUP", "order_entry", "result_review", "med_admin", "chart_review"}
 
@@ -84,6 +84,22 @@ class Orchestrator:
 
         # ETL tick counter (ETL events are less frequent)
         self._etl_tick_counter = 0
+
+        # Anomaly injection state
+        self._anomaly_config = self.scheduler.get_scenario_config().get("anomaly", {})
+        self._anomaly_tick = 0
+        self._anomaly_active = bool(self._anomaly_config)
+        self._anomaly_phase_index = 0
+        self._anomaly_seq_index = 0
+        if self._anomaly_active:
+            atype = self._anomaly_config.get("type", "unknown")
+            dur = self._anomaly_config.get("duration_ticks", 0)
+            phases = self._anomaly_config.get("phases", [])
+            if phases:
+                total = sum(p.get("duration_ticks", 0) for p in phases)
+                print(f"[anomaly] ACTIVE: type={atype}, phases={len(phases)}, total_ticks={total}")
+            else:
+                print(f"[anomaly] ACTIVE: type={atype}, duration_ticks={dur}, events_per_tick={self._anomaly_config.get('events_per_tick', 0)}")
 
     def _load_data(self, config_dir):
         """Load user and patient pools from config directory or generate defaults."""
@@ -203,7 +219,7 @@ class Orchestrator:
 
                 # Correlated HL7 message
                 if "hl7" in self.enabled and event_type in HL7_CORRELATED_EVENTS:
-                    if self.scheduler.should_generate_hl7_event(base_probability=0.6):
+                    if self.scheduler.should_generate_hl7_event(base_probability=0.8):
                         hl7_event = self.hl7_gen.generate_event(
                             session=session, config=self.config, event_type=event_type
                         )
@@ -264,16 +280,41 @@ class Orchestrator:
             self._emit_raw(formatted)
 
     def _maybe_generate_etl_event(self):
-        """Generate ETL job events (less frequent — every ~30 ticks)."""
+        """Generate ETL job events with jitter and batch variation."""
         if "etl" not in self.enabled:
             return
 
         self._etl_tick_counter += 1
-        if self._etl_tick_counter >= 30:
+        # Jitter: fire between 15-45 ticks instead of fixed 30
+        if not hasattr(self, '_etl_next_fire'):
+            self._etl_next_fire = random.randint(15, 45)
+        if self._etl_tick_counter >= self._etl_next_fire:
             self._etl_tick_counter = 0
-            start, complete = self.etl_gen.generate_job_pair()
-            self._emit_generic(start, "ETL")
-            self._emit_generic(complete, "ETL")
+            self._etl_next_fire = random.randint(15, 45)
+            # Batch variation: 1-3 job pairs per fire, scaled by volume
+            multiplier = self._get_volume_multiplier()
+            batch_size = random.choices([1, 2, 3, 4], weights=[30, 40, 20, 10], k=1)[0]
+            # Scale batch by volume multiplier (more jobs during peak hours)
+            if multiplier > 0.7:
+                batch_size = min(batch_size + 1, 5)
+            for _ in range(batch_size):
+                start, complete = self.etl_gen.generate_job_pair()
+                self._emit_generic(start, "ETL")
+                self._emit_generic(complete, "ETL")
+
+    def _maybe_generate_standalone_hl7(self):
+        """Generate standalone HL7 ADT messages (admits, transfers, discharges).
+
+        These are independent of clinical session state and add variety to
+        the HL7 message type distribution (ADT^A01, ADT^A02, ADT^A03).
+        """
+        if "hl7" not in self.enabled:
+            return
+
+        if self.scheduler.should_generate_standalone_hl7():
+            session = random.choice(self.active_sessions) if self.active_sessions else None
+            hl7_event = self.hl7_gen.generate_standalone(session=session, config=self.config)
+            self._emit_hl7(hl7_event)
 
     def _emit_siem(self, event):
         """Format and write a SIEM event."""
@@ -301,6 +342,142 @@ class Orchestrator:
         else:
             print(formatted)
 
+
+    def _inject_anomaly_events(self):
+        """Inject scenario-specific anomaly events if an anomaly is configured."""
+        if not self._anomaly_active:
+            return
+
+        anom = self._anomaly_config
+        atype = anom.get("type", "")
+        phases = anom.get("phases", [])
+
+        # Phase-based anomaly (ransomware)
+        if phases:
+            tick_in_scenario = self._anomaly_tick
+            cumulative = 0
+            current_phase = None
+            for i, phase in enumerate(phases):
+                phase_dur = phase.get("duration_ticks", 10)
+                if tick_in_scenario < cumulative + phase_dur:
+                    current_phase = phase
+                    self._anomaly_phase_index = i
+                    break
+                cumulative += phase_dur
+            if current_phase is None:
+                # All phases completed — restart for continuous demo
+                self._anomaly_tick = 0
+                self._anomaly_phase_index = 0
+                print(f"[anomaly] Restarting {atype} cycle")
+                return
+
+            phase_name = current_phase.get("name", f"phase-{self._anomaly_phase_index}")
+            event_types = current_phase.get("event_types", ["FAILEDLOGIN"])
+            events_per_tick = anom.get("events_per_tick", 10)
+
+            if self._anomaly_tick % 60 == 0:
+                print(f"[anomaly] Phase: {phase_name}, tick={self._anomaly_tick}, events/tick={events_per_tick}")
+
+            for _ in range(events_per_tick):
+                etype = random.choice(event_types)
+                self._emit_anomaly_event(etype, anom)
+
+        else:
+            # Simple anomaly (brute_force, hipaa_audit, insider_threat, privacy_breach)
+            duration = anom.get("duration_ticks", 60)
+            if self._anomaly_tick >= duration:
+                # Restart anomaly for continuous demo
+                self._anomaly_tick = 0
+                self._anomaly_seq_index = 0
+                print(f"[anomaly] Restarting {atype} cycle")
+                return
+
+            events_per_tick = anom.get("events_per_tick", 5)
+            event_types = anom.get("event_types", [])
+            event_sequence = anom.get("event_sequence", [])
+
+            if self._anomaly_tick % 60 == 0:
+                print(f"[anomaly] {atype}: tick={self._anomaly_tick}/{duration}, events/tick={events_per_tick}")
+
+            for _ in range(events_per_tick):
+                if event_sequence:
+                    # Use ordered sequence (insider_threat, privacy_breach)
+                    etype = event_sequence[self._anomaly_seq_index % len(event_sequence)]
+                    self._anomaly_seq_index += 1
+                elif event_types:
+                    etype = random.choice(event_types)
+                else:
+                    etype = "FAILEDLOGIN"
+                self._emit_anomaly_event(etype, anom)
+
+        self._anomaly_tick += 1
+
+    def _emit_anomaly_event(self, event_type, anom):
+        """Generate and emit a single anomaly event."""
+        if "siem" not in self.enabled:
+            return
+
+        # Use perpetrator or target usernames
+        perp = anom.get("perpetrator_username")
+        target_users = anom.get("target_usernames", [])
+        if perp:
+            matching = [u for u in self.users if u.username == perp]
+            if matching:
+                user = matching[0]
+            else:
+                user = random.choice(self.human_users) if self.human_users else None
+        elif target_users:
+            username = random.choice(target_users)
+            matching = [u for u in self.users if u.username == username]
+            user = matching[0] if matching else (random.choice(self.human_users) if self.human_users else None)
+        else:
+            user = random.choice(self.human_users) if self.human_users else None
+
+        if user:
+            session = UserSession.create(user)
+            session.state = "LOGGED_IN"
+            # Assign a patient for chart access events
+            if self.patients:
+                session.current_patient = random.choice(self.patients)
+            # Override source IP if attacker range specified
+            attacker_range = anom.get("attacker_ip_range", "")
+            if attacker_range and "." in attacker_range:
+                base = attacker_range.rsplit(".", 1)[0]
+                session.source_ip = f"{base}.{random.randint(1, 254)}"
+        else:
+            session = None
+
+        try:
+            siem_event = self.siem_gen.generate_event(
+                session=session, config=self.config, event_type=event_type
+            )
+            self._emit_siem(siem_event)
+        except Exception as e:
+            # Fallback: use a known working type
+            try:
+                siem_event = self.siem_gen.generate_event(
+                    session=session, config=self.config, event_type="FAILEDLOGIN"
+                )
+                self._emit_siem(siem_event)
+            except Exception:
+                pass
+
+    def _maybe_generate_login_events(self):
+        """Generate standalone login success/failure events per tick."""
+        if "siem" not in self.enabled:
+            return
+        login_count = random.randint(1, 3)
+        for _ in range(login_count):
+            if random.random() < 0.85:
+                event_type = "LOGIN"
+            else:
+                event_type = random.choice(["FAILEDLOGIN", "FAILEDLOGIN",
+                                           "WPSEC_LOGIN_FAIL", "LOGIN_BLOCKED"])
+            session = random.choice(self.active_sessions) if self.active_sessions else None
+            siem_xml = self.siem_gen.generate_event(
+                session=session, config=self.config, event_type=event_type)
+            self._emit_siem(siem_xml)
+
     def run(self, frequency=10.0, duration=None, dry_run=False):
         """Main simulation loop.
 
@@ -326,11 +503,19 @@ class Orchestrator:
                 self._maybe_generate_fhir_event()
                 self._maybe_generate_mychart_event()
                 self._maybe_generate_etl_event()
+                self._maybe_generate_standalone_hl7()
+                self._maybe_generate_login_events()
+                self._inject_anomaly_events()
 
                 tick += 1
+                if tick % 30 == 0:  # Log every 30 ticks
+                    print(f"[tick {tick}] sessions={len(self.active_sessions)}")
                 # Flush DT output buffer after each tick
                 if hasattr(self.output, 'flush'):
-                    self.output.flush()
+                    try:
+                        self.output.flush()
+                    except Exception as e:
+                        print(f"[tick {tick}] flush error: {e}")
                 time.sleep(frequency)
 
         except KeyboardInterrupt:

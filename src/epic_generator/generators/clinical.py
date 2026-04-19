@@ -186,6 +186,12 @@ class ClinicalGenerator(BaseGenerator):
             self._add_mn(parent, "ORDER_NAME", order["name"])
             self._add_mn(parent, "ORDER_CODE", order["code"])
             self._add_mn(parent, "ORDER_ID", str(uuid.uuid4()))
+            # ORDER_PRIORITY with weighted distribution (STAT ~15% for realism)
+            priority = random.choices(
+                ["ROUTINE", "ROUTINE", "ROUTINE", "STAT", "STAT", "URGENT", "TIMED"],
+                weights=[40, 20, 10, 10, 5, 10, 5], k=1
+            )[0]
+            self._add_mn(parent, "ORDER_PRIORITY", priority)
             if session:
                 self._add_mn(parent, "ORDERING_PROVIDER", session.user.display_name)
 

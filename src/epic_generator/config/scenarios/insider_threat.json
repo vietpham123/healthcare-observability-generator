@@ -17,7 +17,7 @@
     "description": "Employee accessing records of co-workers and VIP patients after hours via break-the-glass",
     "perpetrator_username": "SBRYANT",
     "perpetrator_department": "MED-SURG 4W",
-    "events_per_tick": 2,
+    "events_per_tick": 4,
     "event_sequence": [
       "HKU_LOGIN",
       "PUL_SEARCH_AUDIT",
@@ -35,7 +35,7 @@
       "Direct Care",
       ""
     ],
-    "duration_ticks": 25,
+    "duration_ticks": 300,
     "indicators": [
       "After-hours access (23:00-04:00)",
       "Break-the-glass on patients not in employee's department",
