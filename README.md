@@ -2,6 +2,59 @@
 
 Combined Epic SIEM + Network log generator for **Lawrence Regional Medical Center** — a synthetic healthcare observability data platform built for Dynatrace, with a companion **Dynatrace Platform App** for real-time monitoring.
 
+## Current Deployment State (April 19, 2026)
+
+| Resource | Details |
+|----------|---------|
+| **AKS Cluster** | `aks-healthcare-gen` in `VPEtrade_group`, `southcentralus`, 2× Standard_B2ms |
+| **ACR** | `vietregistry.azurecr.io` |
+| **Namespace** | `healthcare-gen` |
+| **DT Environment** | `gyz6507h.sprint.dynatracelabs.com` |
+| **DT App** | Healthcare Health Monitoring **v1.8.0** (`my.healthcare.health.monitoring`) |
+| **Epic Generator** | `healthcare-gen/epic:v1.0.3` — SIEM, HL7, FHIR, Clinical, MyChart, ETL |
+| **Network Generator** | `healthcare-gen/network:latest` — Cisco/PAN/Aruba syslog, SNMP, NetFlow |
+| **WebUI** | `healthcare-gen/webui:v1.0.5` — Scenario control panel |
+
+### OpenPipeline
+
+**Pipeline:** `Healthcare Observability` (`pipeline_Healthcare_Observability_5001`)
+
+| Processor | Matcher | Extracts |
+|-----------|---------|----------|
+| `processor_Epic_SIEM_XML_5001` | `<EventLog>` | 30+ fields: E1Mid, mnemonics, EMPid, IP, site |
+| `processor_Epic_Clinical_5002` | Clinical events | DEPARTMENT, ORDER_TYPE, NOTE_TYPE, MEDICATION_NAME |
+| `processor_Epic_FHIR_API_5003` | FHIR API logs | method, path, response_code, response_time_ms |
+| `processor_HL7_Message_5004` | `MSH\|` | MSH.9, MSH.10, hl7_sending_app |
+| `processor_FHIR_Resource_5005` | `resourceType` | resourceType, resource ID |
+
+### DT Platform App Pages (v1.8.0)
+
+| Route | Page | Key Panels |
+|-------|------|------------|
+| `/` | Overview | System KPIs, event distribution, activity timeline |
+| `/epic` | Epic Health | Login trends, clinical orders, SIEM audit, service audit, workstation activity |
+| `/auth` | Auth Health | Login success/failure, error types, client type, login context, workstation drill-down |
+| `/network` | Network Health | Device CPU/memory, vendor distribution, syslog timeline |
+| `/integration` | Integration Health | HL7 volume + message types, FHIR latency/errors, ETL job status |
+| `/security` | Security & Compliance | Break-the-glass audit, failed logins, login failure analysis |
+| `/mychart` | MyChart Portal | Portal activity, device distribution, patient actions |
+| `/sites` | Sites | Per-site drill-down with campus map |
+| `/explore` | Explore | Raw event browser |
+
+### Version History
+
+| Component | Version | Date | Changes |
+|-----------|---------|------|---------|
+| Epic Generator | **v1.0.3** | Apr 19 | Login events (BCA_LOGIN_SUCCESS/FAILEDLOGIN), 30+ mnemonic fields, sanitized config |
+| Epic Generator | v1.0.2 | Apr 18 | Gap analysis fixes, config.json overhaul |
+| Epic Generator | v1.0.1 | Apr 18 | DT output mode, OpenPipeline integration |
+| Epic Generator | v1.0.0 | Apr 18 | Initial AKS deployment |
+| DT App | **v1.8.0** | Apr 19 | Auth Health page, service audit panels, login failure analysis |
+| DT App | v1.7.1 | Apr 18 | Calibrated thresholds, section health badges, 8-page layout |
+| DT App | v1.6.0 | Apr 18 | Security & Compliance page, MyChart portal |
+| DT App | v1.4.0 | Apr 18 | Network health, NetFlow, integration health |
+| DT App | v1.0.0 | Apr 18 | Initial deploy — Overview + Epic Health |
+
 ## Overview
 
 Generates temporally-correlated logs and metrics across two domains, sending data directly to Dynatrace via API:
@@ -233,3 +286,32 @@ BGP WAN Outage, DDoS Attack, DHCP Exhaustion, DNS Failure, STP Broadcast Storm, 
 ## License
 
 Internal — Dynatrace SE use only.
+
+## SIEM Mnemonic Fields (v1.0.3+)
+
+The Epic generator produces 30+ realistic mnemonic fields per SIEM event, matching real Epic SIEM output structure:
+
+**Login events** (`BCA_LOGIN_SUCCESS`, `FAILEDLOGIN`):
+`CLIENT_TYPE`, `LOGINERROR`, `LOGIN_CONTEXT`, `LOGIN_LDAP_ID`, `INTERNET_AREA`, `HYP_ACCESS_ID`, `REMOTE_IP`, `UID`, `LOGIN_SOURCE`
+
+**Service audit events** (`IC_SERVICE_AUDIT`):
+`SERVICECATEGORY`, `SERVICETYPE`, `SERVICENAME`, `HOSTNAME`, `INSTANCEURN`, `SERVICE_USER`, `SERVICE_USERTYP`
+
+**Common fields**: `E1Mid`, `Action`, `Source`, `WorkstationID`, `Flag`, `EMPid`, `IP`, `CLIENTNAME`, `SYSLOG_PID`
+
+## Sanitization
+
+All data is synthetic and sanitized — cannot be traced to real systems:
+- Employee IDs/names are generated, not from real Epic environments
+- Workstation IDs follow realistic hospital patterns but are fabricated
+- Service URNs are sanitized versions of real Epic API naming conventions
+- IP addresses use non-routable or random ranges
+- Patient names use obviously fake patterns (no real PHI)
+- No real credentials, tokens, or environment identifiers in generated data
+
+## Additional Documentation
+
+- [Dynatrace Ingestion Advisory](docs/DYNATRACE_INGESTION_ADVISORY.md) — OpenPipeline, Grail buckets, querying
+- [Architecture & Implementation Guide](docs/ARCHITECTURE.md) — Design phases, deployment modes, K8s microservices
+- [Prompting Insights](docs/PROMPTING_INSIGHTS.md) — AI-assisted development analysis and lessons learned
+- [Prompt Appendix](docs/PROMPT_APPENDIX.md) — Sanitized prompt log for thought-process review
