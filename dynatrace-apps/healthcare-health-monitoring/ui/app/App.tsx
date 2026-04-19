@@ -1,5 +1,5 @@
 import { Page } from "@dynatrace/strato-components-preview/layouts";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Route, Routes } from "react-router-dom";
 import { DqlQueryParamsProvider } from "@dynatrace-sdk/react-hooks";
 import type { Timeframe, TimeValue } from "@dynatrace/strato-components/core";
@@ -27,14 +27,26 @@ const toGrailTimeframe = (tv: TimeValue): string =>
 
 export const App = () => {
   const [timeframe, setTimeframe] = useState<Timeframe>(createInitialTimeframe);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(() => {
+    // Re-create the timeframe to force DqlQueryParamsProvider to re-execute all queries
+    const now = new Date();
+    setTimeframe((prev) => ({
+      from: prev.from,
+      to: { ...prev.to, absoluteDate: now.toISOString() },
+    }));
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   return (
     <Page>
       <Page.Header>
-        <Header timeframe={timeframe} onTimeframeChange={(tf) => { if (tf) setTimeframe(tf); }} />
+        <Header timeframe={timeframe} onTimeframeChange={(tf) => { if (tf) setTimeframe(tf); }} onRefresh={handleRefresh} />
       </Page.Header>
       <Page.Main>
         <DqlQueryParamsProvider
+          key={refreshKey}
           defaultTimeframeStart={toGrailTimeframe(timeframe.from)}
           defaultTimeframeEnd={toGrailTimeframe(timeframe.to)}
         >

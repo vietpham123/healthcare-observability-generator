@@ -240,3 +240,79 @@ footer {
   transition: color 0.15s;
 }
 .nav-link:hover { color: #7aadff; }
+
+/* ── Radio-dot for exclusive scenario selection ─── */
+.scenario-row { cursor: pointer; user-select: none; }
+.scenario-row:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+.scenario-row.active:hover { border-color: var(--green); }
+
+.scenario-radio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.radio-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.radio-dot.checked {
+  border-color: var(--green);
+}
+
+.radio-dot.checked::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+/* ── Scenario meta (prep time, runtime, guide link) ─── */
+.scenario-meta {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+.meta-prep {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(79,140,255,0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+.meta-runtime {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.meta-guide {
+  font-size: 0.72rem;
+  color: var(--green);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.meta-guide:hover { color: #5ee8b0; text-decoration: underline; }
+.scenario-tip {
+  font-size: 0.7rem;
+  color: #fbbf24;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}

@@ -97,11 +97,11 @@ export const SecurityCompliance = () => {
       {/* KPI Row */}
       <Flex gap={12} flexWrap="wrap">
         <KpiCard query={f(securityQueries.breakTheGlassCount)} label="Break-the-Glass Events" field="total" format="number" icon="🔓" />
-        <KpiCard query={f(securityQueries.failedLoginCount)} label="Failed Logins" field="total" format="number" thresholds={{ green: 10, amber: 50 }} invertThresholds icon="🚫" />
-        <KpiCard query={f(queries.epicLoginSuccessRate)} label="Login Success Rate" field="success_rate" format="percent" thresholds={{ green: 85, amber: 70 }} icon="🔐" />
-        <KpiCard query={f(queries.afterHoursBtgCount)} label="After-Hours BTG" field="btg_after_hours" format="number" thresholds={{ green: 0, amber: 2 }} invertThresholds icon="🌙" />
+        <KpiCard query={f(securityQueries.failedLoginCount)} label="Failed Logins" field="total" format="number" thresholds={{ green: 200, amber: 500 }} invertThresholds icon="🚫" />
+        <KpiCard query={f(queries.epicLoginSuccessRate)} label="Login Success Rate" field="success_rate" format="percent" thresholds={{ green: 65, amber: 45 }} icon="🔐" />
+        <KpiCard query={f(queries.afterHoursBtgCount)} label="After-Hours BTG" field="btg_after_hours" format="number" thresholds={{ green: 50, amber: 100 }} invertThresholds icon="🌙" />
         <KpiCard query={f(queries.activeWorkstationCount)} label="Active Workstations" field="active_ws" format="number" icon="🖥️" />
-        <KpiCard query={f(queries.authFailedLoginCount)} label="Auth Failures" field="total" format="number" thresholds={{ green: 10, amber: 50 }} invertThresholds icon="⛔" />
+        <KpiCard query={f(queries.authFailedLoginCount)} label="Auth Failures" field="total" format="number" thresholds={{ green: 200, amber: 500 }} invertThresholds icon="⛔" />
       </Flex>
 
       {/* Security Events Section */}
@@ -111,7 +111,7 @@ export const SecurityCompliance = () => {
             <TitleBar.Title>Security Events</TitleBar.Title>
             <TitleBar.Subtitle>Break-the-glass, failed logins, blocked accounts over time</TitleBar.Subtitle>
           </TitleBar>
-          <SectionHealth query={f(queries.epicLoginSuccessRate)} field="success_rate" green={85} amber={70} />
+          <SectionHealth query={f(queries.epicLoginSuccessRate)} field="success_rate" green={65} amber={45} description="Overall Epic login success rate including all failure types (FAILEDLOGIN, LOGIN_BLOCKED, WPSEC_LOGIN_FAIL). A sharp drop below baseline flags active security incidents like brute-force attacks or insider credential abuse." />
         </Flex>
         <TsChart query={f(securityQueries.securityEventsOverTime)} />
         <Flex gap={16} style={{ marginTop: 16 }}>
@@ -159,7 +159,7 @@ export const SecurityCompliance = () => {
             <TitleBar.Title>Authentication Trends</TitleBar.Title>
             <TitleBar.Subtitle>Login success vs failure over time, client and source context</TitleBar.Subtitle>
           </TitleBar>
-          <SectionHealth query={f(queries.authLoginSuccessRate)} field="success_rate" green={85} amber={70} />
+          <SectionHealth query={f(queries.authLoginSuccessRate)} field="success_rate" green={80} amber={60} description="BCA_LOGIN_SUCCESS vs FAILEDLOGIN ratio from Epic SIEM audit logs. Monitors the core authentication layer — degrades during LDAP outages, password policy changes, or targeted credential attacks." />
         </Flex>
         <div style={{ marginTop: 12 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Success vs Failure</Text>
@@ -206,7 +206,7 @@ export const SecurityCompliance = () => {
             <TitleBar.Title>After-Hours Audit</TitleBar.Title>
             <TitleBar.Subtitle>Off-hours access monitoring and full security event log</TitleBar.Subtitle>
           </TitleBar>
-          <SectionHealth query={f(queries.btgTotalCount)} field="btg_total" green={0} amber={3} invert />
+          <SectionHealth query={f(queries.btgTotalCount)} field="btg_total" green={200} amber={400} invert description="Total Break-the-Glass (BTG) events in the current timeframe. BTG allows emergency chart access bypassing normal authorization. Elevated counts may indicate snooping, insider threats, or an actual mass-casualty event requiring emergency access." />
         </Flex>
         <Flex gap={16} style={{ marginTop: 12 }}>
           <div style={{ flex: 1 }}>

@@ -39,6 +39,110 @@
 .wt-header h2 { color: var(--text); margin-bottom: 0.3rem; }
 .wt-desc { color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
 
+/* ── Prep / Pre-Work section ─────────────────────────────── */
+.prep-summary {
+  margin-bottom: 1rem;
+}
+.prep-timing {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.prep-timing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.prep-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.prep-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.prep-value-sm {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+.prep-desc {
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+.prep-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 1rem 0;
+  border-left: 2px solid var(--accent);
+  margin-left: 2.5rem;
+}
+.prep-step {
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 0 0.6rem 1rem;
+  position: relative;
+  align-items: flex-start;
+}
+.prep-step::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 0.8rem;
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.prep-when {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 110px;
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+}
+.prep-detail {
+  flex: 1;
+}
+.prep-action {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+.prep-why {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.prep-protip {
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  font-size: 0.83rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+.protip-label {
+  font-weight: 700;
+  color: #fbbf24;
+  margin-right: 0.3rem;
+}
+
+/* ── Indicators ──────────────────────────────────────────── */
 .indicator-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .indicator-item {
   display: flex; align-items: flex-start; gap: 0.6rem;
@@ -60,6 +164,7 @@
   margin-top: 2px;
 }
 
+/* ── DT Pages ────────────────────────────────────────────── */
 .dt-pages-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -84,6 +189,7 @@
   color: var(--green);
 }
 
+/* ── Demo Steps ──────────────────────────────────────────── */
 .demo-steps { counter-reset: step; }
 .demo-step {
   padding: 0.8rem 1rem;
@@ -107,6 +213,7 @@
 .demo-step h4 { font-size: 0.85rem; margin-bottom: 0.3rem; }
 .demo-step p { color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
 
+/* ── Talking Points ──────────────────────────────────────── */
 .talking-points { display: flex; flex-direction: column; gap: 0.5rem; }
 .talking-point {
   display: flex; gap: 0.6rem; align-items: flex-start;
@@ -116,3 +223,11 @@
   color: var(--text-muted);
 }
 .talking-point .tp-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .prep-timing { flex-direction: column; gap: 0.5rem; }
+  .prep-when { min-width: 80px; }
+  .dt-pages-grid { grid-template-columns: 1fr; }
+  .scenario-selector { grid-template-columns: 1fr; }
+}

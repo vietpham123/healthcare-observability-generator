@@ -11,7 +11,8 @@ Step-by-step walkthrough for demonstrating the Healthcare Observability Generato
 | AKS generators running | `kubectl get pods -n healthcare-gen` — all pods `Running` |
 | Data flowing to DT | Grail query: `fetch logs \| filter healthcare.pipeline == "healthcare-epic" \| sort timestamp desc \| limit 5` |
 | DT Platform App deployed | Open: `https://{env-id}.apps.dynatracelabs.com/ui/apps/my.healthcare.health.monitoring` |
-| Web UI available (optional) | `http://{vm-ip}:8080` for scenario toggling |
+| Web UI available | `http://172.206.131.122` for scenario toggling |
+| Health indicators green | All SectionHealth pills showing green on Overview page |
 
 ---
 
@@ -21,7 +22,7 @@ Step-by-step walkthrough for demonstrating the Healthcare Observability Generato
 
 Open the AKS cluster in Dynatrace (Kubernetes app):
 - **Namespace**: `healthcare-gen`
-- **Workloads**: `epic-generator`, `network-generator`, `webui`
+- **Workloads**: `epic-generator` (v1.0.4), `network-generator`, `webui` (v2.2.0)
 - Point out: these containers generate all synthetic data — Epic SIEM logs, network syslog, SNMP metrics, NetFlow records
 
 ### 1.2 — Show Raw Data in Grail
@@ -37,7 +38,7 @@ fetch logs
 | limit 20
 ```
 
-Point out key attributes: `healthcare.site`, `healthcare.event_type`, `epic.user_id`, `content`
+Point out key attributes: `healthcare.site`, `healthcare.event_type`, `E1Mid`, `epic.user_id`, `content`
 
 ```dql
 // Network logs
@@ -79,18 +80,25 @@ Point out: `network.flow.src_addr`, `network.flow.dst_addr`, `network.flow.bytes
 
 Navigate to: **Apps → Healthcare Health Monitoring → Overview**
 
-### 2.2 — Campus Map
+### 2.2 — Health Indicators
+
+Point out the **Section Health** indicators at the top of the page:
+- **Green pills** = all metrics within healthy thresholds
+- **Hover over each pill** to see the tooltip: what is measured, why, threshold breakdown, current value
+- **Auto-refreshing** every 30 seconds (no manual refresh needed)
+
+### 2.3 — Campus Map
 
 Point out:
 - **Kansas map** — real geographic projection with I-70, I-35 highways, county grid, reference cities
 - **Hospital hub** (Lawrence) — large green icon at the center of Kansas along I-70
 - **Satellite clinics** — Oakley (west), Wellington (south), Belleville (north)
 - **NetFlow animation** — watch the green dots travel from Lawrence to satellite clinics
-- **Health badges** — green = healthy (>95% login success), amber = degraded, red = critical
+- **Health badges** — green = healthy, amber = degraded, red = critical
 
 > "This is a live map. The dots are actual NetFlow records from the last 30 minutes. Each dot represents aggregated bytes flowing between Lawrence and a satellite site."
 
-### 2.3 — KPI Cards
+### 2.4 — KPI Cards
 
 Below the map:
 - **Login Success Rate** — percentage from Epic SIEM
@@ -100,7 +108,7 @@ Below the map:
 - **Network Devices** — count of monitored devices
 - **Network Events** — syslog event count
 
-### 2.4 — Site Filter
+### 2.5 — Site Filter
 
 Click a site button (e.g., **Oakley Rural Health**):
 - All KPIs filter to that site
@@ -115,14 +123,14 @@ Click a site button (e.g., **Oakley Rural Health**):
 
 ### 3.1 — Navigate to Epic Health
 
-Click **Epic Health** tab.
+Click **Epic Health** tab. Note the section health indicators: Login Success, STAT Order Rate.
 
 ### 3.2 — Walk Through Charts
 
 | Chart | What to Show |
 |-------|-------------|
 | **Login Trend** (TimeseriesChart) | Time-of-day curve — peaks at shift changes (7am, 3pm, 11pm) |
-| **Login Success Rate** (TimeseriesChart) | Should be ~97-99% during normal operations |
+| **Login Success Rate** (TimeseriesChart) | Should be ~83% during normal operations (includes BLOCKED events) |
 | **Event Distribution** (DonutChart) | Breakdown: SIEM, Clinical, HL7, FHIR, MyChart |
 | **Audit Timeline** (CategoricalBarChart) | HIPAA audit events over time |
 | **Session Analysis** | Active session count, average duration |
@@ -139,7 +147,7 @@ Select **Wellington Care Center** — watch all charts filter to just that clini
 
 ### 4.1 — Navigate to Network Health
 
-Click **Network Health** tab.
+Click **Network Health** tab. Note health indicators: Avg CPU, Device Up Ratio.
 
 ### 4.2 — Device Fleet Honeycomb
 
@@ -179,7 +187,7 @@ Select **Oakley Rural Health** — see only Oakley's 3-4 devices in the honeycom
 
 ### 5.1 — Navigate to Integration Health
 
-Click **Integration Health** tab.
+Click **Integration Health** tab. Note health indicators: HL7 Delivery, FHIR Health, ETL Success.
 
 ### 5.2 — Key Metrics
 
@@ -188,21 +196,65 @@ Click **Integration Health** tab.
 | **HL7 Delivery Rate** | Messages per minute through the interface engine (ADT, ORM, ORU, SIU) |
 | **HL7 Error Rate** | NACKs and timeouts — should be <1% normally |
 | **FHIR Response Time** | API latency for FHIR R4 calls (Patient, Encounter, Observation) |
-| **ETL Pipeline Status** | Data warehouse extract jobs — completion rate, row counts |
+| **ETL Pipeline Status** | Data warehouse extract jobs — completion rate (excludes RUNNING jobs) |
 
 > "This is the integration layer — HL7 messages, FHIR APIs, and ETL pipelines. In a real Epic environment, failures here mean data stops flowing between systems."
 
 ---
 
-## Part 6: Correlated Scenario (5 min)
+## Part 6: Security & Compliance (3 min)
+
+### 6.1 — Navigate to Security & Compliance
+
+Click **Security & Compliance** tab. Note health indicators: Login Success, Auth Success, BTG Count, After-Hours BTG, Failed Login Count.
+
+### 6.2 — Key Metrics
+
+| Metric | What It Shows |
+|--------|--------------|
+| **Break-the-Glass Count** | Emergency access events (normal: ~50/hr in a hospital) |
+| **After-Hours BTG** | BTG events outside 6 AM – 10 PM (higher risk) |
+| **Failed Login Analysis** | Login failure patterns by user, workstation, time |
+| **Login Success Rates** | Both Epic-wide and BCA authentication layer |
+
+> "In a HIPAA-regulated environment, BTG events are expected but monitored. A spike means either a real emergency or a potential insider threat."
+
+---
+
+## Part 7: MyChart Portal (2 min)
+
+### 7.1 — Navigate to MyChart Portal
+
+Click **MyChart Portal** tab. Note health indicator: MyChart Login.
+
+### 7.2 — Key Metrics
+
+- **Login Activity** — Patient portal login volume (volume-based health check)
+- **Messaging Trends** — Patient-provider message volume
+- **Scheduling** — Appointment booking activity
+- **Device Distribution** — Mobile vs Desktop vs Tablet
+
+> "MyChart is the patient-facing portal. Its health is measured by event flow volume — if events are flowing, the portal is up."
+
+---
+
+## Part 8: Correlated Scenario Demo (5–10 min)
 
 This is the highlight of the demo — showing cross-domain correlation.
 
-### 6.1 — Trigger a Scenario
+### 8.1 — Trigger a Scenario
 
-Open the Web UI (`http://{vm-ip}:8080`) and activate **Ransomware Attack**.
+Open the Web UI (`http://172.206.131.122`) and activate **Ransomware Attack**.
 
-### 6.2 — Watch the Cascade
+### 8.2 — Watch the Health Indicators Change
+
+Within 30-60 seconds (SectionHealth auto-refreshes every 30s):
+- **Overview**: Login Success → RED, FHIR → RED
+- **Security & Compliance**: BTG Count → RED, Failed Logins → RED
+- **Integration Health**: HL7 → RED, ETL → RED
+- **Network Health**: CPU may spike on firewall devices
+
+### 8.3 — Watch the Cascade on Charts
 
 **Network Health** page (check first):
 1. FortiGate IPS alerts appear in Network Events
@@ -220,23 +272,54 @@ Open the Web UI (`http://{vm-ip}:8080`) and activate **Ransomware Attack**.
 2. FHIR response times spike
 3. ETL jobs start failing
 
-### 6.3 — Correlation Narrative
+### 8.4 — Correlation Narrative
 
 > "Notice the timeline: the network attack started at T+0 with IPS alerts. Two minutes later, Epic logins started failing because the infrastructure was degraded. The security team triggered break-the-glass access at T+5. By T+10, all integration feeds were disrupted. In a real SOC, you'd need this cross-domain view to understand that the Epic outage was caused by a network security incident, not an application problem."
 
-### 6.4 — Deactivate Scenario
+### 8.5 — Deactivate Scenario
 
-Return to Web UI, deactivate **Ransomware Attack**. Systems return to normal within 2-3 minutes.
+Return to Web UI, deactivate **Ransomware Attack**.
+- Watch health indicators return to **green** within 2–3 minutes
+- The 30-second auto-refresh means you'll see the transition in real time
 
 ---
 
-## Part 7: Site View (2 min)
+## Part 9: Explore Page (2 min)
 
-### 7.1 — Navigate to Site View
+### 9.1 — Navigate to Explore
+
+Click **Explore** tab.
+
+### 9.2 — Raw Log Viewer
+
+Select **Epic SIEM** from the pipeline dropdown:
+- See the last 100 raw log records with all fields
+- Toggle to **Network** to see network infrastructure logs
+
+### 9.3 — DQL Sandbox
+
+Run any DQL query against the ingested data:
+
+```dql
+fetch logs
+| filter dt.system.bucket == "observe_and_troubleshoot_apps_95_days"
+| filter healthcare.pipeline == "healthcare-epic"
+| filter E1Mid == "FAILEDLOGIN"
+| sort timestamp desc
+| limit 50
+```
+
+> "This is a DQL sandbox. Anything you can query in Grail, you can query here."
+
+---
+
+## Part 10: Site View (2 min)
+
+### 10.1 — Navigate to Site View
 
 Click **Site View** tab.
 
-### 7.2 — Site Cards
+### 10.2 — Site Cards
 
 Each site has a card showing:
 - Site name, code, bed count, and profile type
@@ -249,48 +332,28 @@ Each site has a card showing:
 
 ---
 
-## Part 8: Explore (2 min)
-
-### 8.1 — Navigate to Explore
-
-Click **Explore** tab.
-
-### 8.2 — Free-form DQL
-
-Run any DQL query against the ingested data:
-
-```dql
-fetch logs
-| filter dt.system.bucket == "observe_and_troubleshoot_apps_95_days"
-| filter healthcare.pipeline == "healthcare-epic"
-| filter healthcare.event_type == "SIEM"
-| filter matchesPhrase(content, "FAILED")
-| sort timestamp desc
-| limit 50
-```
-
-> "This is a DQL sandbox. Anything you can query in Grail, you can query here."
-
----
-
 ## Scenario Quick Reference
 
-| Scenario | Duration | Key Visuals |
-|----------|----------|-------------|
-| **Normal Day Shift** | Always on | Smooth curves, green badges |
-| **ED Surge** | 10-15 min | Login spike, ED network saturation |
-| **Ransomware** | 10-15 min | Red badges, IPS alerts, C2 traffic, break-the-glass |
-| **HL7 Interface Failure** | 5-10 min | HL7 NACKs, switch port err-disable |
-| **MyChart Credential Stuffing** | 5-10 min | 500+ login failures, F5 brute force |
-| **Insider Threat** | 5-10 min | After-hours access, VIP snooping (Epic only) |
+| Scenario | Duration | Key Visuals | Pages to Watch |
+|----------|----------|-------------|----------------|
+| **Normal Day Shift** | Always on | Smooth curves, green indicators | Overview |
+| **ED Surge** | 10-15 min | STAT orders spike, ED network saturation | Epic, Network |
+| **Ransomware** | 10-15 min | Red indicators everywhere, IPS alerts, BTG spike | Security, Network, Integration |
+| **Epic Outage (Network)** | 10-15 min | Network DOWN → Epic login failures | Network, Epic |
+| **HL7 Interface Failure** | 5-10 min | HL7 NACKs, switch err-disable | Integration, Network |
+| **IoMT Device Compromise** | 5-10 min | FHIR anomaly, port security alerts | Integration, Network |
+| **MyChart Credential Stuffing** | 5-10 min | 500+ login failures, F5 alerts | MyChart, Security, Network |
+| **Insider Threat** | 5-10 min | After-hours BTG, VIP snooping | Security |
 
 ---
 
 ## Demo Tips
 
-1. **Start with data** — showing raw Grail queries first establishes credibility; the app is just a visualization layer
+1. **Start with health indicators** — hover over the green pills to show tooltips before anything breaks
 2. **Use the site filter early** — it shows the app isn't static; it's querying live data
 3. **End with a scenario** — the cross-domain correlation is the "wow" moment
-4. **Keep the Web UI on a second screen** — toggle scenarios without leaving the DT app
-5. **If data looks stale** — check `kubectl get pods -n healthcare-gen`; generator pods may have restarted
-6. **If the map has no dots** — NetFlow data takes ~60 seconds to appear after generators start
+4. **Watch the auto-refresh** — no need to manually reload; indicators update every 30s
+5. **Keep the Web UI on a second screen** — toggle scenarios without leaving the DT app
+6. **If data looks stale** — check `kubectl get pods -n healthcare-gen`; generator pods may have restarted
+7. **If the map has no dots** — NetFlow data takes ~60 seconds to appear after generators start
+8. **After disabling a scenario** — wait 2-3 minutes for health indicators to recover to green

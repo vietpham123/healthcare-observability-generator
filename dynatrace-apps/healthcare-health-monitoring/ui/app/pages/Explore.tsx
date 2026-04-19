@@ -47,12 +47,12 @@ export const Explore = () => {
         ) : (
           <div style={{ maxHeight: 600, overflow: "auto", fontSize: 12 }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>{Object.keys(records[0]).map((key) => <th key={key} style={TH}>{key}</th>)}</tr></thead>
+              <thead><tr>{Object.keys(records[0]).map((key) => <th key={key} style={key === "content" ? TH_CONTENT : TH}>{key}</th>)}</tr></thead>
               <tbody>
                 {records.map((r: any, i: number) => (
                   <tr key={i}>
                     {Object.keys(records[0]).map((key) => (
-                      <td key={key} style={TD}>
+                      <td key={key} style={key === "content" ? TD_CONTENT : TD}>
                         {r[key] instanceof Date || (typeof r[key] === "string" && /^\d{4}-\d{2}-\d{2}T/.test(r[key]))
                           ? new Date(r[key]).toLocaleString()
                           : String(r[key] ?? "—")}
@@ -70,4 +70,6 @@ export const Explore = () => {
 };
 
 const TH: React.CSSProperties = { padding: "6px 8px", textAlign: "left", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontWeight: 600, whiteSpace: "nowrap" };
+const TH_CONTENT: React.CSSProperties = { ...TH, minWidth: 400 };
 const TD: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const TD_CONTENT: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontFamily: "monospace", fontSize: 11, whiteSpace: "pre-wrap", wordBreak: "break-all", maxWidth: 600, background: "var(--dt-colors-surface-default)", opacity: 0.9 };

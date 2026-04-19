@@ -24,8 +24,8 @@ export const AuthenticationHealth = () => {
 
       {/* KPI Row */}
       <Flex gap={12} flexWrap="wrap">
-        <KpiCard query={f(queries.authLoginSuccessRate)} label="Auth Success Rate" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔐" />
-        <KpiCard query={f(queries.authFailedLoginCount)} label="Failed Logins" field="total" format="number" thresholds={{ green: 0, amber: 5 }} invertThresholds icon="🚫" />
+        <KpiCard query={f(queries.authLoginSuccessRate)} label="Auth Success Rate" field="success_rate" format="percent" thresholds={{ green: 80, amber: 60 }} icon="🔐" />
+        <KpiCard query={f(queries.authFailedLoginCount)} label="Failed Logins" field="total" format="number" thresholds={{ green: 200, amber: 500 }} invertThresholds icon="🚫" />
         <KpiCard query={f(queries.activeWorkstationCount)} label="Active Workstations" field="active_ws" format="number" icon="🖥️" />
         <KpiCard query={f(queries.ldapLoginCount)} label="LDAP Users" field="ldap_users" format="number" icon="👤" />
       </Flex>
@@ -37,7 +37,7 @@ export const AuthenticationHealth = () => {
             <TitleBar.Title>Authentication Trends</TitleBar.Title>
             <TitleBar.Subtitle>Login success vs failure over time, error type analysis</TitleBar.Subtitle>
           </TitleBar>
-          <SectionHealth query={f(queries.authLoginSuccessRate)} field="success_rate" green={95} amber={85} />
+          <SectionHealth query={f(queries.authLoginSuccessRate)} field="success_rate" green={80} amber={60} description="Measures BCA_LOGIN_SUCCESS vs FAILEDLOGIN ratio. A drop indicates credential issues, LDAP failures, or a brute-force attack targeting the Epic authentication layer." />
         </Flex>
         <div style={{ marginTop: 12 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Success vs Failure</Text>

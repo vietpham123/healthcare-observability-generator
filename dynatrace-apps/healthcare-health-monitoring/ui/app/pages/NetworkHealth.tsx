@@ -35,7 +35,7 @@ export const NetworkHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>Device Fleet Health</TitleBar.Title><TitleBar.Subtitle>CPU, memory, and traffic across all network devices</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={fn(queries.avgDeviceCpu)} field="avg_cpu" green={40} amber={60} invert />
+        <SectionHealth query={fn(queries.avgDeviceCpu)} field="avg_cpu" green={40} amber={60} invert description="Average CPU utilization across all network devices (switches, routers, firewalls) over the last 15 minutes. Spikes above 60% indicate device overload — often seen during ransomware lateral movement or DDoS events." />
       </Flex>
       <DeviceHoneycomb site={site} />
       <Flex gap={16} style={{ marginTop: 16 }}>
@@ -88,7 +88,7 @@ export const NetworkHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>Network Logs & Inventory</TitleBar.Title><TitleBar.Subtitle>Log timeline, vendor distribution, and device inventory</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={fn(queries.networkDeviceUpRatio)} field="up_ratio" green={100} amber={95} />
+        <SectionHealth query={fn(queries.networkDeviceUpRatio)} field="up_ratio" green={100} amber={95} description="Percentage of network devices that reported logs within the last 5 minutes. Any device going silent may indicate a power failure, link down, or device compromise. Healthy = all devices reporting." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 2 }}>

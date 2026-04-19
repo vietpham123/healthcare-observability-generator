@@ -354,8 +354,9 @@ export const queries = {
   etlSuccessRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter isNotNull(job_name) AND isNotNull(job_result)
+    | filter job_result != "RUNNING"
     | summarize
-        successes = countIf(job_result == "SUCCESS" OR job_result == "success" OR job_result == "completed"),
+        successes = countIf(job_result == "SUCCESS" OR job_result == "success" OR job_result == "completed" OR job_result == "SUCCESS_WITH_WARNINGS"),
         total = count()
     | fieldsAdd success_rate = if(total > 0, toDouble(successes) / toDouble(total) * 100.0, else: 0.0)`,
 
@@ -374,19 +375,19 @@ export const queries = {
   allEpicEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
-    | fields timestamp, e1mid, Action, EMPid, DEPARTMENT, ORDER_TYPE, healthcare.site
+    | fields timestamp, content, e1mid, Action, EMPid, DEPARTMENT, ORDER_TYPE, healthcare.site
     | sort timestamp desc
     | limit 50`,
 
   allNetworkEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETWORK_FILTER}
-    | fields timestamp, network.device.hostname, network.device.vendor, network.device.role, healthcare.site, network.log_type
+    | fields timestamp, content, network.device.hostname, network.device.vendor, network.device.role, healthcare.site, network.log_type
     | sort timestamp desc
     | limit 50`,
 
   allNetflowEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${NETFLOW_FILTER}
-    | fields timestamp, network.flow.src_ip, network.flow.dst_ip, network.flow.dst_port, network.flow.protocol, network.flow.bytes, network.device.hostname, network.device.site
+    | fields timestamp, content, network.flow.src_ip, network.flow.dst_ip, network.flow.dst_port, network.flow.protocol, network.flow.bytes, network.device.hostname, network.device.site
     | sort timestamp desc
     | limit 50`,
 

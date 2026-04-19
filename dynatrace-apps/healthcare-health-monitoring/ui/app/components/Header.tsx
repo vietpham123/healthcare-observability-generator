@@ -1,6 +1,9 @@
 import React from "react";
 import { AppHeader, Flex } from "@dynatrace/strato-components/layouts";
 import { TimeframeSelector } from "@dynatrace/strato-components/filters";
+import { Button } from "@dynatrace/strato-components/buttons";
+import { Tooltip } from "@dynatrace/strato-components/overlays";
+import { RefreshIcon } from "@dynatrace/strato-icons";
 import type { Timeframe } from "@dynatrace/strato-components/core";
 import { Link, useLocation } from "react-router-dom";
 
@@ -18,9 +21,10 @@ const NAV_ITEMS = [
 interface HeaderProps {
   timeframe?: Timeframe;
   onTimeframeChange?: (tf: Timeframe | null) => void;
+  onRefresh?: () => void;
 }
 
-export const Header = ({ timeframe, onTimeframeChange }: HeaderProps) => {
+export const Header = ({ timeframe, onTimeframeChange, onRefresh }: HeaderProps) => {
   const location = useLocation();
   return (
     <AppHeader>
@@ -47,9 +51,14 @@ export const Header = ({ timeframe, onTimeframeChange }: HeaderProps) => {
               </Link>
             );
           })}
-          <div style={{ marginLeft: "auto" }}>
+          <Flex gap={8} alignItems="center" style={{ marginLeft: "auto" }}>
             <TimeframeSelector value={timeframe} onChange={onTimeframeChange} />
-          </div>
+            <Tooltip text="Refresh all queries with the current timeframe">
+              <Button variant="accent" onClick={onRefresh}>
+                <Button.Prefix><RefreshIcon /></Button.Prefix>
+              </Button>
+            </Tooltip>
+          </Flex>
         </Flex>
       </AppHeader.ActionItems>
     </AppHeader>

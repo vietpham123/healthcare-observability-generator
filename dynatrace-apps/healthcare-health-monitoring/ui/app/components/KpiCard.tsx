@@ -9,7 +9,6 @@ interface KpiCardProps {
   label: string;
   field: string;
   thresholds?: { green: number; amber: number };
-  /** When true, lower values are better (CPU, error rate). Flips threshold logic. */
   invertThresholds?: boolean;
   format?: "number" | "percent" | "bytes";
   icon?: string;
@@ -34,12 +33,10 @@ function healthColor(value: unknown, thresholds?: { green: number; amber: number
   const num = typeof value === "number" ? value : Number(value);
   if (isNaN(num)) return "var(--dt-colors-text-primary-default)";
   if (invert) {
-    // Lower is better (CPU, error rate): ≤ green → green, ≤ amber → amber, else red
     if (num <= thresholds.green) return "#2ab06f";
     if (num <= thresholds.amber) return "#f5a623";
     return "#dc3545";
   }
-  // Higher is better (success rate, delivery rate)
   if (num >= thresholds.green) return "#2ab06f";
   if (num >= thresholds.amber) return "#f5a623";
   return "#dc3545";

@@ -22,7 +22,7 @@ export const EpicHealth = () => {
     </Text>
     <SiteFilter value={site} onChange={setSite} />
     <Flex gap={12} flexWrap="wrap">
-      <KpiCard query={f(queries.epicLoginSuccessRate)} label="Login Success Rate" field="success_rate" format="percent" thresholds={{ green: 85, amber: 70 }} icon="🔐" />
+      <KpiCard query={f(queries.epicLoginSuccessRate)} label="Login Success Rate" field="success_rate" format="percent" thresholds={{ green: 65, amber: 45 }} icon="🔐" />
       <KpiCard query={f(queries.totalEpicEvents)} label="Total Epic Events" field="total" format="number" icon="📊" />
       <KpiCard query={f(queries.activeUsers)} label="Active Users" field="unique_users" format="number" icon="👥" />
       <KpiCard query={f(queries.statOrderRate)} label="STAT Order %" field="stat_pct" format="percent" thresholds={{ green: 5, amber: 10 }} invertThresholds icon="🚑" />
@@ -32,7 +32,7 @@ export const EpicHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>Authentication</TitleBar.Title><TitleBar.Subtitle>Login success/failure trends and site distribution</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={f(queries.epicLoginSuccessRate)} field="success_rate" green={85} amber={70} />
+        <SectionHealth query={f(queries.epicLoginSuccessRate)} field="success_rate" green={65} amber={45} description="Tracks all Epic login outcomes (BCA_LOGIN_SUCCESS, FAILEDLOGIN, LOGIN_BLOCKED, WPSEC_LOGIN_FAIL). Degrades when failed or blocked logins spike — often the first sign of credential stuffing or account lockout events." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>
@@ -50,7 +50,7 @@ export const EpicHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>Clinical Activity</TitleBar.Title><TitleBar.Subtitle>Orders, HL7 message types, and department workload</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={f(queries.statOrderRate)} field="stat_pct" green={5} amber={10} invert />
+        <SectionHealth query={f(queries.statOrderRate)} field="stat_pct" green={5} amber={10} invert description="Percentage of clinical orders marked STAT (urgent). A normal baseline is under 5%. A surge suggests an ED mass-casualty event or system-wide clinical escalation." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>

@@ -3,7 +3,7 @@
   "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
   "app": {
     "name": "Healthcare Health Monitoring",
-    "version": "1.9.0",
+    "version": "1.14.3",
     "description": "Healthcare IT observability \u2014 calibrated thresholds",
     "id": "my.healthcare.health.monitoring",
     "scopes": [

@@ -96,10 +96,10 @@ export const Overview = () => {
       </Text>
       <SiteFilter value={site} onChange={setSite} />
       <Flex gap={12} flexWrap="wrap">
-        <KpiCard query={fe(queries.epicLoginSuccessRate)} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 85, amber: 70 }} icon="🔐" />
+        <KpiCard query={fe(queries.epicLoginSuccessRate)} label="Epic Login Success" field="success_rate" format="percent" thresholds={{ green: 65, amber: 45 }} icon="🔐" />
         <KpiCard query={fe(queries.hl7DeliveryRate)} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="📡" />
-        <KpiCard query={fe(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
-        <KpiCard query={fe(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 80 }} icon="⚙️" />
+        <KpiCard query={fe(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 85, amber: 70 }} icon="🔗" />
+        <KpiCard query={fe(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 88, amber: 70 }} icon="⚙️" />
         <KpiCard query={fe(queries.avgDeviceCpu)} label="Avg Device CPU" field="avg_cpu" format="percent" thresholds={{ green: 40, amber: 60 }} invertThresholds icon="💻" />
         <KpiCard query={fe(queries.networkCriticalEvents)} label="Network Critical" field="critical_count" format="number" thresholds={{ green: 0, amber: 5 }} invertThresholds icon="🚨" />
         <KpiCard query={fe(queries.activeUsers)} label="Active Users" field="unique_users" format="number" icon="👥" />

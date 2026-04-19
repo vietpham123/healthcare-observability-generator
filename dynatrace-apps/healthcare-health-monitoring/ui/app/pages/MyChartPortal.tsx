@@ -33,11 +33,10 @@ const myChartQueries = {
   loginSuccessRate: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
-    | filter e1mid == "MYCHART_LOGIN" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
-    | summarize
-        successes = countIf(e1mid == "MYCHART_LOGIN"),
-        total = count()
-    | fieldsAdd success_rate = if(total > 0, toDouble(successes) / toDouble(total) * 100.0, else: 0.0)`,
+    | filter e1mid == "MYCHART_LOGIN"
+    | makeTimeseries vol = count(), interval: 5m
+    | fieldsAdd recent_vol = arrayLast(vol)
+    | fieldsAdd success_rate = if(isNull(recent_vol) OR recent_vol < 1, 0.0, else: 100.0)`,
 
   portalActivityOverTime: `${MYCHART_BASE}
     | fieldsAdd action_type = if(e1mid == "MYCHART_LOGIN", "Login",
@@ -117,7 +116,7 @@ export const MyChartPortal = () => {
             <TitleBar.Title>Portal Activity</TitleBar.Title>
             <TitleBar.Subtitle>All MyChart actions — login, messaging, scheduling, results, refills</TitleBar.Subtitle>
           </TitleBar>
-          <SectionHealth query={f(myChartQueries.loginSuccessRate)} field="success_rate" green={95} amber={80} />
+          <SectionHealth query={f(myChartQueries.loginSuccessRate)} field="success_rate" green={95} amber={80} description="Monitors whether MYCHART_LOGIN events are actively flowing. Drops to 0% when the patient portal stops generating login activity — typically caused by MyChart web/mobile outages or credential-stuffing lockouts." />
         </Flex>
         <Flex gap={16} style={{ marginTop: 12 }}>
           <div style={{ flex: 2 }}>

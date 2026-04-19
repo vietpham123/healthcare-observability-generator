@@ -252,3 +252,71 @@ dt-app-development/
 | 1.4.6 | Site filtering for timeseries/metric queries |
 | 1.4.7 | Hub moved to Lawrence KS, removed fake netflow generator |
 | 1.4.8 | Canvas particle alignment fix (uniform scaling), multiline timeseries filter detection |
+
+---
+
+## 10. Threshold Calibration (v1.14.3 Session)
+
+### The 100%-is-green Trap
+**Problem**: Initial thresholds assumed ideal values (95% success, 0 BTG events). Real baseline data showed ~83% Epic login success, ~93% auth success, and ~50/hr BTG events. Result: dashboard was permanently red.
+
+**Lesson**: Always measure baseline data before setting thresholds. Run the baseline scenario for 10+ minutes, query each metric, and set green at a comfortable margin above worst-case baseline.
+
+### Counting What Matters
+| Metric | Before Fix | After Fix |
+|--------|-----------|-----------|
+| ETL Success | 45.6% (RUNNING jobs polluted denominator) | ~86% (filter out RUNNING, count SUCCESS_WITH_WARNINGS) |
+| MyChart Login | 0.83% (all failed logins / MyChart successes) | 100% (volume-based: events flowing = healthy) |
+| Epic Login | 83% but threshold=85% | 83% but threshold=65% |
+
+**Lesson**: Review the DQL query semantics, not just the thresholds. The formula matters more than the threshold value.
+
+### Pipeline Value Discovery
+**Problem**: Assumed pipeline values were `epic-siem` and `network-syslog` based on code review. Actual ingested values were `healthcare-epic` and `healthcare-network`.
+
+**Lesson**: Always verify pipeline/attribute values against actual Grail data:
+```dql
+fetch logs | summarize count(), by: {healthcare.pipeline} | sort count() desc
+```
+
+---
+
+## 11. Strato Component Patterns (v1.14.3 Session)
+
+### Tooltip Ref Forwarding
+**Problem**: Wrapping `<Tooltip>` around `<Flex>` causes "ref forwarding" errors — Strato Tooltip needs a native DOM element child to attach its ref.
+
+**Solution**: Wrap in `<div style={{ display: "inline-flex" }}>` instead of `<Flex>`.
+
+### useDql refetchInterval
+**Discovery**: `useDql` from `@dynatrace-sdk/react-hooks` supports `refetchInterval` in its options parameter. Setting `refetchInterval: 30_000` makes the hook re-execute the DQL query every 30 seconds without any additional state management.
+
+**Pattern**:
+```tsx
+const result = useDql(query, { refetchInterval: 30_000 });
+```
+
+This is the simplest way to get auto-refreshing data in a DT platform app. Each component instance maintains its own independent polling cycle.
+
+---
+
+## 12. Multi-Scenario WebUI Architecture (v2.1.0–v2.2.0)
+
+### Race Condition Fix
+**Problem**: Enabling scenario A while B was active caused both to run simultaneously — the new scenario env var was set but the old one wasn't cleared before restart.
+
+**Solution**: Atomic patch-then-restart: clear ACTIVE_SCENARIO first, wait for restart, then set new value and restart again.
+
+### K8s API Integration
+**Pattern**: WebUI runs with an in-cluster ServiceAccount that has RBAC to `get`, `list`, and `patch` Deployments in the `healthcare-gen` namespace. Environment variable injection uses the strategic merge patch type:
+```python
+body = {"spec": {"template": {"spec": {"containers": [{"name": name, "env": [...]}]}}}}
+apps_v1.patch_namespaced_deployment(name, namespace, body)
+```
+
+### Demo Guide Walkthrough System
+The v2.2.0 WebUI includes step-by-step walkthrough guides:
+- Each scenario has a JSON-defined guide with ordered steps
+- Steps include descriptions, DT app deep links, and observation prompts
+- Frontend auto-advances but supports manual navigation
+- Guides are decoupled from scenario activation (can be read without activating)
