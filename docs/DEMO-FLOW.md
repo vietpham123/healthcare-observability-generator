@@ -279,7 +279,7 @@ Within 30-60 seconds (SectionHealth auto-refreshes every 30s):
 ### 8.5 — Deactivate Scenario
 
 Return to Web UI, deactivate **Ransomware Attack**.
-- Watch health indicators return to **green** within 2–3 minutes
+- **Important**: Ransomware recovery takes ~50 minutes (not 2-3 min) because ~1450 failed logins persist in the DQL query window
 - The 30-second auto-refresh means you'll see the transition in real time
 
 ---
@@ -356,4 +356,47 @@ Each site has a card showing:
 5. **Keep the Web UI on a second screen** — toggle scenarios without leaving the DT app
 6. **If data looks stale** — check `kubectl get pods -n healthcare-gen`; generator pods may have restarted
 7. **If the map has no dots** — NetFlow data takes ~60 seconds to appear after generators start
-8. **After disabling a scenario** — wait 2-3 minutes for health indicators to recover to green
+8. **After disabling a scenario** — recovery depends on intensity: ED Surge/IoMT/HL7 recover in ~5 min; Ransomware takes ~50 min due to burst event persistence in DQL query window
+
+
+---
+
+## Appendix: Verified Scenario Test Results (April 2026)
+
+Comprehensive testing of all 8 scenarios via WebUI API with DQL health indicator verification.
+
+### Impact Summary
+
+| Scenario | Epic Login Impact | Failed Logins Impact | FHIR/ETL Impact | Network Impact | Recovery Time |
+|----------|------------------|---------------------|-----------------|----------------|---------------|
+| ED Surge | Minimal shift | No change | No change | Volume increase | ~5 min |
+| Ransomware | 83% → 44% RED | 120 → 1449 RED | No change | No change | ~50 min |
+| MyChart Credential Stuffing | No attack patterns | No change | No change | No change | ~5 min |
+| HL7 Interface Failure | No change | No change | No change | Syslog events | ~5 min |
+| Epic Outage (Network) | No change | No change | No change | CPU 27→32% | ~5 min |
+| IoMT Device Compromise | No change | No change | No change | Minimal | ~5 min |
+| Insider Threat | No change | No change | No change | No change | ~10 min |
+| Normal Day Shift | Baseline | Baseline | Baseline | Baseline | N/A |
+
+### Scenario Categories
+
+**High-impact (shifts Epic health indicators):**
+- Ransomware Attack — the only scenario that dramatically moves percentage metrics
+
+**Medium-impact (detectable through specific indicators):**
+- Insider Threat — generates BTG events (AC_BREAK_THE_GLASS_ACCESS + SECURE)
+- ED Surge — generates volume increase and ORDER_ENTRY events
+
+**Network-only (no Epic-side impact):**
+- HL7 Interface Failure, Epic Outage, IoMT Device Compromise — all map to `normal_shift` for Epic
+
+**Activity-based (no anomaly patterns):**
+- MyChart Credential Stuffing — generates normal peak MyChart activity, NOT attack patterns
+- Normal Day Shift — baseline behavior confirmation
+
+### Demo Recommendations
+
+1. **For maximum visual impact**: Use **Ransomware Attack** — it turns multiple health indicators RED within 60 seconds
+2. **For quick demos**: Use **Insider Threat** — BTG events appear quickly and recover in ~10 minutes
+3. **Avoid for short demos**: **Ransomware** — recovery takes ~50 minutes, making back-to-back demos difficult
+4. **Show the contrast**: Activate ED Surge first (shows volume increase), then Ransomware (shows percentage shift) — demonstrates two different anomaly detection patterns

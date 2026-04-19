@@ -331,3 +331,98 @@ fetch logs
 | `dynatrace-apps/healthcare-health-monitoring/ui/app/pages/*.tsx` | All 9 app pages |
 | `deploy/kubernetes/base/` | K8s manifests (Kustomize base) |
 | `deploy/docker/Dockerfile.*` | Container build files |
+
+---
+
+## 11. Scenario Testing Results (April 2026)
+
+### Comprehensive 8-Scenario Validation
+
+Every scenario was activated via the WebUI API, observed for 60-90 seconds, and then health indicators were measured via DQL queries against live Grail data.
+
+### Test Results Matrix
+
+| Scenario | Epic Mapping | Activation Response | Health Impact | Key Events Observed |
+|----------|-------------|--------------------|--------------|--------------------|
+| **ED Surge** | `ed_surge` | activated | Minimal % shift, volume increase | ORDER_ENTRY, BTG events, elevated event volume |
+| **Ransomware Attack** | `ransomware` | activated | Epic Login → 44% RED, Failed Logins → 1449 RED | WPSEC_LOGIN_FAIL, LOGIN_BLOCKED, AC_BREAK_THE_GLASS_ACCESS, PUL_SEARCH_AUDIT |
+| **MyChart Credential Stuffing** | `mychart_peak` | activated | Elevated MyChart activity only | MYCHART_APPT_SCHEDULE, MYCHART_MSG_SEND, MYCHART_PROXY_ACCESS (no attack patterns) |
+| **HL7 Interface Failure** | `normal_shift` | activated | No Epic shift, network NetFlow/syslog data | HL7 ADT^A08, ORU^R01 messages normal, network syslog events |
+| **Epic Outage (Network Root Cause)** | `normal_shift` | activated | Network CPU 27→32%, no Epic shift | NetFlow traffic patterns |
+| **IoMT Device Compromise** | `normal_shift` | activated | No measurable shift | Network-only scenario |
+| **Insider Threat** | `insider_threat` | activated | BTG events climbing (13/2min), SECURE events elevated | AC_BREAK_THE_GLASS_ACCESS, SECURE events |
+| **Normal Day Shift** | `normal_shift` | activated | Baseline behavior confirmed | Standard clinical activity (BCA_LOGIN_SUCCESS, PUL_SEARCH_AUDIT, etc.) |
+
+### Baseline Recovery Tracking
+
+After running the ransomware scenario (most impactful), all scenarios were deactivated and recovery was tracked:
+
+| Time Post-Deactivation | Epic Login Rate | Failed Login Count | FHIR Health | ETL Success | BTG Count | Network CPU |
+|------------------------|----------------|--------------------|-------------|-------------|-----------|-------------|
+| Baseline (pre-test) | ~82.5% GREEN | ~120 GREEN | ~90.6% GREEN | ~92.7% GREEN | ~0 GREEN | ~27% GREEN |
+| During Ransomware | 44.0% RED | 1449 RED | 91% GREEN | 95% GREEN | 81 GREEN | 27% GREEN |
+| +3 min | 44.2% RED | 1449 RED | 91.2% GREEN | 94.5% GREEN | 96 GREEN | 27.4% GREEN |
+| +8 min | 44.6% RED | 1432 RED | — | — | — | — |
+| +18 min | 49.5% AMBER | 1175 RED | 90.6% GREEN | 96.4% GREEN | 94 GREEN | 23.6% GREEN |
+| +28 min | 57.8% AMBER | 839 RED | 90.6% GREEN | 95.3% GREEN | 92 GREEN | 26.0% GREEN |
+| +48 min | 76.5% GREEN | 357 AMBER | 89.8% GREEN | 95.7% GREEN | 62 GREEN | 25.2% GREEN |
+| +53 min | 82.7% GREEN | 251 AMBER | 89.0% GREEN | 92.3% GREEN | 19 GREEN | 28.6% GREEN |
+
+### Key Findings from Testing
+
+1. **Ransomware is the only scenario that dramatically shifts Epic health indicators** — it drops Epic Login from ~83% to ~44% and generates ~1450 failed logins in a burst.
+
+2. **Network-only scenarios (3 of 8) produce no Epic-side impact** — HL7 Interface Failure, Epic Outage, and IoMT Device Compromise all map to `normal_shift` for Epic. Their impact is visible only in network metrics.
+
+3. **Recovery time is proportional to burst intensity** — Ransomware generates a massive burst that takes ~50 minutes to fully age out of the DQL query window. Less intense scenarios recover in 2-5 minutes.
+
+4. **FHIR, ETL, and Network CPU are scenario-resilient** — These metrics stayed GREEN throughout all 8 scenario tests. Only login success rate and failed login count were meaningfully affected.
+
+5. **Insider Threat produces a distinct BTG pattern** — Unlike ransomware (which generates BTG + failed logins), Insider Threat generates only BTG events (AC_BREAK_THE_GLASS_ACCESS + SECURE), with no login failures. This makes it distinguishable from ransomware in the DT app.
+
+6. **MyChart Credential Stuffing is mislabeled** — It maps to `mychart_peak` (elevated normal activity), not a credential stuffing attack. No MYCHART_FAILED_LOGIN events were generated.
+
+---
+
+## 12. WebUI Scenario API Architecture
+
+### API Endpoints (Confirmed Working)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/status` | Full status with scenario descriptions, indicators |
+| `GET` | `/api/scenarios` | List all scenarios with active state |
+| `POST` | `/api/scenarios/{key}/activate` | Activate a specific scenario |
+| `POST` | `/api/scenarios/{key}/deactivate` | Deactivate a specific scenario |
+| `POST` | `/api/scenarios/deactivate-all` | Deactivate all scenarios atomically |
+| `POST` | `/api/scenarios/reload` | Reload scenario configuration from ConfigMap |
+| `GET` | `/health` | Health check endpoint |
+
+### Activation Flow
+
+```
+WebUI → POST /api/scenarios/{key}/activate
+  → Maps WebUI key to epic_scenario name (e.g., "ransomware-attack" → "ransomware")
+  → K8s API: Patches epic-generator Deployment with ACTIVE_SCENARIO env var
+  → K8s API: Patches network-generator Deployment with ACTIVE_NETWORK_SCENARIO env var
+  → Triggers rolling restart of both generators
+  → Returns: { status: "activated", key, epic_scenario, network_scenario }
+```
+
+### Deactivation Flow
+
+```
+WebUI → POST /api/scenarios/{key}/deactivate
+  → K8s API: Removes ACTIVE_SCENARIO env var from both generators
+  → Triggers rolling restart
+  → Returns: { status: "deactivated", key }
+```
+
+### Deactivate-All (Atomic)
+
+```
+WebUI → POST /api/scenarios/deactivate-all
+  → Clears all scenario env vars
+  → Single restart (not per-scenario)
+  → Returns: { status: "all_deactivated", configmap_patched, generator_restarted }
+```

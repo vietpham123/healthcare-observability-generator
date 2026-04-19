@@ -20,6 +20,7 @@ This document captures patterns, lessons, and insights from building the Healthc
 | 6 | Dynatrace app + OpenPipeline | Very High | 8-page DT Platform App, custom OpenPipeline, gap analysis |
 | 7 | Fidelity gap repair | Very High | 30+ mnemonic fields, login events, service audit, auth page |
 | 8 | Documentation + repo hygiene | Medium | Docs, prompt analysis, sanitization review |
+| 9 | Documentation + scenario testing | Very High | Comprehensive 8-scenario validation, baseline recovery tracking, recovery-time discovery |
 
 ### Complexity Curve
 
@@ -193,3 +194,52 @@ When the agent got stuck, the most effective escalation was:
 5. **Commit the verification queries** — The DQL queries used for testing are valuable documentation. Keep them.
 6. **Separate concerns per prompt** — "Fix the generator AND update the app AND modify OpenPipeline" works poorly. "Fix the generator, verify, then update the app" works well.
 7. **Include the wrong repo path explicitly** — This project hit a repo-confusion bug. Always state the exact file paths for multi-repo projects.
+
+
+---
+
+## Session 9 Insights — Scenario Testing & Documentation
+
+### New Prompting Pattern: Automated Verification Loop
+
+**Pattern**: Issue a single "test all scenarios" directive and let the agent execute an automated test loop with standardized verification at each step.
+
+**Flow**:
+```
+Activate scenario → Wait 60-90s → Query DQL health indicators → Record results → Deactivate → Wait for recovery → Repeat
+```
+
+**Why it works**: The agent can execute a consistent verification protocol across all 8 scenarios without human intervention. Each scenario gets the same battery of health indicator queries, producing comparable results.
+
+**Challenge**: Long wait times (60-90s per scenario for data to flow, plus recovery time) make this a wall-clock-intensive operation. The agent must be patient and not skip wait steps.
+
+### New Anti-Pattern: Cascading Test Contamination
+
+**Problem**: Testing the ransomware scenario (which generates ~1450 failed logins) contaminated the 30-minute DQL query window. Every subsequent scenario test showed RED health indicators even though the new scenario was not the cause.
+
+**Solution**: Either:
+1. Wait for full recovery between impactful scenarios (~50 min for ransomware)
+2. Test the most impactful scenario last
+3. Use explicit time ranges in verification queries (e.g., `| filter timestamp > now() - 2m`) to see only recent data
+
+**Lesson**: When testing multiple scenarios sequentially, order matters. Test mild scenarios first, impactful scenarios last.
+
+### Discovery: Naming vs. Behavior Mismatch
+
+**Observation**: "MyChart Credential Stuffing Attack" maps to `mychart_peak` and produces normal peak activity, not attack patterns. This kind of naming mismatch is only discoverable through end-to-end testing — code review alone would miss it because the mapping looks intentional.
+
+**Lesson**: Always validate scenario behavior by observing actual generated events, not by reading the scenario name or description. The scenario metadata can promise things the generator doesn't deliver.
+
+### Insight: DQL Default Timeframes Create Hidden Dependencies
+
+**Discovery**: `fetch logs` without an explicit time range uses a sliding 30-minute window. This creates a hidden dependency between sequential scenario tests — each test's "baseline" includes data from the previous test.
+
+**Impact on prompting**: When the agent reports "health indicators are RED," you need additional context to determine if it's the active scenario causing it or residual data from a previous scenario. The agent must track which scenarios have been run and when.
+
+### Effective Pattern: Standing Recovery Verification
+
+**Pattern**: After deactivating a scenario, schedule periodic re-checks at increasing intervals (3min, 8min, 18min, 28min, 48min) until all indicators return to GREEN.
+
+**Why it works**: The recovery curve is gradual, not instant. Checking once and declaring "not recovered" would be premature. The agent needs patience and a systematic approach to track the gradual recovery.
+
+**Quantitative result**: Recovery follows an approximately linear curve for percentage metrics: the ratio of anomalous events decreases as baseline events dilute them in the sliding window.

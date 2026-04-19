@@ -320,3 +320,83 @@ The v2.2.0 WebUI includes step-by-step walkthrough guides:
 - Steps include descriptions, DT app deep links, and observation prompts
 - Frontend auto-advances but supports manual navigation
 - Guides are decoupled from scenario activation (can be read without activating)
+
+
+---
+
+## 13. Scenario Testing — Comprehensive Validation (v2.2.0 Session)
+
+### Scenario-to-Epic Mapping Discovery
+**Problem**: Not all WebUI scenarios map to unique Epic scenarios. Three network-only scenarios (HL7 Interface Failure, Epic Outage, IoMT Device Compromise) all map to `epic_scenario: "normal_shift"` -- they produce no Epic-side anomalies.
+
+**Discovery table**:
+| WebUI Scenario | Epic Mapping | Impact Domain |
+|----------------|-------------|---------------|
+| `ransomware-attack` | `ransomware` | Epic + Network |
+| `ed-surge` | `ed_surge` | Epic + Network |
+| `insider-threat-snooping` | `insider_threat` | Epic only |
+| `mychart-credential-stuffing` | `mychart_peak` | Epic (elevated activity, NOT attack patterns) |
+| `hl7-interface-failure` | `normal_shift` | Network only |
+| `epic-outage-network-root-cause` | `normal_shift` | Network only |
+| `iomt-device-compromise` | `normal_shift` | Network only |
+| `normal-day-shift` | `normal_shift` | Baseline |
+
+**Lesson**: When testing scenarios, check the mapping first. Network-only scenarios will not move Epic health indicators.
+
+### MyChart Credential Stuffing Misnomer
+**Problem**: "MyChart Credential Stuffing" maps to `mychart_peak`, which generates elevated MyChart activity (appointments, messaging, proxy access) -- NOT credential stuffing attack patterns (500+ failed logins, PHI export attempts).
+
+**Expected**: MYCHART_LOGIN / MYCHART_FAILED_LOGIN events with high failure rate.
+**Actual**: MYCHART_APPT_SCHEDULE, MYCHART_MSG_SEND, MYCHART_PROXY_ACCESS events (normal peak usage).
+
+**Lesson**: Scenario names in the WebUI should accurately reflect what the generator produces. If the scenario claims "Credential Stuffing" but produces normal peak traffic, either the name or the generator needs updating.
+
+### Ransomware Data Persistence in DQL Windows
+**Problem**: After deactivating the ransomware scenario, Epic Login health took ~50 minutes to fully recover from RED (44%) back to GREEN (83%). The DQL queries use `fetch logs` without an explicit time range, which defaults to the last 30 minutes of data.
+
+**Recovery timeline**:
+| Time Post-Deactivation | Epic Login | Failed Logins | Status |
+|------------------------|-----------|---------------|--------|
+| 0 min | 44.0% | 1449 | RED |
+| 18 min | 49.5% | 1175 | AMBER |
+| 28 min | 57.8% | 839 | AMBER |
+| 48 min | 76.5% | 357 | GREEN (login), AMBER (failed count) |
+| 53 min | 82.7% | 251 | GREEN (login), AMBER (failed count) |
+
+**Lesson**: Ransomware generates a burst of ~1450 failed logins that persist in the 30-minute query window. Full recovery takes ~50 minutes, not 2-3 minutes. Demo guides should set correct expectations.
+
+### Volume vs. Percentage Metrics Behave Differently
+**Problem**: ED Surge generates high event volume but doesn't shift percentage-based metrics (like login success rate). Both successful and failed logins increase proportionally.
+
+**Lesson**: Percentage-based health indicators are resistant to volume-based scenarios. Volume-based scenarios need volume-based indicators to show impact.
+
+### Network-Only Scenarios Show Minimal DT App Impact
+**Problem**: HL7 Interface Failure, Epic Outage, and IoMT Device Compromise produced network events but since they use `normal_shift` for Epic, the DT app health indicators remained GREEN.
+
+**Lesson**: The current DT app health indicators are heavily Epic-centric. Network-specific indicators (switch port errors, HL7 NACK rate, IPS alert count) would be needed to detect network-only scenarios.
+
+---
+
+## 14. DQL Default Query Window Behavior
+
+### No Explicit Timeframe = Last 30 Minutes
+**Discovery**: `fetch logs` without `| filter timestamp > now() - Xm` uses a default sliding window of approximately 30 minutes. Data ingestion lag can extend the effective window.
+
+**Impact**: When a scenario generates a burst of anomalous events, those events persist in the query window for 30+ minutes after the scenario is deactivated. Recovery is gradual, not instant.
+
+**Lesson**: For demo purposes, either use explicit time ranges in health queries for faster recovery, or set expectations that post-scenario recovery takes 15-50 minutes depending on scenario intensity.
+
+---
+
+## 15. Insider Threat Produces Detectable BTG Patterns
+
+### Verified Pattern
+The Insider Threat scenario generates `AC_BREAK_THE_GLASS_ACCESS` events at approximately 6-7 events per minute.
+
+**Key Observations**:
+- BTG events are the primary indicator (not login failures)
+- The scenario also generates elevated SECURE events
+- It does NOT generate FAILEDLOGIN events (insider already has valid credentials)
+- Network indicators remain unaffected (this is an Epic-only scenario)
+
+**Lesson**: Insider Threat is best detected through BTG count and after-hours access patterns, not through login failure metrics. This makes it distinguishable from Ransomware (which generates both BTG and FAILEDLOGIN).

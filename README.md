@@ -30,7 +30,7 @@ Generates temporally-correlated logs and metrics across two domains, sending dat
 
 A custom Dynatrace platform app (`my.healthcare.health.monitoring`) provides real-time visualization of all generated data with health-indicator overlays, auto-refresh, and scenario-aware monitoring.
 
-**Current Version**: v1.14.3
+**Current Version**: v2.2.1
 
 ### App Pages
 
@@ -172,6 +172,20 @@ npx dt-app deploy   # Opens browser for SSO auth
 > **Note**: `npx dt-app deploy` requires local execution (browser SSO). It does not work via SSH.
 
 ---
+
+### Scenario Testing (April 2026)
+
+All 8 scenarios have been comprehensively tested. See [Scenario Test Report](docs/SCENARIO-TEST-REPORT.md) for detailed results.
+
+| Scenario | Impact Level | Recovery Time |
+|----------|-------------|---------------|
+| Ransomware Attack | HIGH (Login 83%→44%) | ~50 min |
+| Insider Threat | MEDIUM (BTG events) | ~10 min |
+| ED Surge | LOW (volume only) | ~5 min |
+| Network-only (3 scenarios) | NONE on Epic | ~5 min |
+| MyChart Peak | LOW (activity increase) | ~5 min |
+| Normal Day Shift | BASELINE | N/A |
+
 
 ## Environment Variables
 
@@ -358,6 +372,7 @@ BGP WAN Outage, DDoS Attack, DHCP Exhaustion, DNS Failure, STP Broadcast Storm, 
 
 | Version | Component | Changes |
 |---------|-----------|---------|
+| v2.2.1 | Docs | Comprehensive 8-scenario validation, scenario test report, recovery time documentation, lessons 13-15 |
 | v1.14.3 | DT App | SectionHealth auto-refresh (30s), tooltip descriptions, threshold recalibration |
 | v1.14.0 | DT App | SectionHealth component, Explore raw-log viewer, Security & Compliance page |
 | v1.9.0 | DT App | Anomaly injection, threshold fixes, brute-force scenario |
@@ -402,3 +417,5 @@ All data is synthetic and sanitized — cannot be traced to real systems:
 - [Architecture & Implementation Guide](docs/ARCHITECTURE.md) — Design phases, deployment modes, K8s microservices
 - [Prompting Insights](docs/PROMPTING_INSIGHTS.md) — AI-assisted development analysis and lessons learned
 - [Prompt Appendix](docs/PROMPT_APPENDIX.md) — Sanitized prompt log for thought-process review
+- [Scenario Test Report](docs/SCENARIO-TEST-REPORT.md) — Comprehensive 8-scenario validation with recovery tracking
+- [Lessons Learned](docs/LESSONS-LEARNED.md) — Patterns, pitfalls, and proven strategies from AI-assisted development

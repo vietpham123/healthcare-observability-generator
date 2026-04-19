@@ -238,3 +238,67 @@ Total agent actions (file edits, commands, queries): ~200+
 Ratio: ~1 prompt → ~5 agent actions
 
 This high leverage ratio is enabled by compound prompts (multiple tasks per prompt) and standing instructions (rules applied without re-prompting).
+
+
+---
+
+## Session 9 — Scenario Testing, Documentation & Analysis (April 19, 2026)
+
+### Prompt 9.1 — Documentation + Scenario Testing
+> "Please update all documentation, and review all sessions to ensure the documentation for the prompt analysis and appendix is as comprehensive for this entire project. Ensure everything is updated and then push."
+
+**Intent:** Comprehensive documentation sweep before scenario testing phase.
+
+### Prompt 9.2 — Comprehensive Scenario Testing
+> "I would like a comprehensive test of all scenarios, along with checking when using the WebUI to enable/disable everything works properly and comes back to baseline."
+
+**Intent:** End-to-end validation of all 8 scenarios — activate, observe impact, deactivate, verify recovery. First systematic testing of the complete scenario suite.
+
+### Prompt 9.3 — Critical Constraint Reminder
+> "Remember all work should be relative to the healthcare-observability-generator repo."
+
+**Intent:** Re-establish standing instruction about the correct repository path after previous session's repo-confusion bug.
+
+### Prompt 9.4 — Continuation After Context Window Break
+> "Can you please update documentation, and also continue to analyze and create the prompt files to ensure lessons learned."
+
+**Intent:** After a context window break during scenario testing, re-establish the documentation + analysis task. The agent needed to survey current doc state, then update all prompt/lessons files with the scenario testing findings.
+
+### Thought Process — Session 9
+
+**Testing methodology evolution:**
+- The user transitioned from "fix and deploy" (sessions 1-8) to "validate and document" (session 9)
+- This is the first session where the agent ran a systematic test protocol across all scenarios
+- The discovery that 3 of 8 scenarios are network-only (no Epic impact) and 1 is mislabeled emerged only through testing
+
+**Documentation as verification:**
+- Writing the scenario test report forced explicit comparison between expected and actual behavior
+- The mismatch between "MyChart Credential Stuffing" name and `mychart_peak` behavior was documented as a finding
+- Recovery time expectations in DEMO-FLOW.md were corrected from "2-3 minutes" to "~50 minutes for ransomware"
+
+**Context window management:**
+- Session 9 crossed a context window boundary during scenario testing (between testing scenarios 3 and 8)
+- The agent had to reconstruct state from the conversation summary and continue testing
+- This highlights the importance of session memory and standing instructions for multi-hour tasks
+
+### Decision Points — Session 9
+
+| Decision | Context | Choice | Why |
+|----------|---------|--------|-----|
+| Test order | 8 scenarios to test | Mild first, intense later | Avoid contaminating subsequent tests |
+| Recovery wait | How long to wait between scenarios | 60-90s for data, 120s+ for recovery | DQL window needs time to flush |
+| Ransomware test position | When to test ransomware | 2nd (after ED Surge) | Resulted in 50-min contamination — should have been last |
+| Documentation scope | What to update | All 6 docs + new test report | Comprehensive update aligned with user request |
+
+### Prompt-to-Outcome Analysis — Session 9
+
+| Prompt | Actions Triggered | Outcome |
+|--------|-------------------|---------|
+| 9.1 (docs) | Survey 6 docs, update README, ARCH, PROMPT-ANALYSIS, DEMO-FLOW, LESSONS | All docs updated + git pushed |
+| 9.2 (testing) | 8 scenario activations, ~30 DQL queries, 6 recovery checks | All scenarios tested, recovery verified |
+| 9.3 (constraint) | Path verification | No wrong-repo mistakes in session 9 |
+| 9.4 (continuation) | Survey docs again, update 6 files, create 1 new file | All docs updated with test findings |
+
+**Total Session 9 agent actions:** ~60+
+**Total Session 9 prompts:** 4
+**Ratio:** 1 prompt → 15 agent actions (higher than average due to automated testing loops)
