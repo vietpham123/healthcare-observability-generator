@@ -373,3 +373,32 @@ BGP WAN Outage, DDoS Attack, DHCP Exhaustion, DNS Failure, STP Broadcast Storm, 
 ## License
 
 Internal — Dynatrace SE use only.
+
+## SIEM Mnemonic Fields (v1.0.3+)
+
+The Epic generator produces 30+ realistic mnemonic fields per SIEM event, matching real Epic SIEM output structure:
+
+**Login events** (`BCA_LOGIN_SUCCESS`, `FAILEDLOGIN`):
+`CLIENT_TYPE`, `LOGINERROR`, `LOGIN_CONTEXT`, `LOGIN_LDAP_ID`, `INTERNET_AREA`, `HYP_ACCESS_ID`, `REMOTE_IP`, `UID`, `LOGIN_SOURCE`
+
+**Service audit events** (`IC_SERVICE_AUDIT`):
+`SERVICECATEGORY`, `SERVICETYPE`, `SERVICENAME`, `HOSTNAME`, `INSTANCEURN`, `SERVICE_USER`, `SERVICE_USERTYP`
+
+**Common fields**: `E1Mid`, `Action`, `Source`, `WorkstationID`, `Flag`, `EMPid`, `IP`, `CLIENTNAME`, `SYSLOG_PID`
+
+## Sanitization
+
+All data is synthetic and sanitized — cannot be traced to real systems:
+- Employee IDs/names are generated, not from real Epic environments
+- Workstation IDs follow realistic hospital patterns but are fabricated
+- Service URNs are sanitized versions of real Epic API naming conventions
+- IP addresses use non-routable or random ranges
+- Patient names use obviously fake patterns (no real PHI)
+- No real credentials, tokens, or environment identifiers in generated data
+
+## Additional Documentation
+
+- [Dynatrace Ingestion Advisory](docs/DYNATRACE_INGESTION_ADVISORY.md) — OpenPipeline, Grail buckets, querying
+- [Architecture & Implementation Guide](docs/ARCHITECTURE.md) — Design phases, deployment modes, K8s microservices
+- [Prompting Insights](docs/PROMPTING_INSIGHTS.md) — AI-assisted development analysis and lessons learned
+- [Prompt Appendix](docs/PROMPT_APPENDIX.md) — Sanitized prompt log for thought-process review
