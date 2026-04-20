@@ -551,6 +551,7 @@ All data is synthetic and sanitized — cannot be traced to real systems:
 - [Demo Flow](docs/DEMO-FLOW.md) — Step-by-step demo walkthrough
 - [Dynatrace Ingestion Advisory](docs/DYNATRACE_INGESTION_ADVISORY.md) — OpenPipeline, Grail buckets, querying
 - [Lessons Learned](docs/LESSONS-LEARNED.md) — Patterns, pitfalls, and proven strategies
+- [Dynatrace Assets](docs/DYNATRACE_ASSETS.md) — OpenPipeline, Davis alerts, DQL queries, deployment checklist
 - [Prompting Insights](docs/PROMPTING_INSIGHTS.md) — AI-assisted development analysis
 
 ---
