@@ -130,34 +130,12 @@ export const SecurityCompliance = () => {
         </div>
       </Surface>
 
-      {/* Login Failure Analysis Section (NEW) */}
-      <Surface style={{ padding: 16, borderRadius: 12 }}>
-        <TitleBar>
-          <TitleBar.Title>Login Failure Analysis</TitleBar.Title>
-          <TitleBar.Subtitle>Login error types, failure by workstation, and client context from new mnemonic fields</TitleBar.Subtitle>
-        </TitleBar>
-        <Flex gap={16} style={{ marginTop: 12 }}>
-          <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Error Type</Text>
-            <BarChart query={f(queries.loginErrorTypeBreakdown)} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Failed Logins by Workstation</Text>
-            <BarChart query={f(queries.failedLoginsByWorkstation)} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Context</Text>
-            <BarChart query={f(queries.loginContextDistribution)} />
-          </div>
-        </Flex>
-      </Surface>
-
-      {/* Authentication Trends Section (merged from Auth Health) */}
+      {/* Login Analysis Section (merged from Login Failure Analysis + Auth Trends) */}
       <Surface style={{ padding: 16, borderRadius: 12 }}>
         <Flex alignItems="center">
           <TitleBar>
-            <TitleBar.Title>Authentication Trends</TitleBar.Title>
-            <TitleBar.Subtitle>Login success vs failure over time, client and source context</TitleBar.Subtitle>
+            <TitleBar.Title>Login Analysis</TitleBar.Title>
+            <TitleBar.Subtitle>Login success vs failure trends, error breakdown, and authentication context</TitleBar.Subtitle>
           </TitleBar>
           <SectionHealth query={f(queries.authLoginSuccessRate)} field="success_rate" green={80} amber={60} description="BCA_LOGIN_SUCCESS vs FAILEDLOGIN ratio from Epic SIEM audit logs. Monitors the core authentication layer — degrades during LDAP outages, password policy changes, or targeted credential attacks." />
         </Flex>
@@ -167,34 +145,16 @@ export const SecurityCompliance = () => {
         </div>
         <Flex gap={16} style={{ marginTop: 16 }}>
           <div style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Error Type</Text>
+            <BarChart query={f(queries.loginErrorTypeBreakdown)} />
+          </div>
+          <div style={{ flex: 1 }}>
             <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Client Type</Text>
             <PieChart query={f(queries.loginClientTypeDistribution)} />
           </div>
           <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Source</Text>
-            <BarChart query={f(queries.loginSourceDistribution)} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Internet Area</Text>
-            <PieChart query={f(queries.loginInternetAreaDistribution)} />
-          </div>
-        </Flex>
-      </Surface>
-
-      {/* Workstation Activity Section (merged from Auth Health) */}
-      <Surface style={{ padding: 16, borderRadius: 12 }}>
-        <TitleBar>
-          <TitleBar.Title>Workstation Activity</TitleBar.Title>
-          <TitleBar.Subtitle>Login volume and failure rates per workstation</TitleBar.Subtitle>
-        </TitleBar>
-        <Flex gap={16} style={{ marginTop: 12 }}>
-          <div style={{ flex: 2 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Top Workstations (Total / Failures)</Text>
-            <WorkstationTable query={f(queries.loginByWorkstation)} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Failed Logins by Workstation</Text>
-            <BarChart query={f(queries.failedLoginsByWorkstation)} />
+            <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Login Context</Text>
+            <BarChart query={f(queries.loginContextDistribution)} />
           </div>
         </Flex>
       </Surface>
@@ -241,42 +201,6 @@ const PieChart = ({ query }: { query: string }) => {
   const { data, isLoading } = useDql({ query });
   if (isLoading) return <ProgressCircle />;
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
-};
-
-const WorkstationTable = ({ query }: { query: string }) => {
-  const { data, isLoading } = useDql({ query });
-  if (isLoading) return <ProgressCircle />;
-  const records = data?.records ?? [];
-  if (records.length === 0) return <div style={{ padding: 20, opacity: 0.5 }}>No workstation data</div>;
-  return (
-    <div style={{ maxHeight: 350, overflow: "auto", fontSize: 12 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={TH}>Workstation</th>
-            <th style={TH}>Total</th>
-            <th style={TH}>Failures</th>
-            <th style={TH}>Fail %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r: any, i: number) => {
-            const total = Number(r.total) || 0;
-            const failures = Number(r.failures) || 0;
-            const failPct = total > 0 ? ((failures / total) * 100).toFixed(1) : "0.0";
-            return (
-              <tr key={i}>
-                <td style={TD}>{r.WorkstationID ?? "—"}</td>
-                <td style={TD}>{total}</td>
-                <td style={{ ...TD, color: failures > 0 ? "#dc3545" : undefined }}>{failures}</td>
-                <td style={{ ...TD, color: Number(failPct) > 20 ? "#dc3545" : Number(failPct) > 5 ? "#ffc107" : undefined }}>{failPct}%</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
 };
 
 const EventTable = ({ query }: { query: string }) => {

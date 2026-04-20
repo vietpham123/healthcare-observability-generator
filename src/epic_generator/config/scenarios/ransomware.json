@@ -16,15 +16,22 @@
     "type": "ransomware",
     "description": "Rapid automated access patterns typical of ransomware reconnaissance and exfiltration",
     "attacker_ip_range": "172.16.99.0/24",
-    "events_per_tick": 15,
+    "events_per_tick": 12,
     "phases": [
       {
         "name": "Reconnaissance",
         "duration_ticks": 120,
         "event_types": [
           "FAILEDLOGIN",
+          "FAILEDLOGIN",
           "WPSEC_LOGIN_FAIL",
-          "IC_SERVICE_AUDIT"
+          "LOGIN_BLOCKED",
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "IC_SERVICE_AUDIT",
+          "PUL_SEARCH_AUDIT"
         ],
         "target_usernames": [
           "EPICHYPERSPACE",

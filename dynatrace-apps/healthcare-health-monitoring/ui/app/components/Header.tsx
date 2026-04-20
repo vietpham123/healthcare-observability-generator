@@ -9,10 +9,10 @@ import { Link, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
   { path: "/", label: "Overview" },
-  { path: "/epic", label: "Epic Health" },
-  { path: "/network", label: "Network" },
-  { path: "/integration", label: "Integration" },
   { path: "/security", label: "Security" },
+  { path: "/integration", label: "Integration" },
+  { path: "/network", label: "Network" },
+  { path: "/epic", label: "Epic Health" },
   { path: "/mychart", label: "MyChart" },
   { path: "/sites", label: "Sites" },
   { path: "/explore", label: "Explore" },

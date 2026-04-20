@@ -85,42 +85,17 @@ export const EpicHealth = () => {
       </Flex>
     </Surface>
 
-    {/* Service Audit Section */}
+    {/* Service Audit Section (slimmed) */}
     <Surface style={{ padding: 16, borderRadius: 12 }}>
-      <TitleBar><TitleBar.Title>Interconnect Service Audit</TitleBar.Title><TitleBar.Subtitle>API service category, type, and instance distribution from IC_SERVICE_AUDIT events</TitleBar.Subtitle></TitleBar>
+      <TitleBar><TitleBar.Title>Interconnect Service Audit</TitleBar.Title><TitleBar.Subtitle>API service category and type distribution from IC_SERVICE_AUDIT events</TitleBar.Subtitle></TitleBar>
       <Flex gap={16} style={{ marginTop: 12 }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 2 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Service Category Over Time</Text>
           <TsChart query={f(queries.serviceCategoryOverTime)} />
         </div>
-      </Flex>
-      <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>API Category Breakdown</Text>
           <BarChart query={f(queries.apiCategoryBreakdown)} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Service Type</Text>
-          <BarChart query={f(queries.serviceTypeDistribution)} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Instance URN</Text>
-          <BarChart query={f(queries.instanceUrnDistribution)} />
-        </div>
-      </Flex>
-    </Surface>
-
-    {/* Workstation Activity Section */}
-    <Surface style={{ padding: 16, borderRadius: 12 }}>
-      <TitleBar><TitleBar.Title>Workstation Activity</TitleBar.Title><TitleBar.Subtitle>Login volume per workstation and failure hotspots</TitleBar.Subtitle></TitleBar>
-      <Flex gap={16} style={{ marginTop: 12 }}>
-        <div style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Top Workstations by Login Volume</Text>
-          <BarChart query={f(queries.loginByWorkstation)} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Failed Logins by Workstation</Text>
-          <BarChart query={f(queries.failedLoginsByWorkstation)} />
         </div>
       </Flex>
     </Surface>

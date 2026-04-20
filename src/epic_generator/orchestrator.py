@@ -482,12 +482,17 @@ class Orchestrator:
                 pass
 
     def _maybe_generate_login_events(self):
-        """Generate standalone login success/failure events per tick."""
+        """Generate standalone login success/failure events per tick.
+
+        Tuned for realistic hospital baseline: ~97-98% login success.
+        Higher volume (5-10 events/tick) ensures attack scenarios produce
+        a visible 60-70% drop rather than swamping the ratio entirely.
+        """
         if "siem" not in self.enabled:
             return
-        login_count = random.randint(1, 3)
+        login_count = random.randint(5, 10)
         for _ in range(login_count):
-            if random.random() < 0.85:
+            if random.random() < 0.98:
                 event_type = "LOGIN"
             else:
                 event_type = random.choice(["FAILEDLOGIN", "FAILEDLOGIN",
