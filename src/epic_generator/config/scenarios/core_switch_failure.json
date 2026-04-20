@@ -1,0 +1,28 @@
+{
+  "name": "Core Switch Failure",
+  "description": "Core network switch failure causes device outages and increased load on remaining infrastructure. Epic systems experience intermittent connectivity.",
+  "volume_multiplier": 0.8,
+  "max_sessions": 15,
+  "generator_overrides": {
+    "fhir_error_bias": 0.15,
+    "etl_failure_bias": 0.2,
+    "hl7_disabled": false,
+    "mirth_scenario": "core_switch_failure"
+  },
+  "anomaly": {
+    "type": "core_switch_failure",
+    "description": "Intermittent Epic connectivity due to core switch outage",
+    "events_per_tick": 3,
+    "duration_ticks": 300,
+    "event_types": [
+      "IC_SERVICE_AUDIT",
+      "FAILEDLOGIN"
+    ],
+    "indicators": [
+      "Network device up ratio drops below 100%",
+      "Device CPU spikes on surviving switches",
+      "Intermittent FHIR API timeouts",
+      "Slight increase in ETL job failures"
+    ]
+  }
+}

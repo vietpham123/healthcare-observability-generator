@@ -110,7 +110,7 @@ The Explore page offers two views:
 The Web UI (FastAPI + HTML/JS) provides:
 
 ### Scenario Management
-- **Enable/Disable** any of the 8 correlated scenarios via toggle buttons
+- **Enable/Disable** any of the 4 focused scenarios via toggle buttons
 - Scenarios are mutually exclusive — enabling one disables others
 - Changes propagate to both Epic and Network generators via K8s API (environment variable injection + rollout restart)
 - Visual feedback with status indicators and countdown timers
@@ -175,7 +175,7 @@ npx dt-app deploy   # Opens browser for SSO auth
 
 ### Scenario Testing (April 2026)
 
-All 8 scenarios have been comprehensively tested. See [Scenario Test Report](docs/SCENARIO-TEST-REPORT.md) for detailed results.
+All 4 scenarios have been comprehensively tested. See [Scenario Test Report](docs/SCENARIO-TEST-REPORT.md) for detailed results.
 
 | Scenario | Impact Level | Recovery Time |
 |----------|-------------|---------------|
@@ -226,7 +226,21 @@ NETFLOW = log.source == "netflow"
 
 ## Correlated Scenarios
 
-Toggle scenarios via the Web UI to inject anomaly events across **both** generators simultaneously:
+Toggle scenarios via the Web UI to inject anomaly events across **both** generators simultaneously.
+v2.3.0 consolidated to 4 focused scenarios, each turning a different DT app page RED:
+
+| Scenario | DT App Page | Primary Indicators | Key Mechanism |
+|-----------|------------|-------------------|---------------|
+| **Ransomware Attack** | Auth, Security | Login failures spike | 4-phase kill chain: Recon → Harvest → Lateral → Exfil |
+| **Insider Threat** | Security | BTG events spike | After-hours employee snooping with break-the-glass |
+| **HL7 Interface Failure** | Integration | Mirth queue backup, FHIR errors, ETL failures | Network switch port error on HL7 VLAN cascades to integration engine |
+| **Core Switch Failure** | Network | Device up ratio drops, CPU spikes | Core switch fails, surviving infrastructure overloaded |
+
+### Mirth Connect Integration Engine
+
+v2.3.0 adds synthetic Mirth Connect channel metrics (5 channels × 6 metrics each) via DT Metrics API v2.
+Channels: LAB-RESULTS-IN, ADT-OUT, PHARMACY-ORDERS, RADIOLOGY-RESULTS, SCHEDULING-OUT.
+During HL7 Interface Failure: queue depths climb, error rates spike, channels stop delivering.
 
 | Scenario | Epic Events | Network Events | Key Correlation |
 |----------|-------------|----------------|-----------------|

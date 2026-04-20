@@ -1,0 +1,34 @@
+{
+  "name": "Core Switch Failure \u2014 Network Outage",
+  "description": "Core network switch fails. Devices go offline, surviving switches spike CPU. Epic connectivity intermittent. Network page turns RED.",
+  "volume_multiplier": 0.8,
+  "max_sessions": 15,
+  "network_correlation": {
+    "enabled": true,
+    "description": "Core switch port-channel failure cascading to connected devices",
+    "playbook": "core_switch_failure.yaml",
+    "events": [
+      {
+        "offset_seconds": 0,
+        "device": "kcrmc-core-01",
+        "event_type": "device_down"
+      },
+      {
+        "offset_seconds": 5,
+        "device": "kcrmc-dist-epic-01",
+        "event_type": "cpu_spike",
+        "params": {
+          "cpu_percent": 85
+        }
+      },
+      {
+        "offset_seconds": 10,
+        "device": "kcrmc-dist-epic-02",
+        "event_type": "cpu_spike",
+        "params": {
+          "cpu_percent": 78
+        }
+      }
+    ]
+  }
+}

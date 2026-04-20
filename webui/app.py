@@ -42,23 +42,18 @@ _SA_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 # Map from shared-config scenario keys (hyphenated) to epic generator keys (underscored)
 SCENARIO_KEY_MAP = {
+    # Shared-config keys (hyphenated) → epic generator keys (underscored)
     "ransomware-attack": "ransomware",
-    "normal-day-shift": "normal_shift",
-    "ed-surge": "ed_surge",
     "insider-threat-snooping": "insider_threat",
-    "mychart-credential-stuffing": "mychart_peak",
-    "hl7-interface-failure": "normal_shift",
-    "iomt-device-compromise": "normal_shift",
-    "epic-outage-network-root-cause": "normal_shift",
+    "hl7-interface-failure": "hl7_interface_failure",
+    "core-switch-failure": "core_switch_failure",
+    "normal-day-shift": "normal_shift",
     # Epic-native keys map to themselves
-    "brute_force": "brute_force",
     "ransomware": "ransomware",
-    "hipaa_audit": "hipaa_audit",
     "insider_threat": "insider_threat",
-    "privacy_breach": "privacy_breach",
+    "hl7_interface_failure": "hl7_interface_failure",
+    "core_switch_failure": "core_switch_failure",
     "normal_shift": "normal_shift",
-    "ed_surge": "ed_surge",
-    "mychart_peak": "mychart_peak",
 }
 
 

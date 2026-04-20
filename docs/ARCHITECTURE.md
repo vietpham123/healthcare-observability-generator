@@ -201,3 +201,31 @@ curl -X POST -H "Authorization: Api-Token $OPERATOR_TOKEN" \
   "$DT_ENV/api/v2/settings/objects" \
   -d '[{"schemaId":"builtin:openpipeline.logs.pipelines","objectId":"<id>","value":{...}}]'
 ```
+
+
+## Mirth Connect Metrics Emitter (v2.3.0)
+
+The epic-generator now includes a Mirth Connect integration engine metrics emitter
+(`mirth_metrics.py`) that sends synthetic channel metrics directly to the Dynatrace
+Metrics API v2 (MINT line protocol).
+
+### Channels
+- LAB-RESULTS-IN (HL7v2 inbound)
+- ADT-OUT (HL7v2 outbound)
+- PHARMACY-ORDERS (HL7v2 bidirectional)
+- RADIOLOGY-RESULTS (HL7v2 inbound)
+- SCHEDULING-OUT (FHIR outbound)
+
+### Metrics (per channel)
+- `healthcare.mirth.channel.messages.received` (count, delta)
+- `healthcare.mirth.channel.messages.sent` (count, delta)
+- `healthcare.mirth.channel.messages.errors` (count, delta)
+- `healthcare.mirth.channel.messages.filtered` (count, delta)
+- `healthcare.mirth.channel.queue.depth` (gauge)
+- `healthcare.mirth.channel.status` (gauge: 1=running, 0=stopped)
+
+### Scenario Integration
+The emitter responds to `generator_overrides.mirth_scenario` in scenario configs:
+- `hl7_interface_failure`: Escalating degradation (queue depth 0→5000, channels stop)
+- `core_switch_failure`: Mild degradation (30% error increase)
+- Any other / None: Normal baseline metrics

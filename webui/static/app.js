@@ -111,20 +111,14 @@ async function reloadScenarios() {
 const SCENARIO_PREP = {
   "normal-day-shift": { icon: "🏥", prep: 5, runtime: "Continuous", tip: "Baseline — activate 5 min before demo for smooth charts." },
   "normal_shift":     { icon: "🏥", prep: 5, runtime: "Continuous", tip: "Baseline — activate 5 min before demo for smooth charts." },
-  "ed-surge":         { icon: "🚨", prep: 10, runtime: "Continuous", tip: "Run Normal first for 15 min, then switch to ED Surge for dramatic spike." },
-  "ed_surge":         { icon: "🚨", prep: 10, runtime: "Continuous", tip: "Run Normal first for 15 min, then switch to ED Surge for dramatic spike." },
-  "ransomware-attack":{ icon: "💀", prep: 30, runtime: "60 min (4 phases)", tip: "Start 30 min early. Present at T-10 to watch Phases 3-4 unfold live." },
-  "ransomware":       { icon: "💀", prep: 30, runtime: "60 min (4 phases)", tip: "Start 30 min early. Present at T-10 to watch Phases 3-4 unfold live." },
-  "brute_force":      { icon: "🔐", prep: 10, runtime: "60 min", tip: "Fastest demo — KPI turns RED in under 5 min. Great for time-constrained demos." },
-  "hipaa_audit":      { icon: "📋", prep: 10, runtime: "60 min", tip: "Focus on Security & Compliance page — single billing user across 6+ departments." },
-  "insider-threat-snooping": { icon: "🕵️", prep: 15, runtime: "50 min", tip: "Low-and-slow attack. Present as a mystery: 'Everything looks normal, but...'" },
-  "insider_threat":   { icon: "🕵️", prep: 15, runtime: "50 min", tip: "Low-and-slow attack. Present as a mystery: 'Everything looks normal, but...'" },
-  "privacy_breach":   { icon: "🔓", prep: 15, runtime: "50 min", tip: "Break-the-glass abuse. Good follow-up to HIPAA Audit scenario." },
-  "epic-outage-network-root-cause": { icon: "🔌", prep: 10, runtime: "Continuous", tip: "Best for showing cross-domain root cause analysis. Network → Epic cascade." },
-  "hl7-interface-failure": { icon: "🔀", prep: 10, runtime: "Continuous", tip: "Present as help-desk ticket: 'Lab results aren't showing in Epic.'" },
-  "iomt-device-compromise": { icon: "💉", prep: 10, runtime: "Continuous", tip: "IoMT-specific audience. Emphasize segmentation as primary defense." },
-  "mychart-credential-stuffing": { icon: "🤖", prep: 10, runtime: "Continuous", tip: "Pair with Brute Force for a 'credential attacks' demo track." },
-  "mychart_peak":     { icon: "📱", prep: 10, runtime: "Continuous", tip: "Healthy portal traffic. Good baseline before credential stuffing demo." },
+  "ransomware-attack":{ icon: "🦠", prep: 10, runtime: "60 min cycle", tip: "Login failures spike → Auth & Security pages turn RED. 4 phases: Recon → Harvest → Lateral → Exfil." },
+  "ransomware":       { icon: "🦠", prep: 10, runtime: "60 min cycle", tip: "Login failures spike → Auth & Security pages turn RED." },
+  "insider-threat-snooping": { icon: "🕵️", prep: 10, runtime: "50 min cycle", tip: "BTG events spike → Security page turns RED. Employee browsing records after hours." },
+  "insider_threat":   { icon: "🕵️", prep: 10, runtime: "50 min cycle", tip: "BTG events spike → Security page turns RED." },
+  "hl7-interface-failure": { icon: "🔌", prep: 10, runtime: "Escalating", tip: "Mirth queue backs up → Integration page turns RED. FHIR errors + ETL failures." },
+  "hl7_interface_failure": { icon: "🔌", prep: 10, runtime: "Escalating", tip: "Mirth queue backs up → Integration page turns RED." },
+  "core-switch-failure": { icon: "🔥", prep: 5, runtime: "Continuous", tip: "Devices go offline, CPU spikes → Network page turns RED." },
+  "core_switch_failure": { icon: "🔥", prep: 5, runtime: "Continuous", tip: "Devices go offline → Network page turns RED." },
 };
 
 // ── Status updates ───────────────────────────────────────────────

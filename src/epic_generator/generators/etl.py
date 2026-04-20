@@ -36,6 +36,7 @@ class ETLGenerator(BaseGenerator):
 
     def __init__(self, data_source="Caboodle"):
         self.data_source = data_source
+        self.failure_bias = 0.0  # 0.0 = normal distribution, >0 = force failures
 
     def generate_event(self, session=None, config=None, event_type=None):
         """Generate an ETL job log entry as a JSON string.
@@ -109,9 +110,12 @@ class ETLGenerator(BaseGenerator):
         base_rows = job["avg_rows"]
         actual_rows = max(0, int(random.gauss(base_rows, base_rows * 0.2)))
 
-        # Status
-        statuses, weights = zip(*ETL_STATUSES)
-        status = random.choices(statuses, weights=weights, k=1)[0]
+        # Status — failure_bias overrides normal distribution during scenarios
+        if self.failure_bias > 0 and random.random() < self.failure_bias:
+            status = random.choice(["FAILED", "TIMEOUT"])
+        else:
+            statuses, weights = zip(*ETL_STATUSES)
+            status = random.choices(statuses, weights=weights, k=1)[0]
 
         # Error details for failures
         error_msg = None

@@ -1,0 +1,30 @@
+{
+  "name": "HL7 Interface Failure",
+  "description": "Switch port error on HL7 VLAN causes Mirth Connect queue backup, FHIR API errors, and ETL job failures. Integration engine metrics degrade while network shows port errors.",
+  "volume_multiplier": 1.2,
+  "max_sessions": 20,
+  "generator_overrides": {
+    "fhir_error_bias": 0.65,
+    "etl_failure_bias": 0.7,
+    "hl7_disabled": true,
+    "mirth_scenario": "hl7_interface_failure"
+  },
+  "anomaly": {
+    "type": "hl7_interface_failure",
+    "description": "Integration engine degradation from network switch port failure on HL7 VLAN",
+    "events_per_tick": 8,
+    "duration_ticks": 300,
+    "event_types": [
+      "IC_SERVICE_AUDIT",
+      "IC_SERVICE_AUDIT",
+      "IC_SERVICE_AUDIT",
+      "FAILEDLOGIN"
+    ],
+    "indicators": [
+      "Mirth Connect queue depth growing >500",
+      "FHIR API error rate exceeds 50%",
+      "ETL jobs failing with connection timeouts",
+      "HL7 message delivery stops completely"
+    ]
+  }
+}

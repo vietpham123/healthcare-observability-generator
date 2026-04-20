@@ -16,6 +16,7 @@ from generators.mychart import MyChartGenerator
 from generators.fhir_resources import FHIRResourceGenerator
 from generators.etl import ETLGenerator
 from outputs.file_output import FileOutput
+from mirth_metrics import MirthMetricsEmitter
 from scheduler import Scheduler
 
 
@@ -100,6 +101,24 @@ class Orchestrator:
                 print(f"[anomaly] ACTIVE: type={atype}, phases={len(phases)}, total_ticks={total}")
             else:
                 print(f"[anomaly] ACTIVE: type={atype}, duration_ticks={dur}, events_per_tick={self._anomaly_config.get('events_per_tick', 0)}")
+
+        # Apply generator_overrides from scenario config
+        overrides = self.scheduler.get_scenario_config().get("generator_overrides", {})
+        if overrides:
+            if "fhir_error_bias" in overrides:
+                self.fhir_gen.error_bias = overrides["fhir_error_bias"]
+                self.fhir_json_gen.error_bias = overrides["fhir_error_bias"]
+                print(f"[override] FHIR error_bias={overrides['fhir_error_bias']}")
+            if "etl_failure_bias" in overrides:
+                self.etl_gen.failure_bias = overrides["etl_failure_bias"]
+                print(f"[override] ETL failure_bias={overrides['etl_failure_bias']}")
+            if overrides.get("hl7_disabled"):
+                self.enabled.discard("hl7")
+                print("[override] HL7 generation disabled")
+
+        # Mirth metrics emitter (None until __main__ wires it up)
+        self._mirth_emitter = None
+        self._mirth_scenario = overrides.get("mirth_scenario")
 
     def _load_data(self, config_dir):
         """Load user and patient pools from config directory or generate defaults."""
@@ -507,6 +526,10 @@ class Orchestrator:
                 self._maybe_generate_login_events()
                 self._inject_anomaly_events()
 
+                # Mirth metrics (every tick)
+                if self._mirth_emitter:
+                    self._mirth_emitter.tick(scenario=self._mirth_scenario)
+
                 tick += 1
                 if tick % 30 == 0:  # Log every 30 ticks
                     print(f"[tick {tick}] sessions={len(self.active_sessions)}")
@@ -621,5 +644,15 @@ if __name__ == "__main__":
         output=output,
         scenario=scenario,
     )
+
+    # Wire up Mirth metrics emitter if DT credentials available
+    dt_endpoint = os.environ.get("DT_ENDPOINT", "").rstrip("/")
+    dt_token = os.environ.get("DT_API_TOKEN", "")
+    if dt_endpoint and dt_token:
+        orch._mirth_emitter = MirthMetricsEmitter(dt_endpoint, dt_token)
+        print(f"Mirth metrics emitter enabled: {dt_endpoint}/api/v2/metrics/ingest")
+    else:
+        print("Mirth metrics emitter disabled (no DT credentials)")
+
     print(f"Epic SIEM Generator starting - mode={output_mode}, frequency={frequency}s")
     orch.run(frequency=frequency)

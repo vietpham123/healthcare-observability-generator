@@ -360,6 +360,25 @@ export const queries = {
         total = count()
     | fieldsAdd success_rate = if(total > 0, toDouble(successes) / toDouble(total) * 100.0, else: 0.0)`,
 
+  // ─── Mirth Connect ─────────────────────────────────────────────────
+  mirthQueueDepth: `timeseries queue=avg(healthcare.mirth.channel.queue.depth), by:{channel.name}, interval:1m`,
+
+  mirthMessageRate: `timeseries received=avg(healthcare.mirth.channel.messages.received), sent=avg(healthcare.mirth.channel.messages.sent), by:{channel.name}, interval:1m`,
+
+  mirthErrorRate: `timeseries errors=avg(healthcare.mirth.channel.messages.errors), by:{channel.name}, interval:1m`,
+
+  mirthChannelHealth: `timeseries status=avg(healthcare.mirth.channel.status), by:{channel.name}, interval:1m
+    | fieldsAdd latest_vals = arrayRemoveNulls(status)
+    | fieldsAdd running_count = arraySize(latest_vals)
+    | summarize channels_total = count(), channels_up = countIf(running_count > 0)
+    | fieldsAdd health_pct = if(channels_total > 0, toDouble(channels_up) / toDouble(channels_total) * 100.0, else: 0.0)`,
+
+  mirthChannelSummary: `timeseries received=sum(healthcare.mirth.channel.messages.received), errors=sum(healthcare.mirth.channel.messages.errors), queue=avg(healthcare.mirth.channel.queue.depth), by:{channel.name}, interval:5m
+    | fieldsAdd last_received = arrayLast(arrayRemoveNulls(received))
+    | fieldsAdd last_errors = arrayLast(arrayRemoveNulls(errors))
+    | fieldsAdd last_queue = arrayLast(arrayRemoveNulls(queue))
+    | fields channel.name, last_received, last_errors, last_queue`,
+
   // ─── Correlation ──────────────────────────────────────────────────
   epicNetworkCorrelation: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${BUCKET} AND (isNotNull(healthcare.pipeline) OR log.source == "netflow")

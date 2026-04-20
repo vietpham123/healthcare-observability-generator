@@ -27,7 +27,27 @@ export const IntegrationHealth = () => {
       <KpiCard query={f(queries.fhirErrorRate)} label="FHIR Error Rate" field="error_rate" format="percent" thresholds={{ green: 2, amber: 5 }} invertThresholds icon="⚠️" />
       <KpiCard query={f(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 88, amber: 70 }} icon="⚙️" />
       <KpiCard query={f(queries.hl7RecentVolume)} label="HL7 Vol/5min" field="hl7_volume" format="number" thresholds={{ green: 5, amber: 1 }} icon="📨" />
+      <KpiCard query={queries.mirthChannelHealth} label="Mirth Channels" field="health_pct" format="percent" thresholds={{ green: 100, amber: 80 }} icon="🔌" />
     </Flex>
+
+    {/* Mirth Connect Section */}
+    <Surface style={{ padding: 16, borderRadius: 12 }}>
+      <Flex alignItems="center">
+        <TitleBar><TitleBar.Title>Mirth Connect</TitleBar.Title><TitleBar.Subtitle>Integration engine channel health, queue depths, and message throughput</TitleBar.Subtitle></TitleBar>
+        <SectionHealth query={queries.mirthChannelHealth} field="health_pct" green={100} amber={80} description="Percentage of Mirth Connect channels actively processing messages. Drops when HL7 VLAN network issues cause channel queues to back up and channels to stop." />
+      </Flex>
+      <Flex gap={16} style={{ marginTop: 12 }}>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Queue Depth</Text>
+          <TsChart query={queries.mirthQueueDepth} thresholds={[{ label: "Warning", value: 100 }, { label: "Critical", value: 500 }]} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Error Rate</Text>
+          <TsChart query={queries.mirthErrorRate} />
+        </div>
+      </Flex>
+      <MirthTable />
+    </Surface>
 
     {/* HL7 Section */}
     <Surface style={{ padding: 16, borderRadius: 12 }}>
@@ -142,6 +162,30 @@ const ETLFailedTable = ({ site }: { site: string | null }) => {
         <tbody>
           {records.map((r: any, i: number) => (
             <tr key={i}><td style={TD}>{new Date(r.timestamp).toLocaleTimeString()}</td><td style={{ ...TD, color: "#dc3545" }}>{r.job_name}</td><td style={TD}>{r.source_system ?? "—"}</td><td style={TD}>{r.duration_seconds ? `${r.duration_seconds}s` : "—"}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const MirthTable = () => {
+  const { data, isLoading } = useDql({ query: queries.mirthChannelSummary });
+  if (isLoading) return <ProgressCircle />;
+  const records = data?.records ?? [];
+  if (records.length === 0) return <Text style={{ padding: 16, opacity: 0.5 }}>No Mirth data yet</Text>;
+  return (
+    <div style={{ maxHeight: 250, overflow: "auto", fontSize: 12, marginTop: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead><tr><th style={TH}>Channel</th><th style={TH}>Received/5m</th><th style={TH}>Errors/5m</th><th style={TH}>Queue Depth</th></tr></thead>
+        <tbody>
+          {records.map((r: any, i: number) => (
+            <tr key={i}>
+              <td style={TD}>{r["channel.name"]}</td>
+              <td style={TD}>{r.last_received != null ? Math.round(r.last_received) : "—"}</td>
+              <td style={{ ...TD, color: (r.last_errors ?? 0) > 5 ? "#dc3545" : undefined }}>{r.last_errors != null ? Math.round(r.last_errors) : "—"}</td>
+              <td style={{ ...TD, color: (r.last_queue ?? 0) > 100 ? "#dc3545" : (r.last_queue ?? 0) > 20 ? "#ffc107" : undefined }}>{r.last_queue != null ? Math.round(r.last_queue) : "—"}</td>
+            </tr>
           ))}
         </tbody>
       </table>

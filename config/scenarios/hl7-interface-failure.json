@@ -1,81 +1,29 @@
 {
-  "name": "HL7 Interface Failure — Network Switch Port Error",
-  "description": "Access switch port errors on VLAN 30 (HL7/Interface) cause HL7 message queue backup. Results tracker shows missing lab results, pharmacy ADT feeds stall, and clinical staff can't see orders in Epic.",
-  "volume_multiplier": 1.0,
-  "mychart_multiplier": 1.0,
+  "name": "HL7 Interface Failure \u2014 Mirth Queue Backup",
+  "description": "Switch port errors on HL7 VLAN cause Mirth Connect queue backup. FHIR API errors spike, ETL jobs fail, HL7 delivery stops. Integration page turns RED.",
+  "volume_multiplier": 1.2,
   "max_sessions": 20,
-  "epic_events": {
-    "phases": [
-      {
-        "name": "HL7 Feed Stalls (T+0)",
-        "offset_minutes": 0,
-        "events": [
-          {"event_type": "HL7_NACK", "count": 50, "description": "HL7 messages getting negative acknowledgements"},
-          {"event_type": "HL7_QUEUE_DEPTH", "count": 1, "params": {"depth": 2500, "interface": "LAB-RESULTS"}}
-        ]
-      },
-      {
-        "name": "Clinical Impact (T+5min)",
-        "offset_minutes": 5,
-        "events": [
-          {"event_type": "chart_review", "count": 25, "description": "Clinicians checking for missing results"},
-          {"event_type": "order_entry", "count": 15, "description": "Duplicate orders because results not visible"},
-          {"event_type": "HKU_LOGIN", "count": 10, "description": "Staff logging in to check on missing data"}
-        ]
-      },
-      {
-        "name": "HL7 Queue Flush (T+15min)",
-        "offset_minutes": 15,
-        "events": [
-          {"event_type": "HL7_ACK", "count": 2500, "description": "Massive queue flush after port recovery"},
-          {"event_type": "ETL_BATCH", "count": 3, "description": "Delayed ETL batches processing backlog"}
-        ]
-      }
-    ]
-  },
   "network_correlation": {
     "enabled": true,
-    "description": "CRC errors and input errors on HL7 interface engine switch port cause TCP retransmissions and HL7 MLLP timeouts",
+    "description": "CRC errors on HL7 VLAN switch port cause TCP retransmissions and MLLP timeouts",
     "events": [
       {
         "offset_seconds": 0,
         "device": "kcrmc-dist-epic-01",
         "event_type": "interface_errors",
-        "params": {"interface": "GigabitEthernet1/0/24", "input_errors": 1500, "crc_errors": 800, "description": "Port connected to Bridges HL7 engine"},
-        "description": "CRC errors on Bridges interface engine port"
+        "params": {
+          "interface": "GigabitEthernet1/0/24",
+          "crc_errors": 800
+        }
       },
       {
         "offset_seconds": 30,
         "device": "kcrmc-dist-epic-01",
-        "event_type": "interface_errors",
-        "params": {"interface": "GigabitEthernet1/0/24", "input_errors": 5000, "crc_errors": 3200},
-        "description": "Errors escalating — cable or transceiver degradation"
-      },
-      {
-        "offset_seconds": 60,
-        "device": "kcrmc-dist-epic-01",
-        "event_type": "err_disable",
-        "params": {"interface": "GigabitEthernet1/0/24", "reason": "link-flap"},
-        "description": "Switch err-disables the port — HL7 engine completely offline"
-      },
-      {
-        "offset_seconds": 900,
-        "device": "kcrmc-dist-epic-01",
-        "event_type": "interface_up",
-        "params": {"interface": "GigabitEthernet1/0/24"},
-        "description": "Port auto-recovered (errdisable recovery timer)"
+        "event_type": "port_flap",
+        "params": {
+          "interface": "GigabitEthernet1/0/24"
+        }
       }
-    ],
-    "flow_anomalies": [
-      {"src_subnet": "10.10.30.0/24", "dst_subnet": "10.10.10.0/24", "decrease_factor": 0.05, "description": "HL7 VLAN → Epic app tier drops to near-zero during outage"},
-      {"src_subnet": "10.10.30.0/24", "dst_subnet": "10.10.10.0/24", "increase_factor": 50.0, "offset_seconds": 900, "description": "Massive queue flush — 50x normal HL7 traffic burst after recovery"}
     ]
-  },
-  "indicators": [
-    "CRC errors on switch port are the root cause — bad cable or SFP",
-    "HL7 NACK rate spikes exactly when port errors begin",
-    "Zero HL7 VLAN traffic during err-disable period confirms network cause",
-    "Queue flush burst after recovery is clearly visible in both HL7 and NetFlow data",
-    "Clinical impact (duplicate orders) starts 5 minutes after technical failure"
-  ]
+  }
 }

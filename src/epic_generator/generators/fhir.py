@@ -84,6 +84,7 @@ class FHIRGenerator(BaseGenerator):
             output_format: "text" for single-line log, "json" for structured JSON.
         """
         self.output_format = output_format
+        self.error_bias = 0.0  # 0.0 = normal distribution, >0 = force errors
 
     def generate_event(self, session=None, config=None, event_type=None):
         """Generate a FHIR Interconnect API log entry.
@@ -103,9 +104,12 @@ class FHIRGenerator(BaseGenerator):
             else:
                 path = path.replace("{id}", str(uuid.uuid4()))
 
-        # Status code
-        codes, weights = zip(*STATUS_DISTRIBUTION)
-        status = random.choices(codes, weights=weights, k=1)[0]
+        # Status code — error_bias overrides normal distribution during scenarios
+        if self.error_bias > 0 and random.random() < self.error_bias:
+            status = random.choice([500, 502, 503, 504])
+        else:
+            codes, weights = zip(*STATUS_DISTRIBUTION)
+            status = random.choices(codes, weights=weights, k=1)[0]
 
         # Latency
         latency = _generate_latency()
