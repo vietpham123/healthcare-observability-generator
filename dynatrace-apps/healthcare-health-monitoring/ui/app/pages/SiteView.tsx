@@ -68,27 +68,29 @@ export const SiteView = () => {
     return <SiteDrillDown site={site} onBack={() => setSelectedSite(null)} />;
   }
 
-  const mainSite = enrichedSites.find((s) => s.code === "kcrmc-main");
-  const satellites = enrichedSites.filter((s) => s.code !== "kcrmc-main");
+  const topRow = ["kcrmc-main", "hq-dc", "branch-west"];
+  const bottomRow = ["oak-clinic", "wel-clinic", "bel-clinic"];
+  const topSites = topRow.map((c) => enrichedSites.find((s) => s.code === c)).filter(Boolean);
+  const bottomSites = bottomRow.map((c) => enrichedSites.find((s) => s.code === c)).filter(Boolean);
 
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
-        Per-site breakdown of all hospital locations — Lawrence Regional Medical Center (main campus), three satellite clinics, and two infrastructure sites across Kansas. Click a site card to drill down into its Epic events and network activity.
+        Per-site breakdown of all hospital locations — Lawrence Regional Medical Center (main campus), two infrastructure sites, and three satellite clinics across Kansas. Click a site card to drill down into its Epic events and network activity.
       </Text>
 
-      {/* Main campus — full width on top */}
-      {mainSite && (
-        <Flex>
-          <div style={{ width: "100%" }}>
-            <SiteCard key={mainSite.code} name={mainSite.name} code={mainSite.code} events={mainSite.events} users={mainSite.users} loginRate={mainSite.loginRate} avgCpu={mainSite.avgCpu} devices={mainSite.devices} onClick={() => setSelectedSite(mainSite.code)} />
-          </div>
-        </Flex>
-      )}
-
-      {/* Satellite clinics — three across */}
+      {/* Top row: main campus + infrastructure */}
       <Flex gap={16} flexWrap="wrap">
-        {satellites.map((site) => (
+        {topSites.map((site: any) => (
+          <div key={site.code} style={{ flex: "1 1 280px", minWidth: 280 }}>
+            <SiteCard name={site.name} code={site.code} events={site.events} users={site.users} loginRate={site.loginRate} avgCpu={site.avgCpu} devices={site.devices} onClick={() => setSelectedSite(site.code)} />
+          </div>
+        ))}
+      </Flex>
+
+      {/* Bottom row: satellite clinics */}
+      <Flex gap={16} flexWrap="wrap">
+        {bottomSites.map((site: any) => (
           <div key={site.code} style={{ flex: "1 1 280px", minWidth: 280 }}>
             <SiteCard name={site.name} code={site.code} events={site.events} users={site.users} loginRate={site.loginRate} avgCpu={site.avgCpu} devices={site.devices} onClick={() => setSelectedSite(site.code)} />
           </div>
