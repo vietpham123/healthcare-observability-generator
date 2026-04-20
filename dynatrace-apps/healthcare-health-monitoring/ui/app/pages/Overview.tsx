@@ -4,7 +4,7 @@ import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
 import { TimeseriesChart, DonutChart, CategoricalBarChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
-import { queries, SITE_ALIAS as SITE_ALIAS_Q } from "../queries";
+import { queries, SITE_ALIAS as SITE_ALIAS_Q, ALL_SITES } from "../queries";
 import { KpiCard } from "../components/KpiCard";
 import { CampusMap } from "../components/CampusMap";
 import { SiteFilter } from "../components/SiteFilter";
@@ -59,7 +59,7 @@ export const Overview = () => {
   const siteRecords = mergeSiteRecords(siteHealth.data?.records ?? [], SITE_ALIAS);
   const devRecords = mergeDeviceRecords(netDevices.data?.records ?? [], SITE_ALIAS);
 
-  const campusSites = siteRecords.map((r: any) => {
+  const campusSitesFromQuery = siteRecords.map((r: any) => {
     const code = r.site ?? "";
     const meta = SITE_META[code] ?? { name: code, label: code, x: 300, y: 160 };
     const logins = Number(r.logins) || 0;
@@ -73,6 +73,21 @@ export const Overview = () => {
       devices: Number(devRec?.devices) || 0,
     };
   });
+
+  // Ensure all sites appear on the map, even infra-only ones with no Epic data
+  const presentCodes = new Set(campusSitesFromQuery.map((s: any) => s.code));
+  const campusSites = [
+    ...campusSitesFromQuery,
+    ...ALL_SITES.filter((s) => !presentCodes.has(s.code)).map((s) => {
+      const meta = SITE_META[s.code] ?? { name: s.name, label: s.name, x: 300, y: 160 };
+      const devRec = devRecords.find((d: any) => d.site === s.code);
+      return {
+        code: s.code, name: meta.name, label: meta.label, x: meta.x, y: meta.y,
+        events: Number(devRec?.devices) || 0,
+        loginRate: 100, users: 0, devices: Number(devRec?.devices) || 0,
+      };
+    }),
+  ];
 
   // Build real flow data from netflow query — hub-and-spoke from KC to satellites
   const flowRecords = netflowBySite.data?.records ?? [];

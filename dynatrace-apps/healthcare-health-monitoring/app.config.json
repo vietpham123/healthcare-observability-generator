@@ -3,8 +3,8 @@
   "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
   "app": {
     "name": "Healthcare Health Monitoring",
-    "version": "1.17.0",
-    "description": "Fix Invalid Date, timeseries conversion, 6-site campus map",
+    "version": "1.17.1",
+    "description": "Fix campus map showing all 6 sites including infra-only",
     "id": "my.healthcare.health.monitoring",
     "scopes": [
       {
