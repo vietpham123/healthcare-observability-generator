@@ -32,6 +32,8 @@ const SITES = [
   { code: "oak-clinic", name: "Oakley Rural Health", beds: 25, profile: "Rural Health & Specialty Outreach" },
   { code: "wel-clinic", name: "Wellington Care Center", beds: 40, profile: "Urgent Care + Family Medicine" },
   { code: "bel-clinic", name: "Belleville Family Medicine", beds: 20, profile: "Primary Care + Pediatrics" },
+  { code: "hq-dc", name: "HQ Data Center", beds: 0, profile: "Infrastructure — Compute & Storage" },
+  { code: "branch-west", name: "West Branch Office", beds: 0, profile: "Infrastructure — Remote Office" },
 ];
 
 export const SiteView = () => {
@@ -72,7 +74,7 @@ export const SiteView = () => {
   return (
     <Flex flexDirection="column" gap={16} padding={16}>
       <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
-        Per-site breakdown of all hospital locations — Lawrence Regional Medical Center (main campus) and three satellite clinics across Kansas. Click a site card to drill down into its Epic events and network activity.
+        Per-site breakdown of all hospital locations — Lawrence Regional Medical Center (main campus), three satellite clinics, and two infrastructure sites across Kansas. Click a site card to drill down into its Epic events and network activity.
       </Text>
 
       {/* Main campus — full width on top */}
