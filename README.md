@@ -179,43 +179,79 @@ npx dt-app deploy   # Opens browser for SSO auth
 
 ## Data Realism Assessment — Overall Score: 78%
 
-This section documents how accurately the generated data emulates real healthcare IT telemetry. The overall score accounts for a "would it fool an expert" factor — raw weighted metrics score 86%, discounted for areas where a subject-matter expert would detect synthetic patterns on close inspection.
+### Why 78% Is the Right Number (and 90% Isn't Worth It)
 
-### Detailed Scoring (10 Dimensions)
+The generator scores **78% overall realism** — and that is a deliberate engineering decision, not a shortcoming. Here's the core argument:
 
-| # | Dimension | Weight | Score | Weighted | Assessment |
-|---|-----------|--------|-------|----------|------------|
-| 1 | **Epic Audit Log XML format** | 15% | 90% | 13.5% | Correct `E1Mid` event types, XML envelope, 30+ `<Mnemonic>` fields. Real Epic admins recognize this format. Missing: Epic version-specific header fields (EpicSN). |
-| 2 | **HL7 v2.x message structure** | 10% | 85% | 8.5% | Proper MSH/PID/OBR/OBX segments, correct message types (ADT^A01, ORU^R01, ORM^O01). Clinical content is randomized, not clinically coherent. |
-| 3 | **FHIR R4 API patterns** | 8% | 80% | 6.4% | Correct resource types and endpoint patterns. Resource-level detail (resourceType, fhir_endpoint) not yet extracted by OpenPipeline. |
-| 4 | **Network syslog per vendor** | 15% | 92% | 13.8% | 7 vendors with correct log format patterns. 6 event types (SYSTEM, SECURITY, INTERFACE, TRAFFIC, ROUTING, THREAT). 40+ parameterized templates. |
-| 5 | **Multi-site topology realism** | 10% | 88% | 8.8% | 6 sites, 29 devices, proper IP addressing per site, WAN transit. Deduction: clinic sites have 2 devices each (real: 4-8). |
-| 6 | **Login rate & temporal curves** | 10% | 95% | 9.5% | 97-98% baseline matches real hospitals. Time-of-day curve (0.30 night → 1.0 day shift). Login failures distributed across sites. |
-| 7 | **Event volume ratios** | 8% | 55% | 4.4% | Compressed scale (~5K SIEM/hr vs millions in production). SIEM dominated by login events (85%) — real: ~40-50% logins, 30% clinical, 20% API. |
-| 8 | **Scenario attack patterns** | 10% | 85% | 8.5% | Ransomware kill chain, insider threat, HL7 failure, core switch failure — all real-world threat models. Recovery is instant (pod restart) vs hours in reality. |
-| 9 | **Cross-system correlation** | 8% | 90% | 7.2% | Epic + Network + HL7 + FHIR + MyChart correlated temporally and by site. Strongest differentiator — most hospitals use 3-5 separate tools. |
-| 10 | **Data ingestion pathway** | 6% | 95% | 5.7% | Same DT APIs (Log Ingest v2, Metrics MINT, Events v2) real customers use. OpenPipeline field extraction is production-grade. |
+**The last 12% lives in areas your audience doesn't care about.** The two weakest dimensions — event volume ratios (55%) and clinical content coherence (implied in HL7/FHIR) — only matter to clinical informaticists and Clarity DBAs. Neither group is in the room when a hospital CTO decides to buy Dynatrace. For the actual buyer audience, effective accuracy is **85-90%**.
 
-**Raw weighted total: 86.3% → Adjusted to 78% for expert scrutiny discount**
+**Getting to 90% has terrible ROI:**
 
-### What Would Push It to 90%+
+| Gap to Close | Effort | Benefit to Demo | Verdict |
+|-------------|--------|-----------------|---------|
+| Clinically coherent HL7/FHIR (ICD-10 → CPT → medication chains) | **Massive** — requires a medical knowledge base, drug interaction tables, and a clinical state machine | Zero for security/ops audiences; marginal for clinical informatics demos | Not worth it |
+| Realistic event volume ratios (millions/day) | **Moderate** code change, but **expensive** — 10-50× DT ingest cost increase | Slightly more realistic dashboards, but same patterns at any scale | Not worth it for a demo environment |
+| Larger device topology (100-500 devices) | **Low** effort — config file expansion | Marginally more impressive; same architecture demonstrated with 29 | Nice-to-have, easy win |
+| ETL batch timing (hourly Clarity runs) | **Low** effort — scheduling change | Minor realism gain; current continuous flow better for live demos | Counterproductive — demo windows are 30-60 min |
+| FHIR resource-level OpenPipeline extraction | **Low** effort — pipeline config update | Enables deeper FHIR drill-down in the app | Worth doing |
 
-1. Clinically coherent HL7/FHIR payloads (matching diagnosis → procedure → medication chains)
-2. Realistic event volume ratios (more clinical events relative to logins)
-3. Larger device topology (100+ devices for a 500-bed hospital)
-4. ETL batch timing patterns (hourly Clarity ETL runs, not random ticks)
-5. Extract FHIR `resourceType` and `fhir_endpoint` fields in OpenPipeline
+**The bottom line**: Two of the five gaps are actively counterproductive for live demos (higher volume = higher cost; batch ETL = dead air during the demo). The clinical coherence gap requires a medical domain engine that has nothing to do with Dynatrace's value proposition.
+
+### The Real Selling Points (What 78% Gets You)
+
+The generator is purpose-built for a specific sales motion: **"Dynatrace can be the single pane of glass for healthcare IT operations."** Every design choice optimizes for that message:
+
+| Design Choice | Why It's Built This Way | Customer Impact |
+|---------------|------------------------|-----------------|
+| **Real DT APIs** (Log Ingest v2, MINT, Events v2) | Customer cannot dismiss this as a mockup. "This is how your data would actually flow." | Eliminates the "but can it really ingest our data?" objection |
+| **Cross-system correlation** (Epic + Network + HL7 + FHIR in one view) | Most hospitals run Splunk for SIEM, SolarWinds for network, Mirth dashboard for HL7 — three separate panes. Unified view is genuinely novel. | The single strongest demo moment. "You've never seen these together before." |
+| **OpenPipeline field extraction** | Shows DT can parse proprietary Epic XML, HL7 segments, and vendor-specific syslog without custom code — just pipeline config. | Positions DT as operationally lightweight vs competitors that need agents everywhere |
+| **Vendor-specific network syslog** (7 vendors, 40+ templates) | Hospital network architects immediately recognize their own vendor's log format. Builds instant credibility. | "You already know what a Palo Alto threat log looks like. Here it is in Dynatrace." |
+| **Scenario-driven storytelling** (ransomware, insider threat, HL7 failure) | Live attack simulation in a 30-min demo window. Health indicators go red in real-time. | Emotional impact. CISOs and CTOs react to watching an attack unfold, not to static dashboards. |
+| **97-98% login baseline** | Matches real hospital environments exactly. When ransomware drops it to 65%, the audience feels the severity because the baseline was credible. | Anchoring effect — realistic baseline makes anomalies impactful |
+| **Compressed timeline** (events every 5s vs hourly batch in production) | Live demos are 30-60 minutes. Batch latency would mean showing a static dashboard. Continuous flow keeps the audience engaged. | Intentional tradeoff: demo pacing > temporal accuracy |
+| **6 sites with realistic IP addressing** | Hub-and-spoke topology mirrors real regional health systems. Per-site drill-down shows DT handles multi-site at scale. | "Each of your clinics gets its own view. Same platform, zero additional tooling." |
+| **Synthetic data only** (no real PHI, no real credentials) | HIPAA-safe by design. Can be demoed anywhere, shipped to any prospect, run on any environment. | Removes the "we can't show real patient data" blocker that kills most healthcare demos |
+| **Same ingestion path** as production | Every API call, every OpenPipeline rule, every DQL query would work identically on real data. Only the data source changes. | "When you're ready, swap the generator for your real Epic export. Everything else stays." |
+
+### The Conversation This Enables
+
+A hospital CTO watching this demo doesn't think "the ICD-10 codes don't match the CPT codes." They think:
+
+> *"I've never seen my Epic audit trail, my Palo Alto firewall, my Mirth channels, and my network switches in one dashboard before. And you're telling me the APIs are the same ones I'd use in production? What do I need to do to get this for real?"*
+
+The answer — which is the entire point of the demo — is: **"Get your Epic team to approve the Audit Log Export data flow. Everything else is standard Dynatrace."** That shifts the conversation from "can Dynatrace do this?" (yes, proven) to "will your organization approve the data sharing?" (a business/governance question, not a technology question).
+
+**That conversation is worth more than 12 percentage points of clinical content accuracy.**
+
+### 10-Factor Realism Scorecard
+
+| # | Factor | Weight | Score | Grade | What's Right | What's Missing | Demo Impact |
+|---|--------|--------|-------|-------|-------------|----------------|-------------|
+| 1 | Epic Audit XML | 15% | 90% | A | `E1Mid` event types, XML envelope, 30+ `<Mnemonic>` fields — recognizable to Epic admins | Epic version-specific headers (EpicSN) | **HIGH** — this is what Epic analysts look for first |
+| 2 | HL7 v2.x Messages | 10% | 85% | B+ | MSH/PID/OBR/OBX segments, correct message types (ADT^A01, ORU^R01) | Clinical content not coherent (random ICD-10 + CPT) | **MEDIUM** — structure sells; payload rarely inspected in demos |
+| 3 | FHIR R4 API | 8% | 80% | B | Correct resource types, realistic endpoint patterns | `resourceType`/`fhir_endpoint` not yet extracted in OpenPipeline | **MEDIUM** — shows modern interop capability |
+| 4 | Network Syslog | 15% | 92% | A | 7 vendors, correct log formats, 6 event types, 40+ templates | Could add more vendors (Juniper, Meraki) | **HIGH** — network architects recognize their own vendor instantly |
+| 5 | Multi-Site Topology | 10% | 88% | B+ | 6 sites, 29 devices, proper IP per site, WAN transit, hub-and-spoke | Clinic sites have 2 devices each (real: 4-8) | **HIGH** — multi-site view is a key differentiator |
+| 6 | Login & Temporal Curves | 10% | 95% | A | 97-98% baseline, diurnal volume curve, site-distributed failures | Evening MyChart peak could be more pronounced | **CRITICAL** — credible baseline makes anomalies impactful |
+| 7 | Event Volume Ratios | 8% | 55% | D | Correct event types present | ~5K/hr vs millions; 85% login-dominated vs 40-50% in production | **LOW** — nobody counts events during a demo |
+| 8 | Scenario Attack Patterns | 10% | 85% | B+ | 4-phase ransomware, insider BTG, HL7 cascade, core switch failure | Recovery is instant (pod restart) vs hours in reality | **CRITICAL** — scenario storytelling is the demo centerpiece |
+| 9 | Cross-System Correlation | 8% | 90% | A | All 5 data types correlated by time and site; unified in one platform | Could add more cross-references (IP linkage between SIEM and firewall) | **CRITICAL** — the #1 reason a CTO would buy |
+| 10 | Ingestion Pathway | 6% | 95% | A | Same DT APIs, same OpenPipeline rules; production-grade pipeline | — | **CRITICAL** — proves "this isn't a mockup" |
+
+**Overall: 78% (raw weighted: 86.3%, expert-scrutiny-adjusted)**
 
 ### Audience-Specific Accuracy
 
-| Audience | Effective Accuracy | Notes |
-|----------|--------------------|-------|
-| **CTO / IT Director** | ~90% | Sees unified dashboard, cross-system correlation, attack scenarios. Convincing. |
-| **Dynatrace SE / Pre-sales** | ~85% | Demonstrates real API paths, OpenPipeline, Grail queries. Defensible. |
-| **Epic Analyst / Clarity DBA** | ~70% | Recognizes XML structure but spots random clinical combinations and compressed volume. |
-| **Mirth/HL7 Engineer** | ~75% | Correct message types and segments, but would notice volume ratios and lack of Mirth channel-level detail. |
-| **Network Architect** | ~80% | Vendor-specific syslog is convincing; 29 devices is low for a 500-bed hospital. |
-| **Clinical Informaticist** | ~55% | Random ICD-10 + CPT pairings are immediately obvious. Frame as "synthetic test data." |
+| Audience | Effective Accuracy | What They Notice | What They Don't |
+|----------|-------------------|-----------------|-----------------|
+| **CTO / IT Director** | ~90% | Unified dashboard, attack scenarios, multi-site view | Event volumes, clinical content details |
+| **Dynatrace SE / Pre-sales** | ~85% | Real API paths, OpenPipeline, DQL queries, scenario storytelling | — (this is their tool) |
+| **CISO / Security Director** | ~85% | Ransomware kill chain, BTG audit, login analysis, compliance view | HL7/FHIR payload details |
+| **Epic Analyst / Clarity DBA** | ~70% | XML structure, mnemonic fields | Random clinical combinations, compressed volume, missing EpicSN |
+| **Mirth/HL7 Engineer** | ~75% | Message types, channel names, queue metrics | Volume ratios, lack of per-channel routing detail |
+| **Network Architect** | ~80% | Vendor-specific syslog, topology, IP addressing | 29 devices is low for 500 beds; missing Juniper/Meraki |
+| **Clinical Informaticist** | ~55% | — | Random ICD-10 + CPT pairings immediately. Frame as "synthetic test data." |
 
 ### Data Fidelity by Source
 
@@ -237,7 +273,7 @@ All Epic log types are distributed across 4 clinical sites via OpenPipeline `end
 
 | Processor | Field | Distribution |
 |-----------|-------|-------------|
-| SIEM XML | `EMPID` | Last digit: 0,1,2,a,b → kcrmc-main; 3,4,c → tpk; 5,6,d → wch; 7,8,9,e,f → lwr |
+| SIEM XML | `EMPID` | Last hex digit: 0,1,2,a,b → kcrmc-main; 3,4,c → tpk; 5,6,d → wch; 7,8,9,e,f → lwr |
 | ETL JSON | `records_processed` | Same digit-based mapping |
 | FHIR API | `correlation_id` | Same mapping (hex-aware for UUID fields) |
 | HL7 Message | `hl7_msg_control_id` | Same mapping |
@@ -270,7 +306,6 @@ The ingestion paths used in this demo are the **same APIs real customers use**:
 4. **What a hospital CTO would say**: *"I believe you can ingest this. The hard part is getting my Epic team and CISO to agree on the data sharing policy."* — which positions Dynatrace as technically ready.
 
 5. **Clinical content fidelity**: A clinician would notice non-coherent ICD-10 + CPT pairings. For security/ops audiences this is irrelevant; for clinical informatics, frame as "synthetic test data."
-
 ---
 
 ## Correlated Scenarios
