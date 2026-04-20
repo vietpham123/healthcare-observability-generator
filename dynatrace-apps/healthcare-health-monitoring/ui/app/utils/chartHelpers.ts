@@ -1,4 +1,4 @@
-import { convertQueryResultToTimeseries } from "@dynatrace/strato-components/charts";
+import { convertQueryResultToTimeseries, convertToTimeseries } from "@dynatrace/strato-components/charts";
 
 /** Threshold reference line definition */
 export interface ThresholdLine {
@@ -8,14 +8,27 @@ export interface ThresholdLine {
 
 /**
  * Convert useDql result.data to Timeseries[] for TimeseriesChart.
+ * Tries high-level convertQueryResultToTimeseries first, then falls back
+ * to the lower-level convertToTimeseries with explicit records + types.
  */
 export function toTimeseries(data: any) {
   if (!data) return [];
   try {
-    return convertQueryResultToTimeseries(data);
-  } catch {
-    return [];
+    const result = convertQueryResultToTimeseries(data);
+    if (result && result.length > 0) return result;
+  } catch (e) {
+    console.warn("[toTimeseries] convertQueryResultToTimeseries failed:", e);
   }
+  // Fallback: use lower-level function with explicit records + types
+  try {
+    if (data.records && data.types) {
+      const result = convertToTimeseries(data.records, data.types);
+      if (result && result.length > 0) return result;
+    }
+  } catch (e) {
+    console.warn("[toTimeseries] convertToTimeseries fallback failed:", e);
+  }
+  return [];
 }
 
 /**

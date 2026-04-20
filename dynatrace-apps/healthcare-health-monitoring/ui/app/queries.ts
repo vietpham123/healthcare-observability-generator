@@ -1,9 +1,9 @@
 // ============================================================================
-// Healthcare Health Monitoring — Shared DQL Queries  (v1.4.0)
+// Healthcare Health Monitoring — Shared DQL Queries  (v1.5.0)
 // ============================================================================
 // All queries target the dedicated healthcare bucket.
 // Sites: kcrmc-main (KC), oak-clinic (Oakley), wel-clinic (Wellington),
-//        bel-clinic (Belleville)
+//        bel-clinic (Belleville), hq-dc (HQ Data Center), branch-west (West Branch)
 // ============================================================================
 
 const BUCKET = 'dt.system.bucket == "observe_and_troubleshoot_apps_95_days"';
@@ -23,6 +23,8 @@ export const ALL_SITES = [
   { code: "oak-clinic", name: "Oakley Rural Health" },
   { code: "wel-clinic", name: "Wellington Care Center" },
   { code: "bel-clinic", name: "Belleville Family Medicine" },
+  { code: "hq-dc", name: "HQ Data Center" },
+  { code: "branch-west", name: "West Branch Office" },
 ];
 
 // Build a DQL site filter clause for Epic logs (healthcare.site field)

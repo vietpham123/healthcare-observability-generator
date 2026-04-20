@@ -19,6 +19,8 @@ const SITE_META: Record<string, { name: string; label: string; x: number; y: num
   "oak-clinic": { name: "Oakley Rural Health", label: "Oakley Clinic", x: 100, y: 130 },
   "wel-clinic": { name: "Wellington Care Center", label: "Wellington Clinic", x: 280, y: 260 },
   "bel-clinic": { name: "Belleville Family Medicine", label: "Belleville Clinic", x: 300, y: 60 },
+  "hq-dc": { name: "HQ Data Center", label: "HQ Data Center", x: 500, y: 200 },
+  "branch-west": { name: "West Branch Office", label: "West Branch", x: 150, y: 260 },
 };
 
 function mergeSiteRecords(records: any[], aliasMap: Record<string, string>): any[] {

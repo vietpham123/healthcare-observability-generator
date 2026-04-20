@@ -53,7 +53,7 @@ export const Explore = () => {
                   <tr key={i}>
                     {Object.keys(records[0]).map((key) => (
                       <td key={key} style={key === "content" ? TD_CONTENT : TD}>
-                        {r[key] instanceof Date || (typeof r[key] === "string" && /^\d{4}-\d{2}-\d{2}T/.test(r[key]))
+                        {key === "timestamp" && (r[key] instanceof Date || (typeof r[key] === "string" && /^\d{4}-\d{2}-\d{2}T/.test(r[key])))
                           ? new Date(r[key]).toLocaleString()
                           : String(r[key] ?? "—")}
                       </td>

@@ -56,7 +56,12 @@ const SITE_GEO: Record<string, { gx: number; gy: number }> = {
   "oak-clinic": geoToSvg(39.1333, -100.8528),   // Oakley KS
   "bel-clinic": geoToSvg(39.8258, -97.6322),    // Belleville KS
   "wel-clinic": geoToSvg(37.2650, -97.3714),    // Wellington KS
+  "hq-dc":      geoToSvg(38.8814, -94.8191),    // Olathe KS (KC metro — data center)
+  "branch-west": geoToSvg(37.7528, -100.0171),  // Dodge City KS (west branch office)
 };
+
+// Sites that are infrastructure-only (data center / office — no hospital icon)
+const INFRA_SITES = new Set(["hq-dc", "branch-west"]);
 
 /* -- Reference cities from real lat/lon -- */
 const REF_CITIES = [
@@ -261,11 +266,12 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
           );
         })}
 
-        {/* Site nodes - Hospital icons */}
+        {/* Site nodes - Hospital & infrastructure icons */}
         {geoSites.map((site) => {
           const hs = computeHealthStatus(site.loginRate, 90, 70);
           const col = statusColor(hs);
           const isMain = site.code === "kcrmc-main";
+          const isInfra = INFRA_SITES.has(site.code);
           const scale = isMain ? 1.8 : 1.3;
 
           return (
@@ -283,18 +289,33 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
               {/* Glow backdrop */}
               <circle cx={site.gx} cy={site.gy} r={18 * scale} fill={col} opacity="0.08" filter="url(#sglow)" />
 
-              {/* Hospital building icon */}
-              <g transform={`translate(${site.gx}, ${site.gy}) scale(${scale})`}>
-                <rect x="-12" y="-8" width="24" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke={col} strokeWidth="1.2" />
-                <rect x="-12" y="-8" width="24" height="3" rx="1" fill={col} opacity="0.7" />
-                <rect x="-1.5" y="-4" width="3" height="10" rx="0.5" fill="#fff" opacity="0.9" />
-                <rect x="-5" y="-0.5" width="10" height="3" rx="0.5" fill="#fff" opacity="0.9" />
-                <rect x="-2.5" y="6" width="5" height="6" rx="1" fill={col} opacity="0.5" />
-                <rect x="-9" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
-                <rect x="6" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
-                <rect x="-9" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
-                <rect x="6" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
-              </g>
+              {isInfra ? (
+                /* Data center / office icon */
+                <g transform={`translate(${site.gx}, ${site.gy}) scale(${scale})`}>
+                  <rect x="-11" y="-9" width="22" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke={col} strokeWidth="1.2" />
+                  <rect x="-11" y="-9" width="22" height="3" rx="1" fill={col} opacity="0.7" />
+                  {/* Server rack lines */}
+                  <rect x="-7" y="-3" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.35)" />
+                  <circle cx="5" cy="-1.75" r="0.8" fill="#4ade80" />
+                  <rect x="-7" y="1" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.3)" />
+                  <circle cx="5" cy="2.25" r="0.8" fill="#4ade80" />
+                  <rect x="-7" y="5" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.25)" />
+                  <circle cx="5" cy="6.25" r="0.8" fill="#facc15" />
+                </g>
+              ) : (
+                /* Hospital building icon */
+                <g transform={`translate(${site.gx}, ${site.gy}) scale(${scale})`}>
+                  <rect x="-12" y="-8" width="24" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke={col} strokeWidth="1.2" />
+                  <rect x="-12" y="-8" width="24" height="3" rx="1" fill={col} opacity="0.7" />
+                  <rect x="-1.5" y="-4" width="3" height="10" rx="0.5" fill="#fff" opacity="0.9" />
+                  <rect x="-5" y="-0.5" width="10" height="3" rx="0.5" fill="#fff" opacity="0.9" />
+                  <rect x="-2.5" y="6" width="5" height="6" rx="1" fill={col} opacity="0.5" />
+                  <rect x="-9" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
+                  <rect x="6" y="0" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.4)" />
+                  <rect x="-9" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
+                  <rect x="6" y="5" width="3" height="3" rx="0.5" fill="rgba(120,170,255,0.3)" />
+                </g>
+              )}
 
               {/* Status indicator dot */}
               <circle cx={site.gx + 14 * scale} cy={site.gy - 10 * scale} r="5" fill={col} stroke="rgba(8,12,24,0.9)" strokeWidth="1.5" />
@@ -328,7 +349,9 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
                 fontSize="8"
                 fontFamily="monospace"
               >
-                {site.loginRate.toFixed(0)}% {'\u00B7'} {site.users}u {'\u00B7'} {site.events}ev
+                {isInfra
+                  ? `${site.events}ev`
+                  : `${site.loginRate.toFixed(0)}% ${'\u00B7'} ${site.users}u ${'\u00B7'} ${site.events}ev`}
               </text>
             </g>
           );
@@ -336,18 +359,26 @@ export const CampusMap = ({ sites, flows = [], onSiteClick }: CampusMapProps) =>
 
         {/* Legend */}
         <g transform={`translate(${PAD_X + 30}, ${VB_H - PAD_Y - 32})`}>
-          <rect x="0" y="0" width="230" height="26" rx="5" fill="rgba(8,12,24,0.8)" stroke="rgba(91,143,249,0.15)" strokeWidth="0.5" />
+          <rect x="0" y="0" width="290" height="26" rx="5" fill="rgba(8,12,24,0.8)" stroke="rgba(91,143,249,0.15)" strokeWidth="0.5" />
           <g transform="translate(14, 13) scale(0.45)">
             <rect x="-12" y="-8" width="24" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke="#2ab06f" strokeWidth="1.5" />
             <rect x="-1.5" y="-4" width="3" height="10" rx="0.5" fill="#fff" />
             <rect x="-5" y="-0.5" width="10" height="3" rx="0.5" fill="#fff" />
           </g>
           <text x="28" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Hospital</text>
-          <circle cx="76" cy="13" r="4" fill="#2ab06f" /><text x="84" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Healthy</text>
-          <circle cx="122" cy="13" r="4" fill="#f5a623" /><text x="130" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Warning</text>
-          <circle cx="170" cy="13" r="4" fill="#dc3545" /><text x="178" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Critical</text>
-          <line x1="208" y1="5" x2="208" y2="21" stroke="rgba(91,143,249,0.2)" strokeWidth="0.5" />
-          <line x1="212" y1="13" x2="224" y2="13" stroke="rgba(120,170,255,0.5)" strokeWidth="1.5" strokeDasharray="3 4">
+          {/* Infra icon in legend */}
+          <g transform="translate(74, 13) scale(0.4)">
+            <rect x="-11" y="-9" width="22" height="20" rx="2" fill="rgba(20,30,50,0.9)" stroke="#5b8ff9" strokeWidth="1.5" />
+            <rect x="-7" y="-3" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.4)" />
+            <rect x="-7" y="1" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.35)" />
+            <rect x="-7" y="5" width="14" height="2.5" rx="0.5" fill="rgba(120,170,255,0.3)" />
+          </g>
+          <text x="88" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Infra</text>
+          <circle cx="118" cy="13" r="4" fill="#2ab06f" /><text x="126" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Healthy</text>
+          <circle cx="164" cy="13" r="4" fill="#f5a623" /><text x="172" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Warning</text>
+          <circle cx="212" cy="13" r="4" fill="#dc3545" /><text x="220" y="16" fill="rgba(160,200,255,0.6)" fontSize="8">Critical</text>
+          <line x1="260" y1="5" x2="260" y2="21" stroke="rgba(91,143,249,0.2)" strokeWidth="0.5" />
+          <line x1="264" y1="13" x2="280" y2="13" stroke="rgba(120,170,255,0.5)" strokeWidth="1.5" strokeDasharray="3 4">
             <animate attributeName="stroke-dashoffset" from="0" to="-7" dur="1s" repeatCount="indefinite" />
           </line>
         </g>
