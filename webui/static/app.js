@@ -109,16 +109,11 @@ async function reloadScenarios() {
 // ── Scenario prep metadata (mirrors walkthrough.js) ─────────────
 
 const SCENARIO_PREP = {
-  "normal-day-shift": { icon: "🏥", prep: 5, runtime: "Continuous", tip: "Baseline — activate 5 min before demo for smooth charts." },
-  "normal_shift":     { icon: "🏥", prep: 5, runtime: "Continuous", tip: "Baseline — activate 5 min before demo for smooth charts." },
-  "ransomware-attack":{ icon: "🦠", prep: 10, runtime: "60 min cycle", tip: "Login failures spike → Auth & Security pages turn RED. 4 phases: Recon → Harvest → Lateral → Exfil." },
-  "ransomware":       { icon: "🦠", prep: 10, runtime: "60 min cycle", tip: "Login failures spike → Auth & Security pages turn RED." },
+  "normal-day-shift":        { icon: "🏥", prep: 5,  runtime: "Continuous",   tip: "Baseline — activate 5 min before demo for smooth charts." },
+  "ransomware-attack":       { icon: "🦠", prep: 10, runtime: "60 min cycle", tip: "Login failures spike → Auth & Security pages turn RED. 4 phases: Recon → Harvest → Lateral → Exfil." },
   "insider-threat-snooping": { icon: "🕵️", prep: 10, runtime: "50 min cycle", tip: "BTG events spike → Security page turns RED. Employee browsing records after hours." },
-  "insider_threat":   { icon: "🕵️", prep: 10, runtime: "50 min cycle", tip: "BTG events spike → Security page turns RED." },
-  "hl7-interface-failure": { icon: "🔌", prep: 10, runtime: "Escalating", tip: "Mirth queue backs up → Integration page turns RED. FHIR errors + ETL failures." },
-  "hl7_interface_failure": { icon: "🔌", prep: 10, runtime: "Escalating", tip: "Mirth queue backs up → Integration page turns RED." },
-  "core-switch-failure": { icon: "🔥", prep: 5, runtime: "Continuous", tip: "Devices go offline, CPU spikes → Network page turns RED." },
-  "core_switch_failure": { icon: "🔥", prep: 5, runtime: "Continuous", tip: "Devices go offline → Network page turns RED." },
+  "hl7-interface-failure":   { icon: "🔌", prep: 10, runtime: "Escalating",   tip: "Mirth queue backs up → Integration page turns RED. FHIR errors + ETL failures." },
+  "core-switch-failure":     { icon: "🔥", prep: 5,  runtime: "Continuous",   tip: "Devices go offline, CPU spikes → Network page turns RED." },
 };
 
 // ── Status updates ───────────────────────────────────────────────

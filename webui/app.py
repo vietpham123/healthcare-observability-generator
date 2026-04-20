@@ -48,12 +48,6 @@ SCENARIO_KEY_MAP = {
     "hl7-interface-failure": "hl7_interface_failure",
     "core-switch-failure": "core_switch_failure",
     "normal-day-shift": "normal_shift",
-    # Epic-native keys map to themselves
-    "ransomware": "ransomware",
-    "insider_threat": "insider_threat",
-    "hl7_interface_failure": "hl7_interface_failure",
-    "core_switch_failure": "core_switch_failure",
-    "normal_shift": "normal_shift",
 }
 
 
@@ -157,19 +151,7 @@ templates = Jinja2Templates(directory=str(_WEBUI_DIR / "templates"))
 _scenarios_dir = _PROJECT_ROOT / "config" / "scenarios"
 coordinator = ScenarioCoordinator(scenarios_dir=_scenarios_dir)
 
-# Also load epic-native scenarios so they appear in the UI
-_epic_scenarios_dir = _PROJECT_ROOT / "src" / "epic_generator" / "config" / "scenarios"
-if _epic_scenarios_dir.is_dir():
-    for fp in sorted(_epic_scenarios_dir.glob("*.json")):
-        key = fp.stem
-        if key not in coordinator.available:
-            try:
-                with open(fp) as f:
-                    data = json.load(f)
-                coordinator.available[key] = data
-                logger.info("Loaded epic scenario: %s", key)
-            except Exception:
-                pass
+# Scenarios are loaded from config/scenarios/ only (shared configs)
 
 
 # ── HTML page ──────────────────────────────────────────────────────
