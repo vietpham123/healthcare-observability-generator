@@ -1,7 +1,8 @@
 # Dynatrace Configuration Assets
 
 > Complete inventory of all Dynatrace-side configuration required to deploy the Healthcare Observability Generator.  
-> Last updated with alerts v1.0.0 and DT App v1.18.1.
+> Last updated with Anomaly Detector app alerts v2.0.0 and DT App v1.18.1.
+> Asset JSONs exported to `dynatrace-assets/` folder.
 
 ---
 
@@ -97,7 +98,13 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 
 ## Davis Anomaly Alerts
 
-### Log-Based Alerts (`builtin:logmonitoring.log-events`)
+> **Migrated to Anomaly Detection app** (`builtin:davis.anomaly-detectors`) — DQL-based, Grail-native.
+> Classic `builtin:logmonitoring.log-events` and `builtin:anomaly-detection.metric-events` alerts have been removed.
+> Exported JSON: `dynatrace-assets/anomaly-detectors.json`
+
+### Anomaly Detectors (6 Total)
+
+All detectors use DQL `makeTimeseries` queries with `interval:1m` and are evaluated by the Davis Anomaly Detection app.
 
 #### 1. Healthcare - Failed Login Burst
 
@@ -105,10 +112,12 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 |----------|-------|
 | **Scenario** | Ransomware Attack (Phase 2: Credential Harvesting) |
 | **Category** | Security |
-| **DQL Query** | `E1Mid == "FAILEDLOGIN" AND isNotNull(dt.source.generator)` |
-| **Davis Title** | Epic Failed Login Burst Detected |
+| **Analyzer** | Auto-Adaptive (learns baseline, `numberOfSignalFluctuations: 3`) |
+| **DQL Query** | `fetch logs \| filter E1Mid == "FAILEDLOGIN" AND isNotNull(dt.source.generator) \| makeTimeseries count=count(), interval:1m` |
+| **Event Name** | Healthcare - Epic Failed Login Burst |
+| **Sliding Window** | 3 of 5 samples violating |
 | **Baseline** | ~3 FAILEDLOGIN per 5 minutes |
-| **Fires When** | FAILEDLOGIN events spike (10x+ during ransomware) |
+| **Fires When** | FAILEDLOGIN events spike above auto-adaptive threshold |
 
 #### 2. Healthcare - Firewall Threat Burst
 
@@ -116,8 +125,10 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 |----------|-------|
 | **Scenario** | Ransomware Attack (Phases 1+3: Recon, Lateral Movement) |
 | **Category** | Security |
-| **DQL Query** | `healthcare.pipeline == "healthcare-network" AND network.event.type == "THREAT"` |
-| **Davis Title** | Network Firewall Threat Burst Detected |
+| **Analyzer** | Auto-Adaptive (learns baseline, `numberOfSignalFluctuations: 3`) |
+| **DQL Query** | `fetch logs \| filter healthcare.pipeline == "healthcare-network" AND network.event.type == "THREAT" \| makeTimeseries count=count(), interval:1m` |
+| **Event Name** | Healthcare - Network Firewall Threat Burst |
+| **Sliding Window** | 3 of 5 samples violating |
 | **Baseline** | ~6 THREAT events per 5 minutes |
 | **Fires When** | IPS/IDS triggers spike from Palo Alto, FortiGate |
 
@@ -127,8 +138,10 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 |----------|-------|
 | **Scenario** | Insider Threat - After-Hours Snooping |
 | **Category** | Compliance |
-| **DQL Query** | `matchesValue(E1Mid, "AC_BREAK_THE_GLASS*")` |
-| **Davis Title** | Break-the-Glass Activity Spike |
+| **Analyzer** | Static Threshold (> 3/min) |
+| **DQL Query** | `fetch logs \| filter startsWith(E1Mid, "AC_BREAK_THE_GLASS") \| makeTimeseries count=count(), interval:1m` |
+| **Event Name** | Healthcare - Break-the-Glass Activity Spike |
+| **Sliding Window** | 3 of 5 samples violating |
 | **Baseline** | Scattered BTG events during business hours |
 | **Fires When** | Concentrated burst of BTG events (especially after-hours) |
 
@@ -138,10 +151,12 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 |----------|-------|
 | **Scenario** | Core Switch Failure |
 | **Category** | Infrastructure |
-| **DQL Query** | `healthcare.pipeline == "healthcare-network" AND network.event.type == "INTERFACE" AND matchesPhrase(content, "down")` |
-| **Davis Title** | Network Interface Error Events Detected |
-| **Baseline** | Occasional interface flaps |
-| **Fires When** | Core switch fails → cascading interface downs |
+| **Analyzer** | Static Threshold (> 1/min) |
+| **DQL Query** | `fetch logs \| filter healthcare.pipeline == "healthcare-network" AND network.event.type == "INTERFACE" AND loglevel == "ERROR" \| makeTimeseries count=count(), interval:1m` |
+| **Event Name** | Healthcare - Network Interface Errors Detected |
+| **Sliding Window** | 2 of 5 samples violating |
+| **Baseline** | Zero during normal operations |
+| **Fires When** | Core switch fails → cascading interface errors |
 
 #### 5. Healthcare - HL7 Message Delivery Failure
 
@@ -149,33 +164,23 @@ Network and NetFlow logs carry `healthcare.site` and `network.device.site` set a
 |----------|-------|
 | **Scenario** | HL7 Interface Failure |
 | **Category** | Integration |
-| **DQL Query** | `isNotNull(hl7_msg_type) AND (matchesPhrase(content, "NACK") OR matchesPhrase(content, "ERROR") OR matchesPhrase(content, "timeout") OR matchesPhrase(content, "rejected"))` |
-| **Davis Title** | HL7 Message Delivery Failure |
-| **Baseline** | Zero NACKs/errors during normal operations |
+| **Analyzer** | Static Threshold (> 2/min) |
+| **DQL Query** | `fetch logs \| filter isNotNull(hl7_msg_type) AND loglevel == "ERROR" \| makeTimeseries count=count(), interval:1m` |
+| **Event Name** | Healthcare - HL7 Message Delivery Failure |
+| **Sliding Window** | 3 of 5 samples violating |
+| **Baseline** | Zero errors during normal operations |
 | **Fires When** | HL7 interface disruption causes delivery failures |
 
-#### 6. Healthcare Obs Gen - Error Events (Pre-existing)
-
-| Property | Value |
-|----------|-------|
-| **Scenario** | Any (generator health) |
-| **Category** | Operational |
-| **DQL Query** | `dt.source.generator=="healthcare-obs-gen-v2" and loglevel=="ERROR"` |
-| **Davis Title** | Healthcare Generator Error |
-| **Fires When** | Generator itself produces ERROR-level logs |
-
-### Metric-Based Alerts (`builtin:anomaly-detection.metric-events`)
-
-#### 7. Healthcare - Mirth Queue Backup
+#### 6. Healthcare - Mirth Queue Backup
 
 | Property | Value |
 |----------|-------|
 | **Scenario** | HL7 Interface Failure |
 | **Category** | Integration |
-| **Metric Key** | `healthcare.mirth.channel.queue.depth` |
-| **Threshold** | > 50 (static) |
-| **Model** | 3 violating samples out of 5, 3 dealerting |
-| **Davis Title** | Mirth Connect Queue Backup |
+| **Analyzer** | Static Threshold (> 50 depth) |
+| **DQL Query** | `timeseries avg(healthcare.mirth.channel.queue.depth), interval:1m` |
+| **Event Name** | Healthcare - Mirth Connect Queue Backup |
+| **Sliding Window** | 3 of 5 samples violating |
 | **Baseline** | Queue depth ~2-5 messages |
 | **Fires When** | HL7 interface failure causes message backlog |
 
@@ -289,23 +294,19 @@ NETFLOW_FILTER = 'log.source == "netflow"'
 2. Verify 5 processors are active in **OpenPipeline → Logs → Healthcare Observability**
 3. Confirm site distribution: run DQL `fetch logs | filter healthcare.pipeline == "healthcare-epic" | summarize count(), by:{healthcare.site}`
 
-### Step 2: Deploy Alerts
+### Step 2: Deploy Anomaly Detectors
 
-Create all 7 alerts via Settings API:
+Import all 6 detectors via the **platform** Settings API endpoint:
 
 ```bash
-# Log events (5 alerts)
-POST /api/v2/settings/objects
-# Schema: builtin:logmonitoring.log-events
-# Scope: environment
-
-# Metric events (1 alert)  
-POST /api/v2/settings/objects
-# Schema: builtin:anomaly-detection.metric-events
-# Scope: environment
+curl 'https://{env-id}.apps.dynatrace.com/platform/classic/environment-api/v2/settings/objects' \
+  -X POST \
+  -H 'Authorization: Bearer {platform-token}' \
+  -H 'Content-Type: application/json; charset=utf-8' \
+  -d @dynatrace-assets/anomaly-detectors.json
 ```
 
-Verify: **Settings → Anomaly Detection → Custom Events** — should show 7 Healthcare alerts, all ON.
+Verify: Open **Anomaly Detection** app → filter by source `healthcare-obs-gen` → should show 6 detectors, all ON.
 
 ### Step 3: Deploy DT App
 
@@ -338,11 +339,12 @@ docker-compose up -d
 
 | Asset | Location |
 |-------|----------|
+| **Anomaly Detectors JSON** | `dynatrace-assets/anomaly-detectors.json` |
+| **OpenPipeline JSON** | `dynatrace-assets/openpipeline-healthcare.json` |
+| **Classic Alerts (deprecated)** | `dynatrace-assets/log-event-alerts-classic.json`, `metric-event-alerts-classic.json` |
 | DT App source | `dynatrace-apps/healthcare-health-monitoring/` |
 | App config | `dynatrace-apps/healthcare-health-monitoring/app.config.json` |
 | DQL queries | `dynatrace-apps/healthcare-health-monitoring/ui/app/queries.ts` |
-| OpenPipeline backup | Settings API object (see Pipeline ID above) |
-| Alert definitions | Settings API objects (see Alert section above) |
 | Network topology | `config/hospital/topology.yaml` |
 | Scenario configs | `config/scenarios/*.json` / `config/scenarios/*.yaml` |
 | Kubernetes manifests | `deploy/kubernetes/` |

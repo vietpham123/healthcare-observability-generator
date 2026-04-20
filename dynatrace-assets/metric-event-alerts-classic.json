@@ -1,0 +1,45 @@
+[
+  {
+    "objectId": "vu9U3hXa3q0AAAABACdidWlsdGluOmFub21hbHktZGV0ZWN0aW9uLm1ldHJpYy1ldmVudHMABnRlbmFudAAGdGVuYW50ACRlZmQ5MTVkNC0wOGRjLTMwYWItYjAzNi03OGY3NzdiZDJlNTG-71TeFdrerQ",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - Mirth Queue Backup",
+      "queryDefinition": {
+        "type": "METRIC_KEY",
+        "metricKey": "healthcare.mirth.channel.queue.depth",
+        "aggregation": "AVG",
+        "entityFilter": {
+          "conditions": []
+        },
+        "dimensionFilter": []
+      },
+      "modelProperties": {
+        "type": "STATIC_THRESHOLD",
+        "threshold": 50.0,
+        "alertOnNoData": false,
+        "alertCondition": "ABOVE",
+        "violatingSamples": 3,
+        "samples": 5,
+        "dealertingSamples": 3
+      },
+      "eventTemplate": {
+        "title": "Mirth Connect Queue Backup",
+        "description": "Mirth integration engine queue depth exceeded 50 messages. Baseline: ~2-5. High queue depth indicates HL7 interface delivery failure \u2014 lab results, ADT notifications, and orders are backing up. Check Integration Health page.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "integration"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "hl7-interface-failure"
+          }
+        ]
+      }
+    }
+  }
+]

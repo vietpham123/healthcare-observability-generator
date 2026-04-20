@@ -1,0 +1,428 @@
+[
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkYzI5OGNkZjUtZTc3My0zNWU3LWI0NTMtYzQyMTQyMjc3NzQxvu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - Mirth Queue Backup",
+      "description": "Detects Mirth integration engine queue depth exceeding safe threshold.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "timeseries avg(healthcare.mirth.channel.queue.depth), interval:1m"
+          },
+          {
+            "key": "threshold",
+            "value": "50"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "3"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - Mirth Connect Queue Backup"
+          },
+          {
+            "key": "event.description",
+            "value": "Mirth queue depth exceeded 50 messages. Baseline ~2-5. HL7 interface delivery failure - lab results and orders backing up."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "integration"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "hl7-interface-failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkZDNjZTMwNzctZDJmYy0zNmRhLWIzMjMtN2QyOTVkZTBkMDQ5vu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - Network Interface Errors",
+      "description": "Detects network interface ERROR events indicating core switch failure.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "fetch logs | filter healthcare.pipeline == \"healthcare-network\" AND network.event.type == \"INTERFACE\" AND loglevel == \"ERROR\" | makeTimeseries count=count(), interval:1m"
+          },
+          {
+            "key": "threshold",
+            "value": "1"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "2"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - Network Interface Errors Detected"
+          },
+          {
+            "key": "event.description",
+            "value": "Network devices reporting interface error events. May indicate core switch failure cascading to clinical systems."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "infrastructure"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "core-switch-failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkMjcxMjExYTItNzlhNC0zMWFmLWJlYjItM2ExOGZlMGFkOGRkvu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - Firewall Threat Burst",
+      "description": "Detects abnormal spike in network firewall THREAT events. Baseline ~6/5min. Triggers on ransomware recon/lateral movement.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.AutoAdaptiveAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "fetch logs | filter healthcare.pipeline == \"healthcare-network\" AND network.event.type == \"THREAT\" | makeTimeseries count=count(), interval:1m"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "numberOfSignalFluctuations",
+            "value": "3"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "3"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - Network Firewall Threat Burst"
+          },
+          {
+            "key": "event.description",
+            "value": "Abnormal spike in firewall THREAT events (IPS/IDS) detected by auto-adaptive baseline. Baseline ~6/5min. May indicate active intrusion, C2 callbacks, or lateral movement."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "security"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "ransomware-attack"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkMmRlOTdlMTctNzM5Yy0zZmU2LTg5NTMtZDZjYmRmNmJmYzQ1vu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - HL7 Message Delivery Failure",
+      "description": "Detects HL7 v2.x message delivery failures. Triggers on HL7 interface failure scenarios.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "fetch logs | filter isNotNull(hl7_msg_type) AND loglevel == \"ERROR\" | makeTimeseries count=count(), interval:1m"
+          },
+          {
+            "key": "threshold",
+            "value": "2"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "3"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - HL7 Message Delivery Failure"
+          },
+          {
+            "key": "event.description",
+            "value": "HL7 v2.x messages experiencing delivery failures. Lab results, ADT notifications, and pharmacy orders may be delayed."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "integration"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "hl7-interface-failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkNDBiMzIxMzMtN2U0Ny0zMDMzLWI3NDAtNjgwMWMxZmI5NjRjvu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - Break-the-Glass Anomaly",
+      "description": "Detects unusual volume of Epic Break-the-Glass events. Triggers on insider threat snooping.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "fetch logs | filter startsWith(E1Mid, \"AC_BREAK_THE_GLASS\") | makeTimeseries count=count(), interval:1m"
+          },
+          {
+            "key": "threshold",
+            "value": "3"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "3"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - Break-the-Glass Activity Spike"
+          },
+          {
+            "key": "event.description",
+            "value": "Unusual volume of Epic Break-the-Glass events. Normal: occasional clinical need. Spike indicates potential unauthorized records access or insider threat."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "compliance"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "insider-threat-snooping"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkNTU0ZmFmNjItOWViZi0zMTIxLTkzOGEtMWJlZjBlYzcyMGYxvu9U3hXa3q0",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "title": "Healthcare - Failed Login Burst",
+      "description": "Detects abnormal spike in Epic FAILEDLOGIN events. Baseline ~3/5min. Triggers on ransomware credential harvesting.",
+      "source": "healthcare-obs-gen",
+      "executionSettings": {
+        "actor": "078dfce6-0342-4cf4-9fae-87da8cf31659"
+      },
+      "analyzer": {
+        "name": "dt.statistics.ui.anomaly_detection.AutoAdaptiveAnomalyDetectionAnalyzer",
+        "input": [
+          {
+            "key": "query",
+            "value": "fetch logs | filter E1Mid == \"FAILEDLOGIN\" AND isNotNull(dt.source.generator) | makeTimeseries count=count(), interval:1m"
+          },
+          {
+            "key": "alertCondition",
+            "value": "ABOVE"
+          },
+          {
+            "key": "alertOnMissingData",
+            "value": "false"
+          },
+          {
+            "key": "numberOfSignalFluctuations",
+            "value": "3"
+          },
+          {
+            "key": "violatingSamples",
+            "value": "3"
+          },
+          {
+            "key": "slidingWindow",
+            "value": "5"
+          },
+          {
+            "key": "dealertingSamples",
+            "value": "5"
+          }
+        ]
+      },
+      "eventTemplate": {
+        "properties": [
+          {
+            "key": "event.name",
+            "value": "Healthcare - Epic Failed Login Burst"
+          },
+          {
+            "key": "event.description",
+            "value": "Abnormal spike in Epic FAILEDLOGIN events detected by auto-adaptive baseline. Baseline ~3/5min. May indicate credential harvesting or brute-force attack (ransomware scenario)."
+          },
+          {
+            "key": "event.type",
+            "value": "CUSTOM_ALERT"
+          },
+          {
+            "key": "healthcare.alert.category",
+            "value": "security"
+          },
+          {
+            "key": "healthcare.scenario",
+            "value": "ransomware-attack"
+          }
+        ]
+      }
+    }
+  }
+]

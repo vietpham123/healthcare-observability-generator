@@ -1,0 +1,254 @@
+[
+  {
+    "objectId": "vu9U3hXa3q0AAAABACNidWlsdGluOm9wZW5waXBlbGluZS5sb2dzLnBpcGVsaW5lcwAGdGVuYW50AAZ0ZW5hbnQAJDEzNmIwN2NiLTE3YmMtMzY2MS04OTNiLTY3YjdkMDRkNzMxMb7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "metadataList": [],
+      "customId": "pipeline_Healthcare_Network_5002",
+      "displayName": "Healthcare Network",
+      "processing": {
+        "processors": [
+          {
+            "id": "processor_Cisco_IOS_Parse_5002",
+            "type": "dql",
+            "matcher": "log.source == \"cisco_ios\"",
+            "description": "Cisco IOS syslog \u2014 extract facility, severity level, mnemonic",
+            "sampleData": "*Apr 14 10:23:45.123: %LINK-3-UPDOWN: Interface GigabitEthernet0/1, changed state to down",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"LD '%' LD:syslog_facility '-' INT:syslog_severity '-' LD:syslog_mnemonic ':' SPACE LD:syslog_message\"\"\"\n| fieldsAdd network.log_type = \"syslog\""
+            }
+          },
+          {
+            "id": "processor_Cisco_ASA_Parse_5002",
+            "type": "dql",
+            "matcher": "log.source == \"cisco_asa\"",
+            "description": "Cisco ASA syslog \u2014 extract ASA level and message ID",
+            "sampleData": "%ASA-6-302013: Built inbound TCP connection 839201 for outside:192.0.2.100/54321 to inside:198.51.100.50/443",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"'%ASA-' INT:asa_level '-' LD:asa_msgid ':' SPACE LD:asa_message\"\"\"\n| fieldsAdd network.log_type = \"firewall\""
+            }
+          },
+          {
+            "id": "processor_PaloAlto_Parse_5002",
+            "type": "dql",
+            "matcher": "log.source == \"paloalto\"",
+            "description": "Palo Alto PAN-OS CSV \u2014 extract log type (TRAFFIC/THREAT/SYSTEM)",
+            "sampleData": "1,2026/04/14 10:23:45,001234567890,TRAFFIC,end,2816,...",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"INT ',' LD:pa_timestamp ',' LD:pa_serial ',' LD:pa_log_type ',' LD:pa_subtype ',' LD\"\"\"\n| fieldsAdd network.log_type = lower(pa_log_type)"
+            }
+          },
+          {
+            "id": "processor_Fortinet_Parse_5002",
+            "type": "dql",
+            "matcher": "log.source == \"fortinet\"",
+            "description": "Fortinet FortiOS key-value \u2014 extract type, subtype, action",
+            "sampleData": "date=2026-04-14 time=10:23:45 devname=\"hq-fg-01\" type=\"traffic\" subtype=\"forward\" action=\"accept\"",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"LD 'type=\"' LD:fg_type '\"' LD\"\"\"\n| parse content, \"\"\"LD 'subtype=\"' LD:fg_subtype '\"' LD\"\"\"\n| parse content, \"\"\"LD 'action=\"' LD:fg_action '\"' LD\"\"\"\n| parse content, \"\"\"LD 'level=\"' LD:fg_level '\"' LD\"\"\"\n| fieldsAdd network.log_type = fg_type"
+            }
+          },
+          {
+            "id": "processor_F5_Classify_5002",
+            "type": "dql",
+            "matcher": "log.source == \"f5\"",
+            "description": "F5 BIG-IP \u2014 classify log type",
+            "enabled": true,
+            "dql": {
+              "script": "fieldsAdd network.log_type = \"loadbalancer\""
+            }
+          },
+          {
+            "id": "processor_Aruba_Classify_5002",
+            "type": "dql",
+            "matcher": "log.source == \"aruba\"",
+            "description": "Aruba WLC \u2014 classify log type",
+            "enabled": true,
+            "dql": {
+              "script": "fieldsAdd network.log_type = \"wireless\""
+            }
+          },
+          {
+            "id": "processor_Citrix_Classify_5002",
+            "type": "dql",
+            "matcher": "log.source == \"citrix\"",
+            "description": "Citrix ADC \u2014 classify log type",
+            "enabled": true,
+            "dql": {
+              "script": "fieldsAdd network.log_type = \"adc\""
+            }
+          },
+          {
+            "id": "processor_Network_Heartbeat_Parse_5002",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"heartbeat\")",
+            "description": "Network heartbeat - extracts tick count and interface count",
+            "sampleData": "kcrmc-core-01: heartbeat tick=134 up interfaces=6",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"LD:device_name ': heartbeat tick=' INT:heartbeat_tick SPACE LD:device_state ' interfaces=' INT:interface_count\"\"\"\n| fieldsAdd network.log_type = \"heartbeat\""
+            }
+          },
+          {
+            "id": "processor_Network_Tag_5002",
+            "type": "dql",
+            "matcher": "true",
+            "description": "Tag all healthcare network logs",
+            "enabled": true,
+            "dql": {
+              "script": "fieldsAdd healthcare.pipeline = \"healthcare-network\", healthcare.data_domain = \"network-infrastructure\""
+            }
+          }
+        ]
+      },
+      "securityContext": {
+        "processors": []
+      },
+      "costAllocation": {
+        "processors": []
+      },
+      "productAllocation": {
+        "processors": []
+      },
+      "storage": {
+        "processors": [
+          {
+            "id": "storage_Network_Bucket_5002",
+            "type": "bucketAssignment",
+            "matcher": "true",
+            "description": "Route healthcare logs to observe_and_troubleshoot_apps_95_days",
+            "enabled": true,
+            "bucketAssignment": {
+              "bucketName": "observe_and_troubleshoot_apps_95_days"
+            }
+          }
+        ]
+      },
+      "metricExtraction": {
+        "processors": []
+      },
+      "davis": {
+        "processors": []
+      },
+      "dataExtraction": {
+        "processors": []
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACNidWlsdGluOm9wZW5waXBlbGluZS5sb2dzLnBpcGVsaW5lcwAGdGVuYW50AAZ0ZW5hbnQAJDdkODY2YjUxLTRhODUtMzYwMC05OGNkLWY4ZDk3MTQ3NjdhML7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "metadataList": [],
+      "customId": "pipeline_Healthcare_Observability_5001",
+      "displayName": "Healthcare Observability",
+      "processing": {
+        "processors": [
+          {
+            "id": "processor_Epic_SIEM_XML_5001",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"<EventLog>\")",
+            "description": "Epic SIEM XML \u2014 extracts E1Mid, Action, EMPid, IP, clinical fields, service audit fields, login auth fields, site",
+            "sampleData": "2026-04-18T03:51:09.178-05:00,<85>1 2026-04-18T03:51:09.178Z 10.6.3.159 Epic 33600 - [origin software=\"Security-SIEM\" swVersion=\"11.2.0\"] <?xml version=\"1.0\"?><EventLog><E1Mid>IC_SERVICE_AUDIT</E1Mid><EventCnt>0</EventCnt><EMPid>99003^EPIC, BRIDGES^EPICBRIDGES</EMPid><Source>PROD</Source><LWSid>CLISUP</LWSid><Action>Query</Action><Date>18/Apr/2026</Date><Time>03:51:09</Time><Flag>Access History</Flag><Mnemonics><Mnemonic Name=\"IP\"><Value>10.6.3.102</Value></Mnemonic><Mnemonic Name=\"CLIENTNAME\"><Value>EPIC_IC</Value></Mnemonic><Mnemonic Name=\"SERVICENAME\"><Value>PatientSearch</Value></Mnemonic><Mnemonic Name=\"SERVICECATEGORY\"><Value>Clinical</Value></Mnemonic></Mnemonics></EventLog>",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"LD ']' SPACE XML:xml\"\"\"\n| fieldsAdd E1Mid = xml[EventLog][E1Mid], Action = xml[EventLog][Action], Source = xml[EventLog][Source], WorkstationID = xml[EventLog][LWSid], Flag = xml[EventLog][Flag]\n| fieldsAdd epic_emp_raw = toString(xml[EventLog][EMPid])\n| parse epic_emp_raw, \"\"\"INT:EMPID '^' LD:EMPid '^' LD:USERNAME\"\"\"\n| parse content, \"\"\"LD 'Name=\"IP\"><Value>' LD:IP '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"CLIENTNAME\"><Value>' LD:CLIENTNAME '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SERVICENAME\"><Value>' LD:SERVICENAME '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SERVICECATEGORY\"><Value>' LD:SERVICECATEGORY '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"DEPARTMENT\"><Value>' LD:DEPARTMENT '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"ORDER_TYPE\"><Value>' LD:ORDER_TYPE '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"NOTE_TYPE\"><Value>' LD:NOTE_TYPE '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"MEDICATION_NAME\"><Value>' LD:MEDICATION_NAME '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"PATIENT_MRN\"><Value>' LD:PATIENT_MRN '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"PLATFORM\"><Value>' LD:device_type '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SESSION_ID\"><Value>' LD:SESSION_ID '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SERVICETYPE\"><Value>' LD:SERVICETYPE '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"HOSTNAME\"><Value>' LD:HOSTNAME '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"INSTANCEURN\"><Value>' LD:INSTANCEURN '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SERVICE_USER\"><Value>' LD:SERVICE_USER '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SERVICE_USERTYP\"><Value>' LD:SERVICE_USERTYP '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"CLIENT_TYPE\"><Value>' LD:CLIENT_TYPE '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"LOGINERROR\"><Value>' LD:LOGINERROR '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"LOGIN_CONTEXT\"><Value>' LD:LOGIN_CONTEXT '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"LOGIN_LDAP_ID\"><Value>' LD:LOGIN_LDAP_ID '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"INTERNET_AREA\"><Value>' LD:INTERNET_AREA '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"HYP_ACCESS_ID\"><Value>' LD:HYP_ACCESS_ID '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"REMOTE_IP\"><Value>' LD:REMOTE_IP '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"UID\"><Value>' LD:UID '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Name=\"SOURCE\"><Value>' LD:LOGIN_SOURCE '</Value>'\"\"\"\n| parse content, \"\"\"LD 'Epic ' INT:SYSLOG_PID ' -'\"\"\"\n| fieldsAdd patient_portal_action = if(E1Mid == \"MYCHART_APPT_SCHEDULE\" OR E1Mid == \"MYCHART_MESSAGE\" OR E1Mid == \"MYCHART_PROXY_ACCESS\" OR E1Mid == \"MYCHART_RX_REFILL\", E1Mid)\n| fieldsAdd `healthcare.site` = if(endsWith(toString(EMPID), \"0\") OR endsWith(toString(EMPID), \"1\") OR endsWith(toString(EMPID), \"2\") OR endsWith(toString(EMPID), \"a\") OR endsWith(toString(EMPID), \"b\"), \"kcrmc-main\", else: if(endsWith(toString(EMPID), \"3\") OR endsWith(toString(EMPID), \"4\") OR endsWith(toString(EMPID), \"c\"), \"tpk-clinic\", else: if(endsWith(toString(EMPID), \"5\") OR endsWith(toString(EMPID), \"6\") OR endsWith(toString(EMPID), \"d\"), \"wch-clinic\", else: \"lwr-clinic\")))\n| fieldsAdd epic.log_type = \"SIEM\""
+            }
+          },
+          {
+            "id": "processor_Epic_ETL_JSON_5002",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"Epic-Caboodle-ETL\")",
+            "description": "Epic ETL \u2014 extracts job_name, job_result, duration, records_processed",
+            "sampleData": "{\"timestamp\":\"2026-04-18T03:56:49.468996\",\"level\":\"INFO\",\"service\":\"Epic-Caboodle-ETL\",\"event\":\"ETL_JOB_COMPLETE\",\"job_id\":\"Caboodle-e3aab7a5\",\"job_name\":\"FlowsheetFact\",\"target_table\":\"Caboodle.dbo.FlowsheetFact\",\"extract_type\":\"Incremental\",\"data_source\":\"Caboodle\",\"instance\":\"ETL-CABOODLE-01\",\"status\":\"SUCCESS\",\"rows_processed\":10558,\"duration_seconds\":5}",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"JSON:etl\"\n| fieldsAdd event = etl[event], job_name = etl[job_name], job_result = etl[status], duration_seconds = etl[duration_seconds], records_processed = etl[rows_processed], source_system = etl[data_source], etl_instance = etl[instance]\n| fieldsAdd `healthcare.site` = if(endsWith(toString(records_processed), \"0\") OR endsWith(toString(records_processed), \"1\") OR endsWith(toString(records_processed), \"2\") OR endsWith(toString(records_processed), \"a\") OR endsWith(toString(records_processed), \"b\"), \"kcrmc-main\", else: if(endsWith(toString(records_processed), \"3\") OR endsWith(toString(records_processed), \"4\") OR endsWith(toString(records_processed), \"c\"), \"tpk-clinic\", else: if(endsWith(toString(records_processed), \"5\") OR endsWith(toString(records_processed), \"6\") OR endsWith(toString(records_processed), \"d\"), \"wch-clinic\", else: \"lwr-clinic\")))\n| fieldsAdd `epic.log_type` = \"ETL\"\n| fieldsRemove etl"
+            }
+          },
+          {
+            "id": "processor_FHIR_API_Access_5003",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"/api/FHIR/\")",
+            "description": "FHIR API \u2014 extracts method, path, response_code, response_time_ms, client_id",
+            "sampleData": "2026-04-18T05:15:18.131-05:00 INFO  [PRD-IC-03/interconnect-web-142] POST /api/FHIR/R4/MedicationRequest 200 36ms correlationId=9530f400-b6b client=THIRD_PARTY_LAB src=10.6.3.54",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"LD '[' LD:fhir_server ']' SPACE LD:method SPACE LD:path SPACE LD:response_code SPACE INT:response_time_ms 'ms' SPACE 'correlationId=' LD:correlation_id SPACE 'client=' LD:client_id SPACE 'src=' IPADDR:src_ip\"\"\"\n| fieldsAdd `healthcare.site` = if(endsWith(toString(correlation_id), \"0\") OR endsWith(toString(correlation_id), \"1\") OR endsWith(toString(correlation_id), \"2\") OR endsWith(toString(correlation_id), \"a\") OR endsWith(toString(correlation_id), \"b\"), \"kcrmc-main\", else: if(endsWith(toString(correlation_id), \"3\") OR endsWith(toString(correlation_id), \"4\") OR endsWith(toString(correlation_id), \"c\"), \"tpk-clinic\", else: if(endsWith(toString(correlation_id), \"5\") OR endsWith(toString(correlation_id), \"6\") OR endsWith(toString(correlation_id), \"d\"), \"wch-clinic\", else: \"lwr-clinic\")))\n| fieldsAdd `epic.log_type` = \"FHIR_API\""
+            }
+          },
+          {
+            "id": "processor_HL7_Message_5004",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"MSH|\")",
+            "description": "HL7 v2 \u2014 extracts MSH.9 message type, MSH.10 control ID",
+            "sampleData": "MSH|^~\\&|EPIC|EPIC|RADIOLOGY_RIS|RADIOLOGY_RIS|20260418040432||ORM^O01^ORM_O01|203982756|P|2.5.1",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"\"\"'MSH|' LD '|' LD:hl7_sending_app '|' LD:hl7_sending_facility '|' LD:hl7_receiving_app '|' LD:hl7_receiving_facility '|' LD '||' LD:hl7_msg_type '|' LD:hl7_msg_control_id '|' LD:hl7_processing_id '|' LD:hl7_version\"\"\"\n| fieldsAdd `MSH.9` = hl7_msg_type, `MSH.10` = hl7_msg_control_id\n| fieldsAdd `healthcare.site` = if(endsWith(toString(hl7_msg_control_id), \"0\") OR endsWith(toString(hl7_msg_control_id), \"1\") OR endsWith(toString(hl7_msg_control_id), \"2\") OR endsWith(toString(hl7_msg_control_id), \"a\") OR endsWith(toString(hl7_msg_control_id), \"b\"), \"kcrmc-main\", else: if(endsWith(toString(hl7_msg_control_id), \"3\") OR endsWith(toString(hl7_msg_control_id), \"4\") OR endsWith(toString(hl7_msg_control_id), \"c\"), \"tpk-clinic\", else: if(endsWith(toString(hl7_msg_control_id), \"5\") OR endsWith(toString(hl7_msg_control_id), \"6\") OR endsWith(toString(hl7_msg_control_id), \"d\"), \"wch-clinic\", else: \"lwr-clinic\")))\n| fieldsAdd `epic.log_type` = \"HL7\""
+            }
+          },
+          {
+            "id": "processor_FHIR_Resource_5005",
+            "type": "dql",
+            "matcher": "matchesPhrase(content, \"resourceType\")",
+            "description": "FHIR Resource \u2014 extracts resourceType and resource ID",
+            "sampleData": "{\"resourceType\":\"Patient\",\"id\":\"e7a1f2b3-4c5d-6e7f-8a9b-0c1d2e3f4a5b\",\"meta\":{\"versionId\":\"1\",\"lastUpdated\":\"2026-04-18T04:01:10.082426\"}}",
+            "enabled": true,
+            "dql": {
+              "script": "parse content, \"JSON:fhir\"\n| fieldsAdd fhir_resource_type = fhir[resourceType], fhir_resource_id = fhir[id]\n| fieldsAdd `healthcare.site` = if(endsWith(toString(fhir_resource_id), \"0\") OR endsWith(toString(fhir_resource_id), \"1\") OR endsWith(toString(fhir_resource_id), \"2\") OR endsWith(toString(fhir_resource_id), \"a\") OR endsWith(toString(fhir_resource_id), \"b\"), \"kcrmc-main\", else: if(endsWith(toString(fhir_resource_id), \"3\") OR endsWith(toString(fhir_resource_id), \"4\") OR endsWith(toString(fhir_resource_id), \"c\"), \"tpk-clinic\", else: if(endsWith(toString(fhir_resource_id), \"5\") OR endsWith(toString(fhir_resource_id), \"6\") OR endsWith(toString(fhir_resource_id), \"d\"), \"wch-clinic\", else: \"lwr-clinic\")))\n| fieldsAdd `epic.log_type` = \"FHIR_RESOURCE\"\n| fieldsRemove fhir"
+            }
+          },
+          {
+            "id": "processor_Healthcare_Epic_Tag_5001",
+            "type": "dql",
+            "matcher": "true",
+            "description": "Tag all healthcare Epic logs",
+            "enabled": true,
+            "dql": {
+              "script": "fieldsAdd healthcare.pipeline = \"healthcare-epic\", healthcare.data_domain = \"epic-ehr\""
+            }
+          }
+        ]
+      },
+      "securityContext": {
+        "processors": []
+      },
+      "costAllocation": {
+        "processors": []
+      },
+      "productAllocation": {
+        "processors": []
+      },
+      "storage": {
+        "processors": [
+          {
+            "id": "storage_Epic_Bucket_5001",
+            "type": "bucketAssignment",
+            "matcher": "true",
+            "description": "Route healthcare logs to observe_and_troubleshoot_apps_95_days",
+            "enabled": true,
+            "bucketAssignment": {
+              "bucketName": "observe_and_troubleshoot_apps_95_days"
+            }
+          }
+        ]
+      },
+      "metricExtraction": {
+        "processors": []
+      },
+      "davis": {
+        "processors": []
+      },
+      "dataExtraction": {
+        "processors": []
+      }
+    }
+  }
+]

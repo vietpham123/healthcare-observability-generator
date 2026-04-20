@@ -1,0 +1,149 @@
+[
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJDgzMjc4MWM2LThmM2YtMzQ5OS05NTM5LTAxNzQ3NTQzNTIzYr7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - Failed Login Burst",
+      "query": "E1Mid == \"FAILEDLOGIN\" AND isNotNull(dt.source.generator)",
+      "eventTemplate": {
+        "title": "Epic Failed Login Burst Detected",
+        "description": "Abnormal spike in Epic FAILEDLOGIN events. Baseline: ~3/5min. This may indicate credential harvesting or brute-force attack. Check Security & Compliance page in Healthcare app.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "security"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "ransomware-attack"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJGFjYTgwNWIwLWI1MjYtMzNlYS1iOGYwLTcwMzgzZGM1OWUzML7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - Network Interface Errors",
+      "query": "healthcare.pipeline == \"healthcare-network\" AND network.event.type == \"INTERFACE\" AND matchesPhrase(content, \"down\")",
+      "eventTemplate": {
+        "title": "Network Interface Error Events Detected",
+        "description": "Network devices reporting interface down events. May indicate core switch failure or port-level issues cascading to clinical systems including Epic, Mirth integration engine, and HL7 feeds. Check Network Health page in Healthcare app.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "infrastructure"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "core-switch-failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJGQwMDJmMzIxLWYwN2ItMzJmYi05YWNiLTI5OGYyYzM2M2YwM77vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - HL7 Message Delivery Failure",
+      "query": "isNotNull(hl7_msg_type) AND (matchesPhrase(content, \"NACK\") OR matchesPhrase(content, \"ERROR\") OR matchesPhrase(content, \"timeout\") OR matchesPhrase(content, \"rejected\"))",
+      "eventTemplate": {
+        "title": "HL7 Message Delivery Failure",
+        "description": "HL7 v2.x messages experiencing delivery failures (NACKs, timeouts, rejections). Clinical workflows impacted - lab results, ADT notifications, and pharmacy orders may be delayed. Check Integration Health page and Mirth channel status.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "integration"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "hl7-interface-failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJGU5YmI2MGU3LTdhZDItMzI3OS1hOGE1LTA3ZWUxZjJmOWNiYr7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - Break-the-Glass Anomaly",
+      "query": "matchesValue(E1Mid, \"AC_BREAK_THE_GLASS*\")",
+      "eventTemplate": {
+        "title": "Break-the-Glass Activity Spike",
+        "description": "Unusual volume of Epic Break-the-Glass events (ACCESS, FAILED_ACCESS, INAPPROPRIATE_ATTEMPT). Normal: occasional clinical need. Spike pattern indicates potential unauthorized records access or insider threat. Review employee, patient, and time-of-day on Security page.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "compliance"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "insider-threat-snooping"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJDM3NjEzYTk4LWQxNjEtMzgzMC1iZGJiLTRiNWRlNzhhYzkxML7vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare Obs Gen - Error Events",
+      "query": "dt.source.generator==\"healthcare-obs-gen-v2\" and loglevel==\"ERROR\"",
+      "eventTemplate": {
+        "title": "Healthcare Generator Error",
+        "description": "Error in healthcare observability generator",
+        "eventType": "ERROR",
+        "davisMerge": true,
+        "metadata": []
+      }
+    }
+  },
+  {
+    "objectId": "vu9U3hXa3q0AAAABACBidWlsdGluOmxvZ21vbml0b3JpbmcubG9nLWV2ZW50cwAGdGVuYW50AAZ0ZW5hbnQAJDVlYjA5YjU5LTI1NTMtMzBkNC1iN2RlLTQzZWEwYmY1ZWEzY77vVN4V2t6t",
+    "schemaId": null,
+    "scope": null,
+    "value": {
+      "enabled": true,
+      "summary": "Healthcare - Firewall Threat Burst",
+      "query": "healthcare.pipeline == \"healthcare-network\" AND network.event.type == \"THREAT\"",
+      "eventTemplate": {
+        "title": "Network Firewall Threat Burst Detected",
+        "description": "Abnormal spike in firewall THREAT events (IPS/IDS triggers from Palo Alto, FortiGate). Baseline: ~6/5min. May indicate active intrusion, C2 callbacks, or lateral movement. Cross-reference with Epic login failures.",
+        "eventType": "CUSTOM_ALERT",
+        "davisMerge": true,
+        "metadata": [
+          {
+            "metadataKey": "healthcare.alert.category",
+            "metadataValue": "security"
+          },
+          {
+            "metadataKey": "healthcare.scenario",
+            "metadataValue": "ransomware-attack"
+          }
+        ]
+      }
+    }
+  }
+]
