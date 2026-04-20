@@ -20,7 +20,7 @@ spec:
         - name: acr-secret
       containers:
         - name: webui
-          image: vietregistry.azurecr.io/healthcare-gen/webui:latest
+          image: <your-acr>.azurecr.io/healthcare-gen/webui:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

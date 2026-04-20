@@ -20,7 +20,7 @@ spec:
         - name: acr-secret
       containers:
         - name: epic
-          image: vietregistry.azurecr.io/healthcare-gen/epic:latest
+          image: <your-acr>.azurecr.io/healthcare-gen/epic:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

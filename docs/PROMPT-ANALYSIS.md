@@ -225,14 +225,14 @@ const values = records.map(r => r.cpu_avg as number);
 ### AKS Cluster
 | Resource | Value |
 |----------|-------|
-| Cluster | `aks-healthcare-gen` |
-| Resource Group | `VPEtrade_group` |
-| Region | `southcentralus` |
+| Cluster | `<your-aks-cluster>` |
+| Resource Group | `<your-resource-group>` |
+| Region | `<your-region>` |
 | Node Pool | 2× Standard_B2ms |
 | Namespace | `healthcare-gen` |
 
 ### Container Registry
-- ACR: `vietregistry.azurecr.io`
+- ACR: `<your-acr>.azurecr.io`
 - Images: `healthcare-gen/epic`, `healthcare-gen/network`, `healthcare-gen/webui`
 
 ### DT App Deployment

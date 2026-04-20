@@ -1,6 +1,6 @@
 {
   "$schema": "./.dt-app/app.config.schema.json",
-  "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
+  "environmentUrl": "https://<your-env-id>.apps.dynatrace.com",
   "app": {
     "name": "Healthcare Health Monitoring",
     "version": "1.18.1",

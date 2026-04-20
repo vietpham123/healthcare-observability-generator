@@ -91,7 +91,7 @@ A field-by-field fidelity analysis was conducted comparing generated logs to rea
 
 #### OpenPipeline Update
 
-Updated `processor_Epic_SIEM_XML_5001` to extract 16 new fields from SIEM XML mnemonics:
+Updated the Epic SIEM XML processor to extract 16 new fields from SIEM XML mnemonics:
 - Service audit: SERVICETYPE, HOSTNAME, INSTANCEURN, SERVICE_USER, SERVICE_USERTYP
 - Login auth: CLIENT_TYPE, LOGINERROR, LOGIN_CONTEXT, LOGIN_LDAP_ID, INTERNET_AREA, HYP_ACCESS_ID, REMOTE_IP, UID, LOGIN_SOURCE
 - Syslog: SYSLOG_PID
@@ -118,7 +118,7 @@ python orchestrator.py
 ### Kubernetes (AKS) — Current Production
 
 ```
-AKS Cluster (aks-healthcare-gen, 2× Standard_B2ms)
+AKS Cluster (<your-aks-cluster>, 2× Standard_B2ms)
   namespace: healthcare-gen
   ├── epic-generator (v1.0.3)      → DT Log Ingest API
   ├── network-generator (latest)    → DT Log/Metrics/Events API
@@ -131,7 +131,7 @@ AKS Cluster (aks-healthcare-gen, 2× Standard_B2ms)
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `DT_ENDPOINT` | `https://gyz6507h.sprint.dynatracelabs.com` | DT environment |
+| `DT_ENDPOINT` | `https://<your-env-id>.live.dynatrace.com` | DT environment |
 | `EPIC_OUTPUT_MODE` | `both` | File + Dynatrace |
 | `TICK_INTERVAL_EPIC` | `5` | 5-second tick |
 | `EPIC_SCENARIO` | `normal_shift` | Default scenario |
@@ -147,7 +147,7 @@ Decomposes monolith into independently scalable pods via Redis Streams consumer 
 
 ## OpenPipeline Configuration
 
-**Pipeline:** `Healthcare Observability` (`pipeline_Healthcare_Observability_5001`)
+**Pipeline:** `Healthcare Observability`
 
 ### SIEM XML Processor — Extracted Fields
 
@@ -170,10 +170,10 @@ Decomposes monolith into independently scalable pods via Redis Streams consumer 
 ### Docker Build (on VM)
 ```bash
 cd ~/healthcare-observability-generator
-docker build -t vietregistry.azurecr.io/healthcare-gen/epic:v1.0.3 \
-  -t vietregistry.azurecr.io/healthcare-gen/epic:latest \
+docker build -t <your-acr>.azurecr.io/healthcare-gen/epic:v1.0.3 \
+  -t <your-acr>.azurecr.io/healthcare-gen/epic:latest \
   -f deploy/docker/Dockerfile.epic .
-docker push vietregistry.azurecr.io/healthcare-gen/epic:v1.0.3
+docker push <your-acr>.azurecr.io/healthcare-gen/epic:v1.0.3
 ```
 
 ### DT App Deploy (from local machine)
@@ -185,8 +185,8 @@ cd /tmp/healthcare-app && npx dt-app deploy
 ```bash
 rsync -avz --exclude node_modules --exclude dist --exclude .dt-app \
   /tmp/healthcare-app/ \
-  azureuser@52.248.43.42:~/healthcare-observability-generator/dynatrace-apps/healthcare-health-monitoring/ \
-  -e "ssh -i ~/.ssh/VPET_key.pem"
+  <user>@<your-vm-ip>:~/healthcare-observability-generator/dynatrace-apps/healthcare-health-monitoring/ \
+  -e "ssh -i ~/.ssh/<your-key>.pem"
 ```
 
 ### OpenPipeline Update (Settings API v2)

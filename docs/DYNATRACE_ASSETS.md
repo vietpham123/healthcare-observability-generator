@@ -25,7 +25,7 @@
 | **App Name** | Healthcare Health Monitoring |
 | **App ID** | `my.healthcare.health.monitoring` |
 | **Version** | 1.18.1 |
-| **Environment** | `https://gyz6507h.sprint.apps.dynatracelabs.com` |
+| **Environment** | `https://<your-env-id>.apps.dynatrace.com` |
 | **Source** | `dynatrace-apps/healthcare-health-monitoring/` |
 | **Deploy Command** | `npx dt-app deploy` |
 

@@ -49,7 +49,7 @@ Add a discriminator attribute to EVERY record at the generator level:
 ```
 dt.source.generator = "healthcare-obs-gen-v2"
 dt.source.generator.version = "2.0.0"
-dt.source.deployment = "aks-healthcare-gen"
+dt.source.deployment = "<your-deployment-id>"
 ```
 
 This requires a small code change in both output adapters. These attributes travel with the data through OpenPipeline and into Grail, enabling precise filtering.
@@ -250,7 +250,7 @@ def _log_to_dt(self, event: LogEvent) -> dict:
         # ADD these segmentation attributes:
         "dt.source.generator": "healthcare-obs-gen-v2",
         "dt.source.generator.version": "2.0.0",
-        "dt.source.deployment": os.environ.get("DEPLOYMENT_ID", "aks-healthcare-gen"),
+        "dt.source.deployment": os.environ.get("DEPLOYMENT_ID", "<your-deployment-id>"),
     }
     return record
 ```
@@ -269,7 +269,7 @@ otlp = OTLPOutput(
     default_attributes={
         "dt.source.generator": "healthcare-obs-gen-v2",
         "dt.source.generator.version": "2.0.0",
-        "dt.source.deployment": "aks-healthcare-gen",
+        "dt.source.deployment": "<your-deployment-id>",
     }
 )
 ```
@@ -306,7 +306,7 @@ data:
   NETWORK_OUTPUT: "both"          # "file" + "dynatrace" simultaneously
   EPIC_OUTPUT_MODE: "otlp"        # Switch from stdout to OTLP/DT ingest
   # NEW: Segmentation
-  DEPLOYMENT_ID: "aks-healthcare-gen"
+  DEPLOYMENT_ID: "<your-deployment-id>"
   GENERATOR_VERSION: "2.0.0"
 ```
 

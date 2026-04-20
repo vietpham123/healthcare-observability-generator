@@ -20,7 +20,7 @@ spec:
         - name: acr-secret
       containers:
         - name: network
-          image: vietregistry.azurecr.io/healthcare-gen/network:latest
+          image: <your-acr>.azurecr.io/healthcare-gen/network:latest
           imagePullPolicy: Always
           args:
             - "--config"

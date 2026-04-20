@@ -147,7 +147,7 @@ npx dt-app deploy
 # Sync back to VM
 rsync -avz --exclude node_modules --exclude dist --exclude .dt-app \
   /tmp/healthcare-app/ \
-  azureuser@<vm-ip>:~/healthcare-observability-generator/dynatrace-apps/healthcare-health-monitoring/ \
+  <user>@<vm-ip>:~/healthcare-observability-generator/dynatrace-apps/healthcare-health-monitoring/ \
   -e "ssh -i ~/.ssh/key.pem"
 ```
 
