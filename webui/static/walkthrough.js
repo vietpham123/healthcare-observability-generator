@@ -1,7 +1,7 @@
 /* Scenario Walkthrough — Frontend Logic */
 /* v2.3.0: 4 focused scenarios + baseline */
 
-const DT_APP_URL = "https://gyz6507h.sprint.apps.dynatracelabs.com/ui/apps/my.healthcare.health.monitoring";
+const DT_APP_URL = "https://gyz6507h.sprint.apps.dynatracelabs.com/ui/apps/my.dynatrace.healthcare.health.monitoring";
 
 const SCENARIO_DATA = {
   "normal-day-shift": {
@@ -20,13 +20,13 @@ const SCENARIO_DATA = {
     dtPages: [
       { page: "Overview (/)", items: ["All KPIs green \u2014 login rate >98%, HL7 delivery 100%", "System Activity timeline shows steady volumes", "Campus map \u2014 all 4 sites reporting"] },
       { page: "Epic Health (/epic)", items: ["Login volume follows time-of-day curve (peak 10AM-2PM)", "Clinical orders show mix of STAT, Routine, PRN", "No security events beyond routine break-the-glass"] },
-      { page: "Network Health (/network)", items: ["All 22 devices reporting, CPU/mem in normal range", "Traffic patterns follow clinical schedule", "NetFlow \u2014 mostly internal, clinical protocols"] },
+      { page: "Network (/network)", items: ["All 22 devices reporting (green hex tiles), CPU/mem in normal range", "Traffic patterns follow clinical schedule", "NetFlow \u2014 mostly internal, clinical protocols"] },
       { page: "Integration (/integration)", items: ["HL7 messages at steady 7AM-7PM rate", "FHIR API p95 <200ms, no errors", "ETL jobs completing on schedule", "Mirth Connect \u2014 all 5 channels running, zero queue depth"] }
     ],
     steps: [
       { title: "Show the Overview", text: "Point out all KPIs are green. The campus map shows all sites healthy. This is the baseline everything else deviates from." },
       { title: "Walk through Epic Health", text: "Show login volume follows a natural bell curve. Orders are a mix of types. Security events table is quiet \u2014 maybe 1-2 routine break-the-glass." },
-      { title: "Check Network Health", text: "Device fleet honeycomb is cool-colored (low CPU). All 22 devices last-seen within 5 min. Traffic is predictable." },
+      { title: "Check Network", text: "Device fleet honeycomb is all green (devices up). CPU and memory in normal range. Traffic is predictable." },
       { title: "Verify Integrations", text: "HL7, FHIR, ETL all green. Mirth Connect shows 5 channels with zero queue depth. This is the target state. Every scenario creates deviations FROM this baseline." }
     ],
     talking: [
@@ -43,23 +43,23 @@ const SCENARIO_DATA = {
       totalRuntime: "60 min cycle (4 phases: Recon \u2192 Harvest \u2192 Lateral \u2192 Exfil)",
       summary: "Simulates a ransomware kill chain \u2014 phishing email at a satellite clinic compromises a workstation. Attacker pivots through WAN to main campus, harvests credentials against Epic, then begins mass patient record exfiltration. Correlated across Epic SIEM break-the-glass, login failures, and anomalous service audit events.",
       steps: [
-        { when: "T-15 min (ideal)", action: "Run 'Normal Day Shift' to establish baseline", why: "Login success rate needs to be at 98%+ baseline for the drop to be visible. Auth page needs green KPIs." },
+        { when: "T-15 min (ideal)", action: "Run 'Normal Day Shift' to establish baseline", why: "Login success rate needs to be at baseline (~83%) for the drop to be visible. Security page needs green KPIs." },
         { when: "T-10 min", action: "Switch to 'Ransomware Attack'", why: "Phase 1 (Recon) starts immediately \u2014 subtle probing. Within 5 min, Phase 2 (Harvest) begins with visible login failures." },
-        { when: "T-5 min", action: "Verify Auth page shows login failures climbing", why: "By now Epic Login Success % should be dropping toward AMBER. The attack is visibly underway." },
-        { when: "T-0", action: "Begin demo \u2014 'We're seeing unusual login activity...'", why: "Auth & Security pages should be RED. The 4-phase kill chain is visible in the timeline." }
+        { when: "T-5 min", action: "Verify Security page shows login failures climbing", why: "By now Epic Login Success % should be dropping toward AMBER. The attack is visibly underway." },
+        { when: "T-0", action: "Begin demo \u2014 'We're seeing unusual login activity...'", why: "Security & Epic Health pages should be RED. The 4-phase kill chain is visible in the timeline." }
       ],
-      proTip: "Let it run through all 4 phases (60 min) to show the complete kill chain. If time is short, the first 15 min covers Recon + Harvest which is enough to show Auth going RED."
+      proTip: "Let it run through all 4 phases (60 min) to show the complete kill chain. If time is short, the first 15 min covers Recon + Harvest which is enough to show Security and Epic Health going RED."
     },
     dtPages: [
-      { page: "Auth Health (/auth)", items: ["Login Success % drops from 98% to <45% (RED)", "Failed login count spikes \u2014 FAILEDLOGIN events flood", "Auth health donut shifts toward failures"] },
-      { page: "Security & Compliance (/security)", items: ["BTG events spike (credential testing triggers break-the-glass)", "Failed login source analysis shows concentrated activity", "Security events table fills with FAILEDLOGIN + BTG"] },
-      { page: "Epic Health (/epic)", items: ["Login volume chart shows massive failure spike", "Service audit events from credential harvesting"] },
+      { page: "Security (/security)", items: ["Failed Logins spike from ~120 to 1400+ (RED)", "BTG events spike (credential testing triggers break-the-glass)", "Failed login source analysis shows concentrated activity", "Security events table fills with FAILEDLOGIN + BTG"] },
+      { page: "Epic Health (/epic)", items: ["Login Success % drops from 83% to ~44% (RED)", "Login volume chart shows massive failure spike", "Service audit events from credential harvesting"] },
       { page: "Overview (/)", items: ["Epic Login Success KPI drops to RED", "System Activity shows event volume spike"] }
     ],
     steps: [
-      { title: "Start at Overview \u2014 see the RED KPIs", text: "Epic Login Success % and Auth Login Success % are both RED. Something is very wrong with authentication." },
-      { title: "Drill into Auth Health", text: "Login failures are flooding in. The success rate has dropped from 98% to below 45%. This is Phase 2 (Harvest) of the kill chain." },
-      { title: "Check Security page", text: "BTG events are spiking \u2014 the credential harvesting triggers break-the-glass events. Failed login analysis shows the attack pattern." },
+      { title: "Start at Overview \u2014 see the RED KPIs", text: "Epic Login Success KPI is RED. Something is very wrong with authentication." },
+      { title: "Drill into Security", text: "Failed Logins have spiked to 1400+. BTG events are flooding in. The credential harvesting triggers break-the-glass events and the attack pattern is visible in the events table." },
+      { title: "Check Epic Health", text: "Login Success Rate has dropped from 83% to below 45%. This is Phase 2 (Harvest) of the kill chain. The login trend chart shows the dramatic drop." },
+      { title: "Return to Security for timeline", text: "Security Events Over Time chart shows the correlation \u2014 BTG and FAILEDLOGIN events spike together as the attack progresses through phases." },
       { title: "Explain the 4 phases", text: "Phase 1: Recon (subtle probing). Phase 2: Harvest (credential testing \u2014 what you see now). Phase 3: Lateral (moving through systems). Phase 4: Exfil (data extraction)." }
     ],
     talking: [
@@ -85,7 +85,7 @@ const SCENARIO_DATA = {
       proTip: "This scenario is about behavioral detection, not volume. Emphasize that the access is 'low and slow' \u2014 no massive spikes, just a suspicious pattern over time."
     },
     dtPages: [
-      { page: "Security & Compliance (/security)", items: ["BTG Count spikes from <200 to >400 (RED)", "Break-the-glass events show after-hours timestamps", "Access pattern: VIP records, celebrity records, coworker records"] },
+      { page: "Security (/security)", items: ["BTG Count spikes from <200 to >400 (RED)", "Break-the-glass events show after-hours timestamps", "Access pattern: VIP records, celebrity records, coworker records"] },
       { page: "Epic Health (/epic)", items: ["Login events show after-hours activity", "CHART_ACCESS events for patients outside user's department", "Event sequence: LOGIN \u2192 SEARCH \u2192 BTG \u2192 CHART_ACCESS"] },
       { page: "Overview (/)", items: ["BTG KPI turns RED", "No network impact \u2014 this is a pure Epic audit scenario"] }
     ],
@@ -119,7 +119,7 @@ const SCENARIO_DATA = {
     },
     dtPages: [
       { page: "Integration (/integration)", items: ["FHIR Health drops from 85% to ~35% (RED)", "ETL Success drops from 88% to ~30% (RED)", "HL7 Delivery Rate drops to 0% (RED)", "Mirth Connect queue depth chart shows escalating backup", "Mirth channel health drops below 80% (AMBER then RED)", "Failed ETL jobs table populates"] },
-      { page: "Network Health (/network)", items: ["Access switch port errors on HL7 VLAN", "Reduced traffic on interface VLAN"] },
+      { page: "Network (/network)", items: ["Access switch port errors on HL7 VLAN", "Reduced traffic on interface VLAN"] },
       { page: "Epic Health (/epic)", items: ["Service audit events from interface failures", "Clinical workflow disruption indicators"] },
       { page: "Overview (/)", items: ["Integration KPIs turn RED", "HL7 Delivery Rate is the most visible indicator"] }
     ],
@@ -152,7 +152,7 @@ const SCENARIO_DATA = {
       proTip: "Good scenario for showing cascading failure \u2014 one switch down means remaining infrastructure is overloaded. Mention that Mirth shows mild degradation (30%) because some integration traffic routes through the failed switch."
     },
     dtPages: [
-      { page: "Network Health (/network)", items: ["Device Up Ratio drops below 95% (RED)", "Avg Device CPU spikes above 60% (RED)", "Device fleet shows offline devices", "Traffic patterns disrupted"] },
+      { page: "Network (/network)", items: ["Device fleet honeycomb shows kcrmc-core-01 as RED (down)", "CPU spikes on kcrmc-dist-epic-01 (85%) and kcrmc-dist-epic-02 (78%)", "Device Up Ratio drops", "Traffic patterns disrupted"] },
       { page: "Integration (/integration)", items: ["Mild FHIR error increase (~15%)", "Mild ETL failure increase (~20%)", "Mirth shows slight degradation (30% error bump)", "Integration stays AMBER, not RED \u2014 secondary impact"] },
       { page: "Overview (/)", items: ["Network KPIs turn RED", "Integration KPIs may turn AMBER (mild cross-impact)"] }
     ],
