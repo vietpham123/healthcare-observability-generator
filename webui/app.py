@@ -196,9 +196,11 @@ async def activate_scenario(key: str):
     epic_key = SCENARIO_KEY_MAP.get(key, key)
 
     # Patch both EPIC_SCENARIO and NETWORK_SCENARIO in a single ConfigMap update
+    # EPIC_SCENARIO uses underscore keys (matching src/epic_generator/config/scenarios/)
+    # NETWORK_SCENARIO uses hyphenated keys (matching config/scenarios/ filenames)
     cm_ok = await _k8s_patch_configmap({
         "EPIC_SCENARIO": epic_key,
-        "NETWORK_SCENARIO": epic_key,
+        "NETWORK_SCENARIO": key,
     })
 
     # Restart both generators so they pick up the new scenario
