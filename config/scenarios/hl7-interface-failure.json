@@ -3,6 +3,12 @@
   "description": "Switch port errors on HL7 VLAN cause Mirth Connect queue backup. FHIR API errors spike, ETL jobs fail, HL7 delivery stops. Integration page turns RED.",
   "volume_multiplier": 1.2,
   "max_sessions": 20,
+  "generator_overrides": {
+    "fhir_error_bias": 0.6,
+    "etl_failure_bias": 0.7,
+    "hl7_disabled": true,
+    "mirth_scenario": "hl7_interface_failure"
+  },
   "network_correlation": {
     "enabled": true,
     "description": "CRC errors on HL7 VLAN switch port cause TCP retransmissions and MLLP timeouts",

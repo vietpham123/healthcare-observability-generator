@@ -60,7 +60,7 @@ export const queries = {
 
   hl7DeliveryRate: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1, from: now()-5m
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | summarize msg_count = count()
     | fieldsAdd delivery_rate = if(msg_count > 0, 100.0, else: 0.0)`,
 
@@ -117,7 +117,7 @@ export const queries = {
   epicEventDistribution: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
-    | fieldsAdd event_category = if(isNotNull(MSH.9), "HL7",
+    | fieldsAdd event_category = if(isNotNull(\`MSH.9\`), "HL7",
         else: if(isNotNull(response_time_ms), "FHIR API",
         else: if(isNotNull(patient_portal_action), "MyChart",
         else: if(isNotNull(job_name), "ETL",
@@ -283,21 +283,21 @@ export const queries = {
   // ─── Integration Health — HL7 ─────────────────────────────────────
   hl7VolumeOverTime: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | makeTimeseries messages = count(), interval: 5m`,
 
   hl7MessageBreakdown: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | parse content, "LD 'ORC|' LD:orc_action '|'"
     | summarize cnt = count(), by: { orc_action }
     | sort cnt desc`,
 
   hl7RecentMessages: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | parse content, "LD 'ORC|' LD:orc_action '|'"
-    | fields timestamp, MSH.9, MSH.10, orc_action, healthcare.site
+    | fields timestamp, \`MSH.9\`, \`MSH.10\`, orc_action, healthcare.site
     | sort timestamp desc
     | limit 30`,
 
@@ -441,7 +441,7 @@ export const queries = {
   siteHL7Volume: (siteFilter: string) => `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | filter ${siteFilter}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | summarize total = count()`,
 
   siteErrorRate: (siteFilter: string) => `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
@@ -467,7 +467,7 @@ export const queries = {
     | filter ${siteFilter}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter isNotNull(e1mid)
-    | fieldsAdd event_category = if(isNotNull(MSH.9), "HL7",
+    | fieldsAdd event_category = if(isNotNull(\`MSH.9\`), "HL7",
         else: if(isNotNull(response_time_ms), "FHIR API",
         else: if(isNotNull(patient_portal_action), "MyChart",
         else: if(isNotNull(job_name), "ETL",
@@ -495,8 +495,8 @@ export const queries = {
   /** HL7 messages by message type (ADT, ORM, etc.) */
   hl7ByMessageType: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
-    | makeTimeseries cnt = count(), by: { MSH.9 }, interval: 5m`,
+    | filter isNotNull(\`MSH.9\`)
+    | makeTimeseries cnt = count(), by: { \`MSH.9\` }, interval: 5m`,
 
   /** Port security violations from network logs */
   portSecurityViolations: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
@@ -553,7 +553,7 @@ export const queries = {
   /** HL7 volume in last 5 minutes (for KPI) */
   hl7RecentVolume: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1, from: now()-5m
     | filter ${EPIC_FILTER}
-    | filter isNotNull(MSH.9)
+    | filter isNotNull(\`MSH.9\`)
     | summarize hl7_volume = count()`,
 
   // ─── Authentication Health — New Mnemonic Fields ──────────────────

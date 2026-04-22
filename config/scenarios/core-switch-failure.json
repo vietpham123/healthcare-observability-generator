@@ -3,6 +3,12 @@
   "description": "Core network switch fails. Devices go offline, surviving switches spike CPU. Epic connectivity intermittent. Network page turns RED.",
   "volume_multiplier": 0.8,
   "max_sessions": 15,
+  "generator_overrides": {
+    "fhir_error_bias": 0.4,
+    "etl_failure_bias": 0.5,
+    "hl7_disabled": true,
+    "mirth_scenario": "core_switch_failure"
+  },
   "network_correlation": {
     "enabled": true,
     "description": "Core switch port-channel failure cascading to connected devices",

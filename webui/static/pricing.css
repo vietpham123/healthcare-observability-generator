@@ -1,0 +1,373 @@
+/* DPS Pricing Estimator — Page Styles */
+
+/* ── Nav Separator ────────────────────────────────────────────── */
+.nav-sep {
+  color: var(--card-border);
+  margin: 0 0.5rem;
+}
+
+/* ── Wizard Steps ─────────────────────────────────────────────── */
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.wizard-step.active { opacity: 1; }
+.wizard-step.current .step-num {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(79, 140, 255, 0.4);
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--card-border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wizard-step.active .step-num {
+  background: var(--green);
+  color: #fff;
+}
+
+.step-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.wizard-connector {
+  width: 32px;
+  height: 2px;
+  background: var(--card-border);
+  margin: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.wizard-step.active + .wizard-connector,
+.wizard-connector:has(+ .wizard-step.active) {
+  /* Fallback: connectors are styled via active step opacity */
+}
+
+/* ── Form Layout ──────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-group input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card-border);
+  outline: none;
+  margin-top: 0.25rem;
+}
+
+.form-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(79, 140, 255, 0.4);
+}
+
+.form-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+.range-display {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.form-group select,
+.form-group input[type="number"] {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-group select:focus,
+.form-group input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+.form-group select option {
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+  color: var(--text);
+}
+
+/* ── Checkboxes ───────────────────────────────────────────────── */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.4rem;
+}
+
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.chk:hover { background: rgba(255,255,255,0.04); }
+
+.chk input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Wizard Nav ───────────────────────────────────────────────── */
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--card-border);
+  gap: 0.75rem;
+}
+
+.btn-calculate {
+  font-size: 0.95rem;
+  padding: 0.6rem 1.5rem;
+}
+
+/* ── Results Hero ─────────────────────────────────────────────── */
+.results-hero {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-stat {
+  flex: 1;
+  min-width: 160px;
+  background: rgba(79, 140, 255, 0.08);
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.hero-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.hero-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+/* ── Results Table ────────────────────────────────────────────── */
+.results-breakdown {
+  margin-bottom: 1rem;
+}
+
+.results-breakdown h3 {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.results-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--card-border);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.results-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+
+.results-table .total-row td {
+  border-top: 2px solid var(--accent);
+  border-bottom: none;
+  padding-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.subsys-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+}
+
+.bar-container {
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  margin-top: 0.3rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ── Assumptions ──────────────────────────────────────────────── */
+.assumptions {
+  background: rgba(251, 191, 36, 0.05);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.assumptions h3 { color: var(--orange); }
+
+.assumptions-ul {
+  list-style: none;
+  padding: 0;
+}
+
+.assumptions-ul li {
+  padding: 0.4rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.assumptions-ul li:last-child { border-bottom: none; }
+
+.assumptions-ul li strong {
+  color: var(--text);
+}
+
+/* ── Input Summary ────────────────────────────────────────────── */
+.input-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0.6rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.s-label { color: var(--text-muted); }
+.s-value { color: var(--text); font-weight: 600; }
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footer-disclaimer {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .wizard-steps { flex-wrap: wrap; gap: 0.3rem; }
+  .step-label { display: none; }
+  .results-hero { flex-direction: column; }
+  .results-table { font-size: 0.75rem; }
+  .results-table th, .results-table td { padding: 0.4rem; }
+}

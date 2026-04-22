@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPS Pricing Estimator — KCRMC</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/pricing.css">
+</head>
+<body>
+  <header>
+    <h1>🏥 Kansas City Regional Medical Center</h1>
+    <p class="subtitle">Dynatrace DPS Pricing Estimator — Production Sizing</p>
+    <nav class="header-nav">
+      <a href="/" class="nav-link">← Control Panel</a>
+      <span class="nav-sep">|</span>
+      <a href="/walkthrough" class="nav-link">📖 Scenario Walkthrough</a>
+      <span class="nav-sep">|</span>
+      <a href="/discovery" class="nav-link">📋 DPS Discovery</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Wizard Steps -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" data-step="1">
+        <span class="step-num">1</span>
+        <span class="step-label">Hospital Profile</span>
+      </div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" data-step="2">
+        <span class="step-num">2</span>
+        <span class="step-label">Infrastructure</span>
+      </div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" data-step="3">
+        <span class="step-num">3</span>
+        <span class="step-label">Configuration</span>
+      </div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" data-step="4">
+        <span class="step-num">4</span>
+        <span class="step-label">Results</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Hospital Profile -->
+    <section class="card wizard-panel" id="step-1">
+      <h2>🏥 Hospital Profile</h2>
+      <p class="section-desc">Define the size and operational profile of the healthcare organization. These parameters drive clinical event volumes.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="staffed-beds">Staffed Beds</label>
+          <input type="range" id="staffed-beds" min="25" max="2000" value="500" step="25">
+          <div class="range-display"><span id="staffed-beds-val">500</span> beds</div>
+          <p class="form-hint">Licensed inpatient beds in active use</p>
+        </div>
+
+        <div class="form-group">
+          <label for="daily-encounters">Daily Encounters</label>
+          <input type="range" id="daily-encounters" min="50" max="10000" value="1200" step="50">
+          <div class="range-display"><span id="daily-encounters-val">1,200</span> / day</div>
+          <p class="form-hint">ED + inpatient + outpatient + telehealth visits</p>
+        </div>
+
+        <div class="form-group">
+          <label for="peak-epic-users">Peak Concurrent Epic Users</label>
+          <input type="range" id="peak-epic-users" min="20" max="3000" value="400" step="10">
+          <div class="range-display"><span id="peak-epic-users-val">400</span> users</div>
+          <p class="form-hint">Max simultaneous Hyperspace / Haiku / Canto sessions</p>
+        </div>
+
+        <div class="form-group">
+          <label for="mychart-patients">MyChart Active Patients (monthly)</label>
+          <input type="range" id="mychart-patients" min="0" max="500000" value="50000" step="5000">
+          <div class="range-display"><span id="mychart-patients-val">50,000</span></div>
+          <p class="form-hint">Unique patients accessing MyChart portal per month</p>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Epic Modules Enabled</h3>
+        <p class="form-hint" style="margin-bottom:0.75rem">Each module generates its own SIEM audit trail. Select all that apply.</p>
+        <div class="checkbox-grid">
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="ehr-core" checked> EHR Core (Chart, Orders, Notes)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="cadence" checked> Cadence (Scheduling)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="willow" checked> Willow (Pharmacy)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="radiant" checked> Radiant (Radiology)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="beaker"> Beaker (Lab)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="optime"> OpTime (Surgery)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="stork"> Stork (OB/L&D)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="tapestry"> Tapestry (Rehab)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="wisdom"> Wisdom (Dental)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="phoenix"> Phoenix (Oncology)</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="home-health"> Home Health</label>
+          <label class="chk"><input type="checkbox" class="epic-module" data-module="care-everywhere" checked> Care Everywhere (HIE)</label>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <div></div>
+        <button class="btn btn-primary" onclick="goToStep(2)">Next: Infrastructure →</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Infrastructure Profile -->
+    <section class="card wizard-panel" id="step-2" style="display:none">
+      <h2>🌐 Infrastructure Profile</h2>
+      <p class="section-desc">Define the network and integration infrastructure. These drive syslog, metric, and NetFlow volumes.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="network-devices">Managed Network Devices</label>
+          <input type="range" id="network-devices" min="10" max="2000" value="200" step="10">
+          <div class="range-display"><span id="network-devices-val">200</span> devices</div>
+          <p class="form-hint">Switches, routers, APs, controllers (SNMP/syslog managed)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="firewalls">Firewalls / Security Appliances</label>
+          <input type="range" id="firewalls" min="1" max="100" value="8" step="1">
+          <div class="range-display"><span id="firewalls-val">8</span> devices</div>
+          <p class="form-hint">Palo Alto, Fortinet, Cisco ASA — primary NetFlow/log sources</p>
+        </div>
+
+        <div class="form-group">
+          <label for="mirth-channels">Mirth / Interface Engine Channels</label>
+          <input type="range" id="mirth-channels" min="1" max="200" value="30" step="1">
+          <div class="range-display"><span id="mirth-channels-val">30</span> channels</div>
+          <p class="form-hint">Active Mirth Connect / Rhapsody / Cloverleaf channels</p>
+        </div>
+
+        <div class="form-group">
+          <label for="hl7-interfaces">HL7 Integration Interfaces</label>
+          <input type="range" id="hl7-interfaces" min="1" max="200" value="25" step="1">
+          <div class="range-display"><span id="hl7-interfaces-val">25</span> interfaces</div>
+          <p class="form-hint">Ancillary systems: LIS, RIS, pharmacy, blood bank, etc.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="sites">Hospital / Clinic Sites</label>
+          <input type="range" id="sites" min="1" max="50" value="6" step="1">
+          <div class="range-display"><span id="sites-val">6</span> sites</div>
+          <p class="form-hint">Main campus + satellite clinics + data centers</p>
+        </div>
+
+        <div class="form-group">
+          <label for="care-everywhere-partners">Care Everywhere Partners</label>
+          <input type="range" id="care-everywhere-partners" min="0" max="500" value="50" step="10">
+          <div class="range-display"><span id="care-everywhere-partners-val">50</span> orgs</div>
+          <p class="form-hint">External orgs exchanging data via FHIR / Care Everywhere</p>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">Next: Configuration →</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Configuration Profile -->
+    <section class="card wizard-panel" id="step-3" style="display:none">
+      <h2>⚙️ Configuration Profile</h2>
+      <p class="section-desc">Tuning parameters that significantly affect data volumes. Get these right for accurate estimates.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="siem-audit-level">Epic SIEM Audit Level</label>
+          <select id="siem-audit-level">
+            <option value="low">Low — Login/logout + security events only</option>
+            <option value="medium" selected>Medium — Standard clinical audit (Epic default)</option>
+            <option value="high">High — Verbose audit (all chart access, context changes)</option>
+            <option value="custom">Custom / Regulatory — SOX/HIPAA extended logging</option>
+          </select>
+          <p class="form-hint">Higher audit levels generate 3–10× more SIEM events</p>
+        </div>
+
+        <div class="form-group">
+          <label for="netflow-sampling">NetFlow Sampling Rate</label>
+          <select id="netflow-sampling">
+            <option value="1">1:1 — Every packet (extremely high volume)</option>
+            <option value="100" selected>1:100 — Standard sampling</option>
+            <option value="1000">1:1000 — Light sampling</option>
+            <option value="0">Disabled — No NetFlow collection</option>
+          </select>
+          <p class="form-hint">Sampling rate dramatically impacts flow log volume (100×+ difference)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="syslog-level">Network Syslog Verbosity</label>
+          <select id="syslog-level">
+            <option value="errors">Errors & Critical only</option>
+            <option value="warnings" selected>Warnings + Errors (typical)</option>
+            <option value="informational">Informational (verbose)</option>
+            <option value="debug">Debug (extremely verbose)</option>
+          </select>
+          <p class="form-hint">Debug-level syslog can produce 10–50× more events than Warnings</p>
+        </div>
+
+        <div class="form-group">
+          <label for="snmp-poll-interval">SNMP Polling Interval</label>
+          <select id="snmp-poll-interval">
+            <option value="300">5 min (standard)</option>
+            <option value="60" selected>1 min (detailed monitoring)</option>
+            <option value="30">30 sec (high-frequency)</option>
+            <option value="10">10 sec (real-time)</option>
+          </select>
+          <p class="form-hint">Shorter intervals = more metric data points per device</p>
+        </div>
+
+        <div class="form-group">
+          <label for="retention-days">Grail Log Retention</label>
+          <input type="range" id="retention-days" min="7" max="365" value="35" step="1">
+          <div class="range-display"><span id="retention-days-val">35</span> days</div>
+          <p class="form-hint">Longer retention increases storage DPS costs linearly</p>
+        </div>
+
+        <div class="form-group">
+          <label for="dps-rate">DPS Unit Rate ($/DPS/month)</label>
+          <input type="number" id="dps-rate" min="0" max="1000" value="" step="0.01" placeholder="Optional — leave blank for DPS-only view">
+          <p class="form-hint">Your contract $/DPS rate. Leave blank to show DPS units only.</p>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-primary btn-calculate" onclick="calculateAndShow()">📊 Calculate Estimate →</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Results -->
+    <section class="card wizard-panel" id="step-4" style="display:none">
+      <h2>📊 DPS Consumption Estimate</h2>
+      <p class="section-desc">Production-scale estimate based on industry benchmarks and your inputs. Ranges reflect ±30% variance across healthcare organizations.</p>
+
+      <!-- Summary Hero -->
+      <div class="results-hero">
+        <div class="hero-stat">
+          <div class="hero-label">Daily DPS</div>
+          <div class="hero-value" id="total-daily-dps">—</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-label">Monthly DPS</div>
+          <div class="hero-value" id="total-monthly-dps">—</div>
+        </div>
+        <div class="hero-stat" id="cost-hero" style="display:none">
+          <div class="hero-label">Est. Monthly Cost</div>
+          <div class="hero-value" id="total-monthly-cost">—</div>
+        </div>
+      </div>
+
+      <!-- Volume Breakdown -->
+      <div class="card results-breakdown">
+        <h3>📈 Data Volume Breakdown</h3>
+        <div class="breakdown-chart" id="breakdown-chart"></div>
+        <table class="results-table" id="results-table">
+          <thead>
+            <tr>
+              <th>Subsystem</th>
+              <th>Daily Volume</th>
+              <th>Daily GiB / DDUs</th>
+              <th>DPS/Day (low)</th>
+              <th>DPS/Day (high)</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td><strong>Total</strong></td>
+              <td></td>
+              <td></td>
+              <td id="total-low-dps"><strong>—</strong></td>
+              <td id="total-high-dps"><strong>—</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Storage Costs -->
+      <div class="card results-breakdown">
+        <h3>💾 Grail Storage Retention</h3>
+        <table class="results-table" id="storage-table">
+          <thead>
+            <tr>
+              <th>Data Type</th>
+              <th>Daily Ingest (GiB)</th>
+              <th>Retention (days)</th>
+              <th>Stored Volume (GiB)</th>
+              <th>Storage DPS/Day</th>
+            </tr>
+          </thead>
+          <tbody id="storage-body"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td><strong>Total Storage</strong></td>
+              <td id="storage-total-ingest">—</td>
+              <td></td>
+              <td id="storage-total-vol">—</td>
+              <td id="storage-total-dps"><strong>—</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Assumptions -->
+      <div class="card assumptions">
+        <h3>📋 Assumptions & Methodology</h3>
+        <div id="assumptions-list"></div>
+      </div>
+
+      <!-- Input Summary -->
+      <div class="card">
+        <h3>🔧 Your Configuration</h3>
+        <div id="input-summary" class="input-summary-grid"></div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-secondary" onclick="goToStep(3)">← Adjust Inputs</button>
+        <button class="btn btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="btn btn-primary" onclick="goToStep(1)">🔄 Start Over</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Kansas City Regional Medical Center — Dynatrace DPS Pricing Estimator</p>
+    <p class="footer-disclaimer">Estimates are based on industry benchmarks and parametric modeling. Actual consumption depends on customer-specific configuration, data verbosity, and Dynatrace feature usage. DPS conversion rates are illustrative unless you provide your contract rate.</p>
+  </footer>
+
+  <script src="/static/pricing.js"></script>
+</body>
+</html>

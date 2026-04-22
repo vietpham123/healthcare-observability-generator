@@ -4,6 +4,11 @@
   "volume_multiplier": 2.0,
   "mychart_multiplier": 0.3,
   "max_sessions": 50,
+  "generator_overrides": {
+    "fhir_error_bias": 0.3,
+    "etl_failure_bias": 0.4,
+    "mirth_scenario": "core_switch_failure"
+  },
   "curve_overrides": {
     "1": 2.0,
     "2": 2.5,

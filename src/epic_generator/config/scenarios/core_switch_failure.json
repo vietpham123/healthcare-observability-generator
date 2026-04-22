@@ -4,9 +4,9 @@
   "volume_multiplier": 0.8,
   "max_sessions": 15,
   "generator_overrides": {
-    "fhir_error_bias": 0.15,
-    "etl_failure_bias": 0.2,
-    "hl7_disabled": false,
+    "fhir_error_bias": 0.4,
+    "etl_failure_bias": 0.5,
+    "hl7_disabled": true,
     "mirth_scenario": "core_switch_failure"
   },
   "anomaly": {

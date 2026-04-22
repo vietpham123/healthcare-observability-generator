@@ -13,19 +13,19 @@ import { SectionHealth } from "../components/SectionHealth";
 // ── Security-specific DQL queries ─────────────────────────────────
 
 const securityQueries = {
-  breakTheGlassCount: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  breakTheGlassCount: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT"
     | summarize total = count()`,
 
-  failedLoginCount: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  failedLoginCount: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
     | summarize total = count()`,
 
-  securityEventsOverTime: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  securityEventsOverTime: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
@@ -37,7 +37,7 @@ const securityQueries = {
         else: "Security Fail")))
     | makeTimeseries events = count(), by: { event_category }, interval: 5m`,
 
-  breakTheGlassByUser: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  breakTheGlassByUser: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT"
@@ -45,7 +45,7 @@ const securityQueries = {
     | sort count desc
     | limit 15`,
 
-  failedLoginsByHour: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  failedLoginsByHour: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
@@ -53,7 +53,7 @@ const securityQueries = {
     | summarize count = count(), by: { hour }
     | sort hour asc`,
 
-  securityBySite: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  securityBySite: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
@@ -64,7 +64,7 @@ const securityQueries = {
     | summarize count = count(), by: { site = healthcare.site, event_category }
     | sort count desc`,
 
-  afterHoursAccess: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  afterHoursAccess: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT"
@@ -74,7 +74,7 @@ const securityQueries = {
     | sort timestamp desc
     | limit 30`,
 
-  recentSecurityEvents: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  recentSecurityEvents: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"
@@ -83,7 +83,7 @@ const securityQueries = {
     | limit 50`,
 
   /** Total security event count — drives Security Events section health */
-  totalSecurityEventCount: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  totalSecurityEventCount: `fetch logs, scanLimitGBytes: -1, samplingRatio: 1
     | filter ${EPIC_FILTER}
     | parse content, "LD '<E1Mid>' LD:e1mid '<'"
     | filter e1mid == "AC_BREAK_THE_GLASS_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_FAILED_ACCESS" OR e1mid == "AC_BREAK_THE_GLASS_INAPPROPRIATE_ATTEMPT" OR e1mid == "FAILEDLOGIN" OR e1mid == "LOGIN_BLOCKED" OR e1mid == "WPSEC_LOGIN_FAIL"

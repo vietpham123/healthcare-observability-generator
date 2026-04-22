@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPS Discovery Questionnaire — Healthcare</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/discovery.css">
+</head>
+<body>
+  <header>
+    <h1>🏥 Healthcare Observability — DPS Discovery</h1>
+    <p class="subtitle">Pre-Sales Discovery Questionnaire for Accurate DPS Quoting</p>
+    <nav class="header-nav">
+      <a href="/" class="nav-link">← Control Panel</a>
+      <span class="nav-sep">|</span>
+      <a href="/walkthrough" class="nav-link">📖 Scenario Walkthrough</a>
+      <span class="nav-sep">|</span>
+      <a href="/pricing" class="nav-link">💰 DPS Calculator</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Progress Bar -->
+    <div class="discovery-progress">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-label" id="progress-label">Section 1 of 7</div>
+    </div>
+
+    <!-- Section Navigation -->
+    <div class="section-tabs" id="section-tabs">
+      <button class="section-tab active" data-section="1" onclick="goToSection(1)">
+        <span class="tab-num">1</span> Organization
+      </button>
+      <button class="section-tab" data-section="2" onclick="goToSection(2)">
+        <span class="tab-num">2</span> EHR & Clinical
+      </button>
+      <button class="section-tab" data-section="3" onclick="goToSection(3)">
+        <span class="tab-num">3</span> Integration
+      </button>
+      <button class="section-tab" data-section="4" onclick="goToSection(4)">
+        <span class="tab-num">4</span> Network
+      </button>
+      <button class="section-tab" data-section="5" onclick="goToSection(5)">
+        <span class="tab-num">5</span> Security & Compliance
+      </button>
+      <button class="section-tab" data-section="6" onclick="goToSection(6)">
+        <span class="tab-num">6</span> Observability Goals
+      </button>
+      <button class="section-tab" data-section="7" onclick="goToSection(7)">
+        <span class="tab-num">7</span> Summary
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1: Organization Profile                          -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-1">
+      <div class="section-header">
+        <h2>🏥 Organization Profile</h2>
+        <p class="section-purpose">Understanding the scale and structure of the organization sets the baseline for all volume estimates. These are typically available from the hospital's annual report or CMS cost report.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="org_name">
+          <label>Organization Name</label>
+          <input type="text" placeholder="e.g., Kansas City Regional Medical Center" class="q-input">
+          <p class="why-ask">Used for report labeling and reference.</p>
+        </div>
+
+        <div class="question" data-key="org_type">
+          <label>Organization Type</label>
+          <div class="option-grid">
+            <label class="option-card"><input type="radio" name="org_type" value="community"> <span class="opt-label">Community Hospital</span><span class="opt-desc">Independent, 25–200 beds</span></label>
+            <label class="option-card"><input type="radio" name="org_type" value="regional"> <span class="opt-label">Regional Medical Center</span><span class="opt-desc">200–600 beds, multi-specialty</span></label>
+            <label class="option-card"><input type="radio" name="org_type" value="academic"> <span class="opt-label">Academic Medical Center</span><span class="opt-desc">Teaching hospital, 500+ beds</span></label>
+            <label class="option-card"><input type="radio" name="org_type" value="health_system"> <span class="opt-label">Multi-Hospital Health System</span><span class="opt-desc">2+ hospitals under one IT org</span></label>
+            <label class="option-card"><input type="radio" name="org_type" value="critical_access"> <span class="opt-label">Critical Access Hospital</span><span class="opt-desc">Rural, ≤25 beds, CMS-designated</span></label>
+            <label class="option-card"><input type="radio" name="org_type" value="specialty"> <span class="opt-label">Specialty / Children's</span><span class="opt-desc">Focused clinical scope</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Organization type determines baseline complexity — academic centers generate 3–5× more data than community hospitals of similar bed count due to research, teaching, and sub-specialty workflows.</p>
+        </div>
+
+        <div class="question" data-key="staffed_beds">
+          <label>Total Licensed / Staffed Beds</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 500" min="1" max="5000">
+          <p class="guidance">Include ICU, med-surg, L&D, psych, and rehab beds. Exclude observation and ED holding. If multi-hospital system, provide total across all facilities.</p>
+          <p class="why-ask"><strong>Why:</strong> Beds drive SIEM audit trail volume (~4,000–30,000 events/bed/day depending on audit level) and clinical event load.</p>
+        </div>
+
+        <div class="question" data-key="daily_encounters">
+          <label>Average Daily Patient Encounters (all types)</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 1200" min="1" max="50000">
+          <p class="guidance">Sum of: ED visits + inpatient admissions + outpatient visits + ambulatory surgery + telehealth + infusion center. Ask: "What does your daily census + outpatient volume look like?"</p>
+          <p class="why-ask"><strong>Why:</strong> Each encounter generates 12–25 clinical events (orders, meds, notes, results) and 4–12 HL7 messages. This is the primary driver for clinical log volume.</p>
+        </div>
+
+        <div class="question" data-key="num_facilities">
+          <label>Number of Facilities / Sites</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 6" min="1" max="200">
+          <p class="guidance">Main campus + satellite clinics + ambulatory surgery centers + data center locations. Each site typically has its own network infrastructure generating independent syslog/SNMP streams.</p>
+          <p class="why-ask"><strong>Why:</strong> Each site adds network devices (typically 5–20 per site) and WAN links generating NetFlow data.</p>
+        </div>
+
+        <div class="question" data-key="annual_revenue">
+          <label>Annual Net Patient Revenue (optional)</label>
+          <select class="q-input">
+            <option value="">Prefer not to say</option>
+            <option value="under_100m">Under $100M</option>
+            <option value="100m_500m">$100M – $500M</option>
+            <option value="500m_1b">$500M – $1B</option>
+            <option value="1b_5b">$1B – $5B</option>
+            <option value="over_5b">Over $5B</option>
+          </select>
+          <p class="why-ask"><strong>Why:</strong> Revenue correlates with IT complexity and helps validate bed/encounter numbers. A $1B system typically has 500–800 beds and 2,000+ daily encounters.</p>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <div></div>
+        <button class="btn btn-primary" onclick="goToSection(2)">Next: EHR & Clinical →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2: EHR & Clinical Systems                        -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-2" style="display:none">
+      <div class="section-header">
+        <h2>💻 EHR & Clinical Systems</h2>
+        <p class="section-purpose">The EHR platform and its configuration are the largest drivers of log volume. These questions should be directed to the Epic (or EHR) team lead or CMIO's office.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="ehr_vendor">
+          <label>Primary EHR Platform</label>
+          <div class="option-grid">
+            <label class="option-card"><input type="radio" name="ehr_vendor" value="epic"> <span class="opt-label">Epic</span><span class="opt-desc">Hyperspace, Haiku, Canto</span></label>
+            <label class="option-card"><input type="radio" name="ehr_vendor" value="cerner"> <span class="opt-label">Oracle Health (Cerner)</span><span class="opt-desc">Millennium / PowerChart</span></label>
+            <label class="option-card"><input type="radio" name="ehr_vendor" value="meditech"> <span class="opt-label">MEDITECH</span><span class="opt-desc">Expanse or 6.x</span></label>
+            <label class="option-card"><input type="radio" name="ehr_vendor" value="other"> <span class="opt-label">Other / Multi-EHR</span><span class="opt-desc">Specify in notes</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Epic generates the most detailed audit trails (SIEM/audit logs). Cerner uses a different audit model. This changes volume calculations by 2–3×.</p>
+        </div>
+
+        <div class="question" data-key="peak_concurrent_users">
+          <label>Peak Concurrent EHR Users</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 400" min="1" max="10000">
+          <p class="guidance">Ask: "During your busiest shift (typically weekday mornings), how many clinicians are simultaneously logged into Epic/Cerner?" Include Hyperspace, Haiku (mobile), Canto (iPad), and Rover.</p>
+          <p class="why-ask"><strong>Why:</strong> Each concurrent user generates 800–5,000 SIEM events/day depending on audit level. This is used as a cross-check against bed-based volume estimates.</p>
+        </div>
+
+        <div class="question" data-key="epic_modules">
+          <label>Which EHR modules are live? (select all that apply)</label>
+          <div class="checkbox-grid">
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="ehr-core" checked> EHR Core (Orders, Notes, Chart)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="cadence"> Cadence (Scheduling)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="willow"> Willow (Pharmacy)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="radiant"> Radiant (Radiology)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="beaker"> Beaker (Lab)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="optime"> OpTime (Surgery)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="stork"> Stork (OB/L&D)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="tapestry"> Tapestry (Rehab)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="wisdom"> Wisdom (Dental)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="phoenix"> Phoenix (Oncology)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="home-health"> Home Health</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="mychart"> MyChart (Patient Portal)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="care-everywhere"> Care Everywhere (HIE)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="cogito"> Cogito (Analytics)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-module="rover"> Rover (Mobile Nursing)</label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Each active module adds ~8% to SIEM audit volume. A fully-loaded Epic instance (12+ modules) generates ~2× the audit trail of a basic 4-module deployment.</p>
+        </div>
+
+        <div class="question" data-key="siem_audit_level">
+          <label>What audit logging level is configured?</label>
+          <div class="option-grid cols-2">
+            <label class="option-card"><input type="radio" name="siem_audit_level" value="low"> <span class="opt-label">Minimal</span><span class="opt-desc">Login/logout + security events only</span></label>
+            <label class="option-card"><input type="radio" name="siem_audit_level" value="medium"> <span class="opt-label">Standard (Default)</span><span class="opt-desc">Clinical document access, orders, med admin</span></label>
+            <label class="option-card"><input type="radio" name="siem_audit_level" value="high"> <span class="opt-label">Verbose</span><span class="opt-desc">All chart access, context switches, print events</span></label>
+            <label class="option-card"><input type="radio" name="siem_audit_level" value="custom"> <span class="opt-label">Extended / Regulatory</span><span class="opt-desc">SOX, HIPAA breach investigation, Break-the-Glass detail</span></label>
+          </div>
+          <p class="guidance">If the customer doesn't know, assume "Standard." Ask: "Has your compliance team ever requested expanded audit logging beyond Epic defaults?"</p>
+          <p class="why-ask"><strong>Why:</strong> This is the single largest volume swing factor. Verbose audit generates 3–8× the data of standard audit. Knowing this accurately can prevent a 5× quoting error.</p>
+          <div class="impact-badge impact-critical">🔴 Critical — 3-8× volume impact</div>
+        </div>
+
+        <div class="question" data-key="mychart_active">
+          <label>Monthly Active MyChart / Patient Portal Users</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 50000" min="0" max="5000000">
+          <p class="guidance">Ask: "How many unique patients log into MyChart per month?" If unavailable, estimate as 30–40% of annual unique patients.</p>
+          <p class="why-ask"><strong>Why:</strong> Each active patient generates 1.5–16 log events/day (portal sessions, message sends, results views). A health system with 200K active MyChart users can generate 300K–3.2M events/day from portal alone.</p>
+        </div>
+
+        <div class="question" data-key="existing_siem">
+          <label>Current SIEM / Log Analytics Platform</label>
+          <div class="checkbox-grid">
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="splunk"> Splunk</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="sentinel"> Microsoft Sentinel</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="qradar"> IBM QRadar</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="logrhythm"> LogRhythm</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="elastic"> Elastic / ELK</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="crowdstrike"> CrowdStrike LogScale</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-siem="none"> None / Manual</label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> If they have an existing SIEM, ask for their current daily ingest volume (GiB/day). This is the single most accurate data point you can get — it tells you actual production log volume without any estimation.</p>
+          <div class="impact-badge impact-gold">⭐ Gold — Ask for current GiB/day ingest if available</div>
+        </div>
+
+        <div class="question" data-key="current_ingest_gib">
+          <label>Current SIEM Daily Ingest Volume (if known)</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 50 (GiB/day)" min="0" max="100000" step="0.1">
+          <p class="guidance">This is the most valuable single data point. Ask: "What's your current daily log ingest into Splunk/Sentinel?" Even a rough number (e.g., "about 50 gigs a day") massively improves quote accuracy.</p>
+          <div class="impact-badge impact-critical">🔴 Critical — Provides real-world baseline, eliminates estimation</div>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goToSection(3)">Next: Integration →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3: Integration & Interoperability                -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-3" style="display:none">
+      <div class="section-header">
+        <h2>🔌 Integration & Interoperability</h2>
+        <p class="section-purpose">Integration engines and HL7/FHIR interfaces are major log generators. Direct these questions to the integration team or interface analysts.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="integration_engine">
+          <label>Primary Integration Engine</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="integration_engine" value="mirth"> <span class="opt-label">Mirth Connect</span><span class="opt-desc">NextGen Healthcare</span></label>
+            <label class="option-card"><input type="radio" name="integration_engine" value="rhapsody"> <span class="opt-label">Rhapsody</span><span class="opt-desc">InterOperability</span></label>
+            <label class="option-card"><input type="radio" name="integration_engine" value="cloverleaf"> <span class="opt-label">Cloverleaf</span><span class="opt-desc">Infor</span></label>
+            <label class="option-card"><input type="radio" name="integration_engine" value="bridges"> <span class="opt-label">Epic Bridges</span><span class="opt-desc">Native Epic integration</span></label>
+            <label class="option-card"><input type="radio" name="integration_engine" value="ensemble"> <span class="opt-label">InterSystems</span><span class="opt-desc">HealthShare / Ensemble</span></label>
+            <label class="option-card"><input type="radio" name="integration_engine" value="other"> <span class="opt-label">Other</span><span class="opt-desc">Specify in notes</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Mirth Connect exposes 6 metrics/channel at 1-min resolution. Other engines have different metric profiles. Knowing the platform determines metric DDU calculations.</p>
+        </div>
+
+        <div class="question" data-key="active_channels">
+          <label>Number of Active Integration Channels</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 30" min="0" max="1000">
+          <p class="guidance">Ask: "How many active channels are running in your Mirth/Rhapsody instance?" Include both inbound and outbound. Production channels only — exclude dev/test.</p>
+          <p class="why-ask"><strong>Why:</strong> Each Mirth channel generates 8,640 metric DDUs/day at 1-min polling. 30 channels = 259K DDUs/day. 200 channels = 1.7M DDUs/day.</p>
+        </div>
+
+        <div class="question" data-key="hl7_interfaces">
+          <label>Number of HL7v2 Integration Interfaces</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 25" min="0" max="500">
+          <p class="guidance">Count distinct HL7 connections to ancillary systems: LIS (lab), RIS (radiology), pharmacy, blood bank, device interfaces, billing, registration, etc. Ask: "How many ancillary systems send/receive HL7 messages?"</p>
+          <p class="why-ask"><strong>Why:</strong> Each interface generates 800–3,000 HL7 messages/day (~1.5 KB avg). 25 interfaces ≈ 20K–75K messages/day ≈ 30–112 MB/day of log data.</p>
+        </div>
+
+        <div class="question" data-key="hl7_daily_volume">
+          <label>Daily HL7 Message Volume (if known)</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 50000 messages/day" min="0" max="10000000">
+          <p class="guidance">Most integration teams know this number. Ask: "What's your daily HL7 message throughput?" Check Mirth dashboard → Channel Statistics.</p>
+          <div class="impact-badge impact-gold">⭐ Gold — Direct measurement beats estimation</div>
+        </div>
+
+        <div class="question" data-key="fhir_enabled">
+          <label>Is FHIR / Interconnect API actively used?</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="fhir_enabled" value="no"> <span class="opt-label">No</span><span class="opt-desc">HL7v2 only</span></label>
+            <label class="option-card"><input type="radio" name="fhir_enabled" value="limited"> <span class="opt-label">Limited</span><span class="opt-desc">MyChart API, a few 3rd-party apps</span></label>
+            <label class="option-card"><input type="radio" name="fhir_enabled" value="active"> <span class="opt-label">Active</span><span class="opt-desc">Care Everywhere, TEFCA, bulk FHIR</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> FHIR API call volume ranges from near-zero (HL7v2-only shops) to millions/day (active Care Everywhere with 100+ partners). This can be a 0–10 GiB/day swing.</p>
+        </div>
+
+        <div class="question" data-key="care_everywhere_partners">
+          <label>Number of Care Everywhere / HIE Partners</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 50" min="0" max="2000">
+          <p class="guidance">Ask: "How many external organizations exchange data with you via Care Everywhere, CommonWell, or Carequality?" Larger systems may have 200+ partners.</p>
+          <p class="why-ask"><strong>Why:</strong> Each active partner generates 500–5,000 FHIR API calls/day. 50 partners at midpoint = 137K calls/day ≈ 65 MB/day.</p>
+        </div>
+
+        <div class="question" data-key="etl_jobs">
+          <label>Number of ETL / Data Extract Jobs (daily)</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 15" min="0" max="500">
+          <p class="guidance">Clarity/Caboodle data extracts, warehouse loads, analytics feeds, regulatory reporting exports.</p>
+          <p class="why-ask"><strong>Why:</strong> ETL job logging is a small but measurable contributor (20–80 log records per interface/day). Mostly relevant for completeness.</p>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goToSection(4)">Next: Network →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 4: Network Infrastructure                        -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-4" style="display:none">
+      <div class="section-header">
+        <h2>🌐 Network Infrastructure</h2>
+        <p class="section-purpose">Network devices are typically the highest-volume log sources (syslog + NetFlow). These questions go to the network engineering or infrastructure team.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="managed_devices">
+          <label>Total Managed Network Devices</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 200" min="0" max="10000">
+          <p class="guidance">Count all SNMP/syslog-managed devices: core switches, distribution switches, access switches, wireless controllers, APs (if individually managed), routers, load balancers. Ask: "How many devices are in your network monitoring system (SolarWinds, PRTG, LibreNMS)?"</p>
+          <p class="why-ask"><strong>Why:</strong> Each device generates 200–200K syslog events/day (depending on verbosity) and 38–540 SNMP metric DDUs/day (depending on poll interval). This is often the #1 or #2 largest data source.</p>
+        </div>
+
+        <div class="question" data-key="firewalls">
+          <label>Number of Firewalls / Security Appliances</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 8" min="0" max="500">
+          <p class="guidance">Palo Alto, Fortinet, Cisco ASA/FTD, Check Point, Sophos. Include all perimeter, internal segmentation, and DMZ firewalls. Ask: "How many firewall appliances (physical + virtual) are in production?"</p>
+          <p class="why-ask"><strong>Why:</strong> Firewalls generate 3–10× more syslog than switches and are the primary NetFlow source. A single Palo Alto on a busy 1Gbps link can produce 10–20M flow records/day at 1:1 sampling.</p>
+          <div class="impact-badge impact-high">🟠 High — Firewalls are often the largest single log source</div>
+        </div>
+
+        <div class="question" data-key="firewall_vendor">
+          <label>Primary Firewall Vendor</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="palo_alto"> <span class="opt-label">Palo Alto</span></label>
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="fortinet"> <span class="opt-label">Fortinet</span></label>
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="cisco"> <span class="opt-label">Cisco ASA/FTD</span></label>
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="checkpoint"> <span class="opt-label">Check Point</span></label>
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="sophos"> <span class="opt-label">Sophos</span></label>
+            <label class="option-card"><input type="radio" name="firewall_vendor" value="other"> <span class="opt-label">Other</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Palo Alto and Fortinet have the most verbose default syslog. Cisco ASA is more compact. Vendor choice affects average log line size (200–800 bytes).</p>
+        </div>
+
+        <div class="question" data-key="syslog_verbosity">
+          <label>Network Syslog Verbosity Level</label>
+          <div class="option-grid cols-2">
+            <label class="option-card"><input type="radio" name="syslog_verbosity" value="errors"> <span class="opt-label">Errors & Critical Only</span><span class="opt-desc">200–5K events/device/day</span></label>
+            <label class="option-card"><input type="radio" name="syslog_verbosity" value="warnings"> <span class="opt-label">Warnings + Errors</span><span class="opt-desc">2K–40K events/device/day (typical)</span></label>
+            <label class="option-card"><input type="radio" name="syslog_verbosity" value="informational"> <span class="opt-label">Informational</span><span class="opt-desc">10K–150K events/device/day</span></label>
+            <label class="option-card"><input type="radio" name="syslog_verbosity" value="debug"> <span class="opt-label">Debug</span><span class="opt-desc">50K–800K events/device/day</span></label>
+          </div>
+          <p class="guidance">If they don't know, assume "Warnings + Errors" (the most common default). Ask: "Are your switches/firewalls sending syslog to a collector today? What severity level?"</p>
+          <div class="impact-badge impact-critical">🔴 Critical — 10-50× volume difference between error-only and debug</div>
+        </div>
+
+        <div class="question" data-key="netflow_enabled">
+          <label>Is NetFlow / IPFIX collection enabled?</label>
+          <div class="option-grid cols-2">
+            <label class="option-card"><input type="radio" name="netflow_enabled" value="no"> <span class="opt-label">No</span><span class="opt-desc">No flow data collection</span></label>
+            <label class="option-card"><input type="radio" name="netflow_enabled" value="sampled"> <span class="opt-label">Yes — Sampled</span><span class="opt-desc">1:100 or 1:1000 sampling</span></label>
+            <label class="option-card"><input type="radio" name="netflow_enabled" value="full"> <span class="opt-label">Yes — Full (1:1)</span><span class="opt-desc">Every packet → extremely high volume</span></label>
+            <label class="option-card"><input type="radio" name="netflow_enabled" value="unknown"> <span class="opt-label">Unknown</span><span class="opt-desc">Need to verify with network team</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> NetFlow at 1:1 can generate 40–160M records/day for an 8-firewall campus (16–64 GiB/day). At 1:100 sampling, that drops to 400K–1.6M records (160–640 MB/day). This single setting can be the difference between a 20 DPS and 80 DPS quote.</p>
+          <div class="impact-badge impact-critical">🔴 Critical — Largest potential volume swing in the entire assessment</div>
+        </div>
+
+        <div class="question" data-key="netflow_sampling">
+          <label>NetFlow Sampling Rate (if enabled)</label>
+          <select class="q-input">
+            <option value="">Not applicable / unknown</option>
+            <option value="1">1:1 (every packet)</option>
+            <option value="10">1:10</option>
+            <option value="100">1:100 (standard)</option>
+            <option value="1000">1:1000 (light)</option>
+            <option value="10000">1:10000 (minimal)</option>
+          </select>
+        </div>
+
+        <div class="question" data-key="snmp_polling">
+          <label>SNMP Polling Interval</label>
+          <div class="option-grid cols-2">
+            <label class="option-card"><input type="radio" name="snmp_polling" value="300"> <span class="opt-label">5 min</span><span class="opt-desc">Standard — 288 polls/device/day</span></label>
+            <label class="option-card"><input type="radio" name="snmp_polling" value="60"> <span class="opt-label">1 min</span><span class="opt-desc">Detailed — 1,440 polls/device/day</span></label>
+            <label class="option-card"><input type="radio" name="snmp_polling" value="30"> <span class="opt-label">30 sec</span><span class="opt-desc">High-frequency — 2,880 polls/device/day</span></label>
+            <label class="option-card"><input type="radio" name="snmp_polling" value="none"> <span class="opt-label">No SNMP</span><span class="opt-desc">Using streaming telemetry or no network metrics</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> A 200-device network at 1-min polling generates ~13M DDUs/day. At 5-min polling, that drops to ~2.6M DDUs/day.</p>
+        </div>
+
+        <div class="question" data-key="current_syslog_gib">
+          <label>Current Syslog Daily Volume (if known)</label>
+          <input type="number" class="q-input q-number" placeholder="e.g., 20 (GiB/day)" min="0" max="100000" step="0.1">
+          <p class="guidance">If they have a syslog collector (Splunk, Graylog, rsyslog), ask: "What's your daily syslog volume?" This replaces all network estimation.</p>
+          <div class="impact-badge impact-gold">⭐ Gold — Direct measurement beats estimation</div>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(3)">← Back</button>
+        <button class="btn btn-primary" onclick="goToSection(5)">Next: Security & Compliance →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 5: Security & Compliance                         -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-5" style="display:none">
+      <div class="section-header">
+        <h2>🔒 Security & Compliance</h2>
+        <p class="section-purpose">Compliance requirements directly affect log retention and audit verbosity. These questions go to the CISO or compliance officer.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="compliance_frameworks">
+          <label>Which compliance frameworks apply?</label>
+          <div class="checkbox-grid">
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="hipaa" checked> HIPAA (required for all US healthcare)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="hitrust"> HITRUST CSF</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="sox"> SOX (if publicly traded)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="pci"> PCI DSS (payment card processing)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="nist"> NIST CSF / 800-53</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="joint-commission"> Joint Commission</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-fw="state"> State-specific regulations</label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> SOX and HITRUST typically require "extended" audit logging. PCI DSS mandates 1-year log retention. HIPAA requires 6-year policy retention but log retention varies. These drive both volume and storage costs.</p>
+        </div>
+
+        <div class="question" data-key="log_retention">
+          <label>Required Log Retention Period</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="log_retention" value="30"> <span class="opt-label">30 days</span><span class="opt-desc">Operational minimum</span></label>
+            <label class="option-card"><input type="radio" name="log_retention" value="90"> <span class="opt-label">90 days</span><span class="opt-desc">Common for HIPAA</span></label>
+            <label class="option-card"><input type="radio" name="log_retention" value="180"> <span class="opt-label">180 days</span><span class="opt-desc">HITRUST / SOX typical</span></label>
+            <label class="option-card"><input type="radio" name="log_retention" value="365"> <span class="opt-label">1 year</span><span class="opt-desc">PCI DSS requirement</span></label>
+            <label class="option-card"><input type="radio" name="log_retention" value="730"> <span class="opt-label">2+ years</span><span class="opt-desc">Extended compliance</span></label>
+            <label class="option-card"><input type="radio" name="log_retention" value="unknown"> <span class="opt-label">Unknown</span><span class="opt-desc">Need to verify with compliance</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Retention is a linear multiplier on storage DPS. 365 days of retention on 50 GiB/day ingest = 18,250 GiB stored = ~64 storage DPS/day. This is often the largest cost surprise.</p>
+          <div class="impact-badge impact-high">🟠 High — Directly multiplies storage costs</div>
+        </div>
+
+        <div class="question" data-key="btg_frequency">
+          <label>Break-the-Glass (BTG) Monitoring Active?</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="btg_frequency" value="no"> <span class="opt-label">No</span></label>
+            <label class="option-card"><input type="radio" name="btg_frequency" value="yes"> <span class="opt-label">Yes</span></label>
+            <label class="option-card"><input type="radio" name="btg_frequency" value="unknown"> <span class="opt-label">Unknown</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> BTG monitoring adds detailed access logs for restricted records. Volume impact is moderate (2–5% increase) but it indicates the org has higher audit requirements overall.</p>
+        </div>
+
+        <div class="question" data-key="insider_threat_program">
+          <label>Active Insider Threat / User Behavior Monitoring?</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="insider_threat_program" value="no"> <span class="opt-label">No</span></label>
+            <label class="option-card"><input type="radio" name="insider_threat_program" value="planned"> <span class="opt-label">Planned</span></label>
+            <label class="option-card"><input type="radio" name="insider_threat_program" value="active"> <span class="opt-label">Active</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Insider threat programs (e.g., Protenus, Imprivata FairWarning) typically require verbose audit logs. If active/planned, audit level is likely "High" or "Extended" — validate this against Section 2.</p>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(4)">← Back</button>
+        <button class="btn btn-primary" onclick="goToSection(6)">Next: Observability Goals →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 6: Observability Goals                           -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-6" style="display:none">
+      <div class="section-header">
+        <h2>🎯 Observability Goals & Dynatrace Scope</h2>
+        <p class="section-purpose">Understanding what the customer wants to observe determines which data sources to include in the quote. Not all sources need to be ingested into Dynatrace.</p>
+      </div>
+
+      <div class="question-group">
+        <div class="question" data-key="dt_use_cases">
+          <label>Which observability use cases are in scope?</label>
+          <div class="checkbox-grid">
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="infra_monitoring"> Infrastructure Monitoring (hosts, VMs, containers)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="network_monitoring"> Network Device Monitoring (SNMP/syslog)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="log_analytics"> Log Analytics & Search (Grail)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="security_analytics"> Security Analytics & SIEM replacement</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="app_monitoring"> Application Performance (APM for web apps)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="rum"> Real User Monitoring (MyChart, patient portal)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="synthetics"> Synthetic Monitoring (uptime checks)</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="hl7_monitoring"> HL7 / Integration Engine Monitoring</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="compliance"> Compliance Reporting & Dashboarding</label>
+            <label class="chk"><input type="checkbox" class="q-checkbox" data-uc="automation"> Workflow Automation (Davis AI, auto-remediation)</label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Scope defines which data sources are included. A "network + logs only" deal is very different from "full-stack observability." Scope directly determines which subsystem volumes contribute to the quote.</p>
+        </div>
+
+        <div class="question" data-key="phased_rollout">
+          <label>Deployment Approach</label>
+          <div class="option-grid cols-3">
+            <label class="option-card"><input type="radio" name="phased_rollout" value="all_at_once"> <span class="opt-label">Big Bang</span><span class="opt-desc">All use cases from Day 1</span></label>
+            <label class="option-card"><input type="radio" name="phased_rollout" value="phased"> <span class="opt-label">Phased</span><span class="opt-desc">Start with 1–2 use cases, expand</span></label>
+            <label class="option-card"><input type="radio" name="phased_rollout" value="poc"> <span class="opt-label">POC First</span><span class="opt-desc">Proof of concept, then expand</span></label>
+          </div>
+          <p class="why-ask"><strong>Why:</strong> Phased deployments need Phase 1 vs. full-run-rate quotes. POCs typically use 10–20% of full production volume.</p>
+        </div>
+
+        <div class="question" data-key="dps_rate">
+          <label>Known DPS Contract Rate ($/DPS/month)</label>
+          <input type="number" class="q-input q-number" placeholder="Optional — for cost projection" min="0" max="1000" step="0.01">
+          <p class="guidance">If a contract rate has been discussed or is known from a prior quote, enter it here to generate dollar estimates alongside DPS projections.</p>
+        </div>
+
+        <div class="question" data-key="notes">
+          <label>Additional Notes / Context</label>
+          <textarea class="q-input q-textarea" rows="4" placeholder="Any additional context: upcoming go-lives, planned expansions, seasonal volume patterns, specific pain points..."></textarea>
+        </div>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(5)">← Back</button>
+        <button class="btn btn-primary" onclick="generateSummary(); goToSection(7)">Generate Summary →</button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 7: Summary & Export                              -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section class="card discovery-section" id="section-7" style="display:none">
+      <div class="section-header">
+        <h2>📋 Discovery Summary</h2>
+        <p class="section-purpose">Review the collected information, identify gaps, and assess quote confidence.</p>
+      </div>
+
+      <!-- Confidence Score -->
+      <div class="confidence-panel" id="confidence-panel">
+        <div class="confidence-header">
+          <h3>Quote Confidence Score</h3>
+          <div class="confidence-score" id="confidence-score">—%</div>
+        </div>
+        <div class="confidence-bar-track">
+          <div class="confidence-bar-fill" id="confidence-bar"></div>
+        </div>
+        <p class="confidence-desc" id="confidence-desc"></p>
+      </div>
+
+      <!-- Missing Critical Items -->
+      <div class="card gaps-panel" id="gaps-panel" style="display:none">
+        <h3>⚠️ Critical Gaps — Must Resolve Before Quoting</h3>
+        <ul id="gaps-list" class="gaps-list"></ul>
+      </div>
+
+      <!-- Collected Answers -->
+      <div class="card" id="summary-answers">
+        <h3>📝 Collected Discovery Data</h3>
+        <div id="summary-grid" class="summary-grid"></div>
+      </div>
+
+      <!-- Sizing Guidance -->
+      <div class="card sizing-guidance" id="sizing-guidance">
+        <h3>📊 Preliminary Sizing Guidance</h3>
+        <p class="section-desc">Based on the discovery data, here are preliminary sizing ranges. Feed these into the <a href="/pricing">DPS Calculator</a> for detailed estimates.</p>
+        <div id="sizing-recommendations" class="sizing-grid"></div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="card">
+        <h3>📌 Recommended Next Steps</h3>
+        <ol id="next-steps" class="next-steps-list"></ol>
+      </div>
+
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goToSection(6)">← Back</button>
+        <button class="btn btn-secondary" onclick="exportDiscovery()">📥 Export JSON</button>
+        <button class="btn btn-secondary" onclick="exportDiscoveryCSV()">📥 Export CSV</button>
+        <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copy Summary</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Healthcare Observability — DPS Discovery Questionnaire</p>
+    <p class="footer-disclaimer">This questionnaire collects non-PHI infrastructure and operational data for Dynatrace DPS sizing. No patient data, clinical records, or protected health information is collected or transmitted.</p>
+  </footer>
+
+  <script src="/static/discovery.js"></script>
+</body>
+</html>

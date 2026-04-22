@@ -12,6 +12,11 @@
     "5": 2.0
   },
   "max_sessions": 50,
+  "generator_overrides": {
+    "fhir_error_bias": 0.3,
+    "etl_failure_bias": 0.4,
+    "mirth_scenario": "core_switch_failure"
+  },
   "anomaly": {
     "type": "ransomware",
     "description": "Rapid automated access patterns typical of ransomware reconnaissance and exfiltration",

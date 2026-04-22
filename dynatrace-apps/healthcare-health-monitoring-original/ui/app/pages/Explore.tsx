@@ -1,0 +1,75 @@
+import React, { useState } from "react";
+import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
+import { Heading, Text } from "@dynatrace/strato-components/typography";
+import { ProgressCircle } from "@dynatrace/strato-components/content";
+import { useDql } from "@dynatrace-sdk/react-hooks";
+import { queries } from "../queries";
+import { SiteFilter } from "../components/SiteFilter";
+import { withSiteFilter } from "../utils/queryHelpers";
+
+type PresetKey = "allEpic" | "allNetwork" | "allNetflow" | "problems";
+
+const PRESETS: Record<PresetKey, { label: string; query: string; kind: "epic" | "network" | "netflow" | "none" }> = {
+  allEpic: { label: "Epic Events", query: queries.allEpicEvents, kind: "epic" },
+  allNetwork: { label: "Network Events", query: queries.allNetworkEvents, kind: "network" },
+  allNetflow: { label: "NetFlow Records", query: queries.allNetflowEvents, kind: "netflow" },
+  problems: { label: "Active Problems", query: queries.activeProblemsList, kind: "none" },
+};
+
+export const Explore = () => {
+  const [active, setActive] = useState<PresetKey>("allEpic");
+  const [site, setSite] = useState<string | null>(null);
+  const preset = PRESETS[active];
+  const q = preset.kind === "none" ? preset.query : withSiteFilter(preset.query, site, preset.kind);
+  const { data, isLoading } = useDql({ query: q });
+  const records = data?.records ?? [];
+
+  return (
+    <Flex flexDirection="column" gap={16} padding={16}>
+      <Text style={{ fontSize: 13, opacity: 0.6, marginBottom: -8 }}>
+        Raw data explorer — browse Epic SIEM events, network device logs, NetFlow traffic records, and active Dynatrace problems. Use the preset buttons to switch between data sources.
+      </Text>
+      <Heading level={3}>Explore Data</Heading>
+      <SiteFilter value={site} onChange={setSite} />
+      <Flex gap={8}>
+        {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
+          <button key={key} onClick={() => setActive(key)} style={{ padding: "8px 18px", borderRadius: 8, border: active === key ? "2px solid var(--dt-colors-charts-categorical-color-01)" : "1px solid var(--dt-colors-border-neutral-default)", background: active === key ? "var(--dt-colors-surface-default)" : "transparent", fontWeight: active === key ? 600 : 400, fontSize: 13, cursor: "pointer", color: "var(--dt-colors-text-primary-default)" }}>
+            {PRESETS[key].label}
+          </button>
+        ))}
+      </Flex>
+      <Surface style={{ padding: 16, borderRadius: 12 }}>
+        <TitleBar><TitleBar.Title>{PRESETS[active].label}</TitleBar.Title><TitleBar.Subtitle>{records.length} records</TitleBar.Subtitle></TitleBar>
+        {isLoading ? (
+          <Flex justifyContent="center" style={{ padding: 40 }}><ProgressCircle /></Flex>
+        ) : records.length === 0 ? (
+          <Text style={{ padding: 20, opacity: 0.5 }}>No records found</Text>
+        ) : (
+          <div style={{ maxHeight: 600, overflow: "auto", fontSize: 12 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr>{Object.keys(records[0]).map((key) => <th key={key} style={key === "content" ? TH_CONTENT : TH}>{key}</th>)}</tr></thead>
+              <tbody>
+                {records.map((r: any, i: number) => (
+                  <tr key={i}>
+                    {Object.keys(records[0]).map((key) => (
+                      <td key={key} style={key === "content" ? TD_CONTENT : TD}>
+                        {key === "timestamp" && (r[key] instanceof Date || (typeof r[key] === "string" && /^\d{4}-\d{2}-\d{2}T/.test(r[key])))
+                          ? new Date(r[key]).toLocaleString()
+                          : String(r[key] ?? "—")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Surface>
+    </Flex>
+  );
+};
+
+const TH: React.CSSProperties = { padding: "6px 8px", textAlign: "left", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontWeight: 600, whiteSpace: "nowrap" };
+const TH_CONTENT: React.CSSProperties = { ...TH, minWidth: 400 };
+const TD: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const TD_CONTENT: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--dt-colors-border-neutral-default)", fontFamily: "monospace", fontSize: 11, whiteSpace: "pre-wrap", wordBreak: "break-all", maxWidth: 600, background: "var(--dt-colors-surface-default)", opacity: 0.9 };

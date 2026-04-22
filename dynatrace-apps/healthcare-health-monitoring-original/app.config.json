@@ -1,11 +1,11 @@
 {
   "$schema": "./.dt-app/app.config.schema.json",
-  "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
+  "environmentUrl": "https://<your-env-id>.apps.dynatrace.com",
   "app": {
-    "name": "Healthcare Observability",
-    "version": "1.26.0",
-    "description": "Epic EHR, network, and clinical integration health monitoring.",
-    "id": "my.dynatrace.healthcare.health.monitoring",
+    "name": "Healthcare Health Monitoring",
+    "version": "1.18.1",
+    "description": "Fix site distribution (field-based), 6-site SiteView",
+    "id": "my.healthcare.health.monitoring",
     "scopes": [
       {
         "name": "storage:logs:read",
