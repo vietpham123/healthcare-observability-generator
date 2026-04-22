@@ -212,10 +212,11 @@ Each `SectionHealth` instance independently polls Grail every 30 seconds.
 ### Chart gapPolicy
 All `TimeseriesChart` instances use `gapPolicy="connect"` to prevent visual breaks when data arrives irregularly.
 
-### HoneycombChart Gotcha
-`HoneycombChart` accepts only `number[]`, not object arrays. Extract the numeric values first:
+### HoneycombChart Usage
+`HoneycombChart` supports both numeric and categorical data. For categorical data (e.g., device status), pass `{ name, value }[]` with a `colorScheme` map:
 ```tsx
-const values = records.map(r => r.cpu_avg as number);
+const tiles = records.map(r => ({ name: r.device, value: r.status === "down" ? "DOWN" : "UP" }));
+<HoneycombChart data={tiles} shape="hexagon" showLabels colorScheme={{ UP: "#2ab050", DOWN: "#dc3545" }} />
 ```
 
 ---
@@ -253,7 +254,7 @@ const values = records.map(r => r.cpu_avg as number);
 | Issue | Workaround |
 |-------|-----------|
 | `npx dt-app deploy` via SSH | Deploy from local machine only |
-| HoneycombChart won't accept objects | Map to `number[]` before passing |
+| HoneycombChart categorical data | Pass `{ name, value }[]` with `colorScheme` map for categorical, or `number[]` for numeric |
 | Strato Tooltip needs native DOM child | Wrap in `<div>` instead of `<Flex>` |
 | Shell heredocs corrupt Python/JSON | Use base64-encoded Python scripts for file writes |
 | GitHub SSH not configured on VM | Push from local clone |

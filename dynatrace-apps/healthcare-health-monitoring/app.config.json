@@ -3,7 +3,7 @@
   "environmentUrl": "https://gyz6507h.sprint.apps.dynatracelabs.com",
   "app": {
     "name": "Healthcare Observability",
-    "version": "1.27.0",
+    "version": "1.29.0",
     "description": "Epic EHR, network, and clinical integration health monitoring.",
     "id": "my.dynatrace.healthcare.health.monitoring",
     "scopes": [

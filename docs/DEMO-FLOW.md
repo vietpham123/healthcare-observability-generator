@@ -152,13 +152,13 @@ Click **Network** tab. Note health indicators: Peak Device CPU, Device Fleet Hea
 
 ### 4.2 — Device Fleet Honeycomb
 
-The honeycomb shows all network devices as hex tiles:
-- **Green** tiles = device is reporting (up and healthy)
-- **Red** tiles = device is silent (down or unreachable)
+The honeycomb uses Strato's native `HoneycombChart` with categorical UP/DOWN data and hexagonal tiles:
+- **Green** hexagons = device is reporting (up and healthy)
+- **Red** hexagons = device is silent (down or unreachable)
 
-Hover over a tile to see the device hostname.
+Hover over a hexagon to see the device hostname and status.
 
-> "Each hex is a network device — routers, switches, firewalls, load balancers. Green means it reported a heartbeat in the last 5 minutes. Red means silence."
+> "Each hexagon is a network device — routers, switches, firewalls, load balancers. Green means it reported a heartbeat in the last 5 minutes. Red means silence."
 
 ### 4.3 — KPI Cards
 

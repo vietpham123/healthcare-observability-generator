@@ -1,0 +1,25 @@
+# Ignore everything
+*
+
+# Allow only what the Dockerfiles need
+!requirements.txt
+!src/
+!config/
+!webui/
+!deploy/
+
+# Re-ignore stuff inside allowed dirs
+src/epic_generator/outputs/
+src/network_generator/outputs/
+**/__pycache__
+**/*.pyc
+
+# Large dirs never needed
+dynatrace-apps/
+dynatrace-assets/
+docs/
+scripts/
+node_modules/
+.git/
+.venv/
+*.md

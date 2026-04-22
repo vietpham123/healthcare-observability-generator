@@ -13,7 +13,7 @@ and scenario-aware anomaly detection.
 |------|-------|---------|
 | Overview | `/` | Campus map, top-level KPIs, cross-system correlation, section health |
 | Epic Health | `/epic` | EHR login analytics, clinical orders, SIEM audit, STAT order rate |
-| Network Health | `/network` | Device CPU/memory honeycomb, traffic, NetFlow, vendor distribution |
+| Network Health | `/network` | Device fleet honeycomb (Strato HoneycombChart, green=UP/red=DOWN), CPU/memory charts, traffic, NetFlow, vendor distribution |
 | Integration Health | `/integration` | HL7 delivery, FHIR API health, ETL pipeline status |
 | Security & Compliance | `/security` | Break-the-glass, failed logins, after-hours audit, BTG counts |
 | MyChart Portal | `/mychart` | Patient portal login, messaging, scheduling, device breakdown |

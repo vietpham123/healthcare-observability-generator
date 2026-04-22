@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
-import { TimeseriesChart, CategoricalBarChart, DonutChart } from "@dynatrace/strato-components/charts";
+import { TimeseriesChart, CategoricalBarChart, DonutChart, HoneycombChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
@@ -141,39 +141,25 @@ const DeviceHoneycomb = ({ site }: { site: string | null }) => {
   const records = data?.records ?? [];
   if (records.length === 0) return <Text>No device data</Text>;
 
-  const ROLE_ICONS: Record<string, string> = {
-    core: "🔷", distribution: "🔶", access: "🟢", firewall: "🛡️", wireless: "📶",
-  };
+  const tiles = records.map((r: any) => ({
+    name: String(r.device ?? "").replace(/^kcrmc-/, ""),
+    value: r.status === "down" ? "DOWN" : "UP",
+    device: r.device,
+    vendor: r.vendor,
+    role: r.role,
+    site: r.site,
+    minutes_ago: Number(r.minutes_ago).toFixed(1),
+  }));
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 0" }}>
-      {records.map((r: any, i: number) => {
-        const isDown = r.status === "down";
-        const bg = isDown ? "var(--dt-colors-charts-categorical-color-11, #dc3545)" : "var(--dt-colors-charts-status-success, #2ab050)";
-        const label = String(r.device ?? "").replace(/^kcrmc-/, "");
-        const icon = ROLE_ICONS[r.role] ?? "📡";
-        return (
-          <div
-            key={i}
-            title={`${r.device}\n${r.vendor} • ${r.role} • ${r.site}\nStatus: ${isDown ? "DOWN" : "UP"}\nLast seen: ${Number(r.minutes_ago).toFixed(1)}m ago`}
-            style={{
-              width: 100, height: 70,
-              background: bg, borderRadius: 8,
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              color: "#fff", fontSize: 11, fontWeight: 600,
-              opacity: isDown ? 1 : 0.85,
-              border: isDown ? "2px solid #ff4d4f" : "1px solid rgba(255,255,255,0.15)",
-              cursor: "default",
-              position: "relative",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{isDown ? "🔴" : icon}</span>
-            <span style={{ marginTop: 2, textAlign: "center", lineHeight: 1.2, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-            <span style={{ fontSize: 9, opacity: 0.8 }}>{isDown ? "DOWN" : "UP"}</span>
-          </div>
-        );
-      })}
+    <div style={{ padding: "12px 0" }}>
+      <HoneycombChart
+        data={tiles}
+        shape="hexagon"
+        showLabels
+        colorScheme={{ UP: "#2ab050", DOWN: "#dc3545" }}
+        height={280}
+      />
     </div>
   );
 };

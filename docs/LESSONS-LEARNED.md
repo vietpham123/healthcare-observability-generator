@@ -41,7 +41,7 @@ The app needs explicit scopes in `app.config.json` for every data type it reads:
 | Component | Issue | Solution |
 |-----------|-------|----------|
 | **TimeseriesChart** | Data gaps show as breaks in lines | Add `gapPolicy="connect"` prop |
-| **HoneycombChart** | Doesn't accept object arrays | Pass `number[]` only (e.g., CPU values) |
+| **HoneycombChart** | Supports categorical and numeric modes | Categorical: `{ name, value: string }[]` with `colorScheme` map; Numeric: `number[]` |
 | **Select / FilterBar** | `Select.Content` wrapper required around `Select.Option` children; FilterBar expects specific structures | Bypass entirely — use button-based toggle filters instead. Simpler, more reliable. |
 | **DonutChart** | Needs `{ name, value }[]` format | Use a helper function `toDonutData(records)` |
 | **CategoricalBarChart** | Needs `{ name, value }[]` format | Use a helper function `toBarData(records)` |
@@ -226,7 +226,7 @@ dt-app-development/
 ### Key Rules the Skill Should Enforce
 1. Always bump version before deploy
 2. Import charts from `@dynatrace/strato-components/charts` (not `-preview`)
-3. `HoneycombChart` takes `number[]` only
+3. `HoneycombChart` supports categorical (`{ name, value }[]` + `colorScheme`) and numeric (`number[]`) modes
 4. `gapPolicy="connect"` on all TimeseriesChart instances
 5. `withSiteFilter` must handle both `timeseries ` and `timeseries\n` patterns
 6. Canvas overlays on SVG must use uniform scaling to match `preserveAspectRatio`
