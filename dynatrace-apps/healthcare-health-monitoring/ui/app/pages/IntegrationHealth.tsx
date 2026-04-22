@@ -23,9 +23,9 @@ export const IntegrationHealth = () => {
     <SiteFilter value={site} onChange={setSite} />
     <Flex gap={12} flexWrap="wrap">
       <KpiCard query={f(queries.hl7DeliveryRate)} label="HL7 Delivery" field="delivery_rate" format="percent" thresholds={{ green: 99, amber: 90 }} icon="📡" />
-      <KpiCard query={f(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="🔗" />
-      <KpiCard query={f(queries.fhirErrorRate)} label="FHIR Error Rate" field="error_rate" format="percent" thresholds={{ green: 2, amber: 5 }} invertThresholds icon="⚠️" />
-      <KpiCard query={f(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 95, amber: 85 }} icon="⚙️" />
+      <KpiCard query={f(queries.fhirHealthRate)} label="FHIR API Health" field="success_rate" format="percent" thresholds={{ green: 88, amber: 75 }} icon="🔗" />
+      <KpiCard query={f(queries.fhirErrorRate)} label="FHIR Error Rate" field="error_rate" format="percent" thresholds={{ green: 12, amber: 20 }} invertThresholds icon="⚠️" />
+      <KpiCard query={f(queries.etlSuccessRate)} label="ETL Success" field="success_rate" format="percent" thresholds={{ green: 90, amber: 80 }} icon="⚙️" />
       <KpiCard query={f(queries.hl7RecentVolume)} label="HL7 Vol/5min" field="hl7_volume" format="number" thresholds={{ green: 5, amber: 1 }} icon="📨" />
       <KpiCard query={queries.mirthChannelHealth} label="Mirth Channels" field="health_pct" format="percent" thresholds={{ green: 100, amber: 90 }} icon="🔌" />
     </Flex>
@@ -66,7 +66,7 @@ export const IntegrationHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>FHIR API</TitleBar.Title><TitleBar.Subtitle>REST API request rates, response times, and status codes</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={f(queries.fhirHealthRate)} field="success_rate" green={95} amber={85} description="Ratio of FHIR R4 API calls returning HTTP 2xx/3xx vs 4xx/5xx. Degradation signals API gateway issues, expired OAuth tokens, or backend Interconnect server overload." />
+        <SectionHealth query={f(queries.fhirHealthRate)} field="success_rate" green={88} amber={75} description="Ratio of FHIR R4 API calls returning HTTP 2xx/3xx vs 4xx/5xx. Degradation signals API gateway issues, expired OAuth tokens, or backend Interconnect server overload." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}>
@@ -94,7 +94,7 @@ export const IntegrationHealth = () => {
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
         <TitleBar><TitleBar.Title>ETL Pipelines</TitleBar.Title><TitleBar.Subtitle>Batch job status and duration trends</TitleBar.Subtitle></TitleBar>
-        <SectionHealth query={f(queries.etlSuccessRate)} field="success_rate" green={95} amber={85} description="Success rate of completed ETL batch jobs (excludes in-progress RUNNING jobs). Counts SUCCESS and SUCCESS_WITH_WARNINGS as healthy. Failures indicate Clarity/Caboodle load problems or source system timeouts." />
+        <SectionHealth query={f(queries.etlSuccessRate)} field="success_rate" green={90} amber={80} description="Success rate of completed ETL batch jobs (excludes in-progress RUNNING jobs). Counts SUCCESS and SUCCESS_WITH_WARNINGS as healthy. Failures indicate Clarity/Caboodle load problems or source system timeouts." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}><TsChart query={f(queries.etlJobStatusOverTime)} /></div>
