@@ -10,7 +10,7 @@ Step-by-step walkthrough for demonstrating the Healthcare Observability Generato
 |-----------|-------------|
 | AKS generators running | `kubectl get pods -n healthcare-gen` — all pods `Running` |
 | Data flowing to DT | Grail query: `fetch logs \| filter healthcare.pipeline == "healthcare-epic" \| sort timestamp desc \| limit 5` |
-| DT Platform App deployed | Open: `https://{env-id}.apps.dynatracelabs.com/ui/apps/my.healthcare.health.monitoring` |
+| DT Platform App deployed | Open: `https://gyz6507h.sprint.apps.dynatracelabs.com/ui/apps/my.dynatrace.healthcare.health.monitoring` |
 | Web UI available | `http://172.206.131.122` for scenario toggling |
 | Health indicators green | All SectionHealth pills showing green on Overview page |
 
@@ -22,7 +22,7 @@ Step-by-step walkthrough for demonstrating the Healthcare Observability Generato
 
 Open the AKS cluster in Dynatrace (Kubernetes app):
 - **Namespace**: `healthcare-gen`
-- **Workloads**: `epic-generator` (v1.0.4), `network-generator`, `webui` (v2.2.0)
+- **Workloads**: `epic-generator` (v1.0.8), `network-generator` (v1.3.0), `webui` (v1.3.0)
 - Point out: these containers generate all synthetic data — Epic SIEM logs, network syslog, SNMP metrics, NetFlow records
 
 ### 1.2 — Show Raw Data in Grail
@@ -78,7 +78,7 @@ Point out: `network.flow.src_addr`, `network.flow.dst_addr`, `network.flow.bytes
 
 ### 2.1 — Open the App
 
-Navigate to: **Apps → Healthcare Health Monitoring → Overview**
+Navigate to: **Apps → Healthcare Observability → Overview**
 
 ### 2.2 — Health Indicators
 
@@ -101,12 +101,13 @@ Point out:
 ### 2.4 — KPI Cards
 
 Below the map:
-- **Login Success Rate** — percentage from Epic SIEM
-- **Active Sessions** — current Hyperspace sessions
-- **Clinical Events** — orders, notes, results
-- **HL7 Messages** — interface engine throughput
-- **Network Devices** — count of monitored devices
-- **Network Events** — syslog event count
+- **Epic Login Success** — success rate from Epic SIEM login events
+- **HL7 Delivery** — whether HL7 messages are flowing in the last 5 minutes
+- **FHIR API Health** — success rate for FHIR R4 REST API calls
+- **ETL Success** — batch job completion rate (excludes RUNNING jobs)
+- **Avg Device CPU** — fleet-wide average CPU across network devices
+- **Network Critical** — count of critical/emergency/alert syslog events
+- **Active Users** — distinct users in the last 2 hours
 
 ### 2.5 — Site Filter
 
@@ -147,37 +148,38 @@ Select **Wellington Care Center** — watch all charts filter to just that clini
 
 ### 4.1 — Navigate to Network Health
 
-Click **Network Health** tab. Note health indicators: Avg CPU, Device Up Ratio.
+Click **Network** tab. Note health indicators: Peak Device CPU, Device Fleet Health.
 
 ### 4.2 — Device Fleet Honeycomb
 
-The honeycomb shows all network devices colored by CPU utilization:
-- **Green** cells = healthy (<60% CPU)
-- **Amber** cells = elevated (60-80%)
-- **Red** cells = critical (>80%)
+The honeycomb shows all network devices as hex tiles:
+- **Green** tiles = device is reporting (up and healthy)
+- **Red** tiles = device is silent (down or unreachable)
 
-> "Each cell is a network device — routers, switches, firewalls, load balancers. This is SNMP data sent as MINT metrics."
+Hover over a tile to see the device hostname.
+
+> "Each hex is a network device — routers, switches, firewalls, load balancers. Green means it reported a heartbeat in the last 5 minutes. Red means silence."
 
 ### 4.3 — KPI Cards
 
-- **Devices Up** — count from latest SNMP poll
+- **Devices Up** — count from latest heartbeat/SNMP poll
 - **Avg CPU** — fleet-wide average
 - **Avg Memory** — fleet-wide average
-- **Network Events** — syslog count (last 30 min)
+- **Network Events** — syslog count
 - **NetFlow Records** — flow record count
 
 ### 4.4 — Traffic Charts
 
 | Chart | What to Show |
 |-------|-------------|
-| **CPU by Device** (TimeseriesChart) | Individual device CPU lines, faceted by device name |
+| **CPU by Device** (TimeseriesChart) | Individual device CPU lines — warning at 60%, critical at 80% |
 | **Memory by Device** (TimeseriesChart) | Same for memory |
 | **Traffic In** (TimeseriesChart) | Ingress bytes/sec per device |
 | **Traffic Out** (TimeseriesChart) | Egress bytes/sec per device |
 
 ### 4.5 — Filter by Site
 
-Select **Oakley Rural Health** — see only Oakley's 3-4 devices in the honeycomb and charts.
+Select **Oakley Rural Health** — see only Oakley's devices in the honeycomb and charts.
 
 > "This is the network infrastructure layer. When something goes wrong here, it cascades up to the Epic layer — we'll show that next."
 
@@ -187,45 +189,65 @@ Select **Oakley Rural Health** — see only Oakley's 3-4 devices in the honeycom
 
 ### 5.1 — Navigate to Integration Health
 
-Click **Integration Health** tab. Note health indicators: HL7 Delivery, FHIR Health, ETL Success.
+Click **Integration** tab. Note health indicators across four sections: Mirth Connect, HL7 Interface, FHIR API, and ETL Pipelines.
 
-### 5.2 — Key Metrics
+### 5.2 — KPI Cards
 
-| Metric | What It Shows |
-|--------|--------------|
-| **HL7 Delivery Rate** | Messages per minute through the interface engine (ADT, ORM, ORU, SIU) |
-| **HL7 Error Rate** | NACKs and timeouts — should be <1% normally |
-| **FHIR Response Time** | API latency for FHIR R4 calls (Patient, Encounter, Observation) |
-| **ETL Pipeline Status** | Data warehouse extract jobs — completion rate (excludes RUNNING jobs) |
+| KPI | What It Shows |
+|-----|--------------|
+| **HL7 Delivery** | Whether HL7 v2.x messages are actively flowing (100% = yes, 0% = no) |
+| **FHIR API Health** | Success rate of FHIR R4 API calls (HTTP 2xx/3xx vs 4xx/5xx) |
+| **FHIR Error Rate** | Percentage of FHIR calls returning errors |
+| **ETL Success** | Batch job completion rate (SUCCESS + SUCCESS_WITH_WARNINGS) |
+| **HL7 Vol/5min** | HL7 message count in the last 5-minute window |
+| **Mirth Channels** | Percentage of Mirth Connect channels that are healthy |
 
-> "This is the integration layer — HL7 messages, FHIR APIs, and ETL pipelines. In a real Epic environment, failures here mean data stops flowing between systems."
+### 5.3 — Section Health Indicators
+
+Each section (Mirth Connect, HL7, FHIR, ETL) has its own health pill:
+- **Mirth Connect**: Healthy only when all channels are running, error rate < 10%, and queue depth < 50
+- **HL7 Interface**: Checks whether messages are actively flowing
+- **FHIR API**: Success rate of REST API calls
+- **ETL Pipelines**: Batch job success rate
+
+> "This is the integration layer — HL7 messages, FHIR APIs, Mirth Connect channels, and ETL pipelines. In a real Epic environment, failures here mean data stops flowing between systems."
 
 ---
 
-## Part 6: Security & Compliance (3 min)
+## Part 6: Security (3 min)
 
-### 6.1 — Navigate to Security & Compliance
+### 6.1 — Navigate to Security
 
-Click **Security & Compliance** tab. Note health indicators: Login Success, Auth Success, BTG Count, After-Hours BTG, Failed Login Count.
+Click **Security** tab. Note KPIs: Break-the-Glass Events, Failed Logins, Login Success Rate, After-Hours BTG, Active Workstations, Auth Failures.
 
 ### 6.2 — Key Metrics
 
 | Metric | What It Shows |
 |--------|--------------|
-| **Break-the-Glass Count** | Emergency access events (normal: ~50/hr in a hospital) |
-| **After-Hours BTG** | BTG events outside 6 AM – 10 PM (higher risk) |
-| **Failed Login Analysis** | Login failure patterns by user, workstation, time |
-| **Login Success Rates** | Both Epic-wide and BCA authentication layer |
+| **Break-the-Glass Events** | Emergency access events (BTG is normal in hospitals but monitored) |
+| **After-Hours BTG** | BTG events outside 6 AM – 10 PM (higher risk for snooping) |
+| **Failed Logins** | Login failure count (FAILEDLOGIN + LOGIN_BLOCKED + WPSEC_LOGIN_FAIL) |
+| **Login Success Rate** | Overall Epic login success percentage |
+| **Auth Failures** | BCA authentication layer failures |
+| **Active Workstations** | Distinct workstations with activity |
+
+### 6.3 — Charts
+
+- **Security Events Over Time** — BTG vs Failed Login vs Login Blocked trends
+- **BTG by User** — which users are using break-the-glass most
+- **Failed Logins by Hour** — time-of-day pattern for failed logins
+- **Security by Site** — BTG and auth failures broken down by site
+- **Recent Security Events** — table of latest BTG and failure events
 
 > "In a HIPAA-regulated environment, BTG events are expected but monitored. A spike means either a real emergency or a potential insider threat."
 
 ---
 
-## Part 7: MyChart Portal (2 min)
+## Part 7: MyChart (2 min)
 
-### 7.1 — Navigate to MyChart Portal
+### 7.1 — Navigate to MyChart
 
-Click **MyChart Portal** tab. Note health indicator: MyChart Login.
+Click **MyChart** tab. Note health indicator: MyChart Login.
 
 ### 7.2 — Key Metrics
 
@@ -244,43 +266,45 @@ This is the highlight of the demo — showing cross-domain correlation.
 
 ### 8.1 — Trigger a Scenario
 
-Open the Web UI (`http://172.206.131.122`) and activate **Ransomware Attack**.
+Open the Web UI (`http://172.206.131.122`) and activate **Core Switch Failure**.
 
 ### 8.2 — Watch the Health Indicators Change
 
-Within 30-60 seconds (SectionHealth auto-refreshes every 30s):
-- **Overview**: Login Success → RED, FHIR → RED
-- **Security & Compliance**: BTG Count → RED, Failed Logins → RED
-- **Integration Health**: HL7 → RED, ETL → RED
-- **Network Health**: CPU may spike on firewall devices
+Within 60 seconds:
+- **Network** page: Device Fleet honeycomb shows kcrmc-core-01 turn **red** (down), CPU spikes on kcrmc-dist-epic-01 (85%) and kcrmc-dist-epic-02 (78%)
+- **Integration** page: Mirth Connect health degrades (elevated errors and queue depth)
+- **Overview** page: Avg Device CPU rises, Network Critical count increases
 
-### 8.3 — Watch the Cascade on Charts
+### 8.3 — Walk Through the Cascade
 
-**Network Health** page (check first):
-1. FortiGate IPS alerts appear in Network Events
-2. Palo Alto threat logs show C2 callback traffic
-3. Device CPU spikes on firewalls
-4. NetFlow shows unusual internal scanning patterns
+**Network** page (check first):
+1. Hex grid shows kcrmc-core-01 as RED (device down — no heartbeats)
+2. CPU chart shows dist-epic-01 and dist-epic-02 spiking
+3. Memory rises proportionally on affected switches
 
-**Epic Health** page (check second):
-1. Login failures spike (infrastructure degraded)
-2. Break-the-glass events appear (emergency access)
-3. Mass patient record lookups (data exfiltration attempt)
+**Integration** page (check second):
+1. Mirth channels ADT-OUT, ORM-OUT, ORU-OUT show elevated error rates and queue depths
+2. Mirth section health turns amber/red
+3. HL7 volume may show disruption
 
-**Integration Health** page (check third):
-1. HL7 delivery rate drops
-2. FHIR response times spike
-3. ETL jobs start failing
+### 8.4 — Try Ransomware Attack
 
-### 8.4 — Correlation Narrative
+Deactivate Core Switch Failure, then activate **Ransomware Attack**.
 
-> "Notice the timeline: the network attack started at T+0 with IPS alerts. Two minutes later, Epic logins started failing because the infrastructure was degraded. The security team triggered break-the-glass access at T+5. By T+10, all integration feeds were disrupted. In a real SOC, you'd need this cross-domain view to understand that the Epic outage was caused by a network security incident, not an application problem."
+Within 30-60 seconds:
+- **Epic Health**: Login Success Rate drops dramatically (83% → ~44%)
+- **Security**: Failed Logins spike (120 → 1400+), BTG events appear
+- **Overview**: Login Success → RED
 
-### 8.5 — Deactivate Scenario
+### 8.5 — Correlation Narrative
 
-Return to Web UI, deactivate **Ransomware Attack**.
-- **Important**: Ransomware recovery takes ~50 minutes (not 2-3 min) because ~1450 failed logins persist in the DQL query window
-- The 30-second auto-refresh means you'll see the transition in real time
+> "In the core switch failure, the network layer broke first — a device went down, causing Mirth Connect queue backups and HL7 delivery issues. In the ransomware scenario, the Epic application layer broke — mass login failures and emergency access events. Two different failure modes, both visible in the same app."
+
+### 8.6 — Deactivate Scenario
+
+Return to Web UI, click **Deactivate All**.
+- **Core Switch Failure**: Recovers in ~2-3 minutes (network heartbeats resume)
+- **Ransomware**: Recovery takes ~50 minutes (failed login events persist in the 2-hour DQL query window)
 
 ---
 
@@ -313,11 +337,11 @@ fetch logs
 
 ---
 
-## Part 10: Site View (2 min)
+## Part 10: Sites (2 min)
 
-### 10.1 — Navigate to Site View
+### 10.1 — Navigate to Sites
 
-Click **Site View** tab.
+Click **Sites** tab.
 
 ### 10.2 — Site Cards
 
@@ -328,22 +352,21 @@ Each site has a card showing:
 - Clinical events
 - Network devices + average CPU
 
+Click a site to drill down into site-specific detail: HL7 volume, error rate, event categories, netflow timeline.
+
 > "This is the per-site summary. A hospital IT director would use this to compare sites at a glance."
 
 ---
 
 ## Scenario Quick Reference
 
-| Scenario | Duration | Key Visuals | Pages to Watch |
-|----------|----------|-------------|----------------|
-| **Normal Day Shift** | Always on | Smooth curves, green indicators | Overview |
-| **ED Surge** | 10-15 min | STAT orders spike, ED network saturation | Epic, Network |
-| **Ransomware** | 10-15 min | Red indicators everywhere, IPS alerts, BTG spike | Security, Network, Integration |
-| **Epic Outage (Network)** | 10-15 min | Network DOWN → Epic login failures | Network, Epic |
-| **HL7 Interface Failure** | 5-10 min | HL7 NACKs, switch err-disable | Integration, Network |
-| **IoMT Device Compromise** | 5-10 min | FHIR anomaly, port security alerts | Integration, Network |
-| **MyChart Credential Stuffing** | 5-10 min | 500+ login failures, F5 alerts | MyChart, Security, Network |
-| **Insider Threat** | 5-10 min | After-hours BTG, VIP snooping | Security |
+| Scenario | Key Visuals | Pages to Watch |
+|----------|-------------|----------------|
+| **Normal Day Shift** | Smooth curves, green indicators | Overview |
+| **Core Switch Failure** | Network device down (red hex), CPU spikes, Mirth queue backup | Network, Integration |
+| **Ransomware Attack** | Red indicators everywhere, login failures spike, BTG events | Security, Epic Health, Overview |
+| **HL7 Interface Failure** | HL7 disruption, syslog events from switch err-disable | Integration, Network |
+| **Insider Threat** | After-hours BTG events, VIP patient snooping | Security |
 
 ---
 
@@ -351,52 +374,25 @@ Each site has a card showing:
 
 1. **Start with health indicators** — hover over the green pills to show tooltips before anything breaks
 2. **Use the site filter early** — it shows the app isn't static; it's querying live data
-3. **End with a scenario** — the cross-domain correlation is the "wow" moment
-4. **Watch the auto-refresh** — no need to manually reload; indicators update every 30s
-5. **Keep the Web UI on a second screen** — toggle scenarios without leaving the DT app
-6. **If data looks stale** — check `kubectl get pods -n healthcare-gen`; generator pods may have restarted
-7. **If the map has no dots** — NetFlow data takes ~60 seconds to appear after generators start
-8. **After disabling a scenario** — recovery depends on intensity: ED Surge/IoMT/HL7 recover in ~5 min; Ransomware takes ~50 min due to burst event persistence in DQL query window
-
+3. **Core Switch Failure is best for cross-domain** — network device down → Mirth degradation → HL7 impact
+4. **Ransomware is best for shock value** — turns login success rate RED within 60 seconds
+5. **Watch the auto-refresh** — no need to manually reload; indicators update every 30s
+6. **Keep the Web UI on a second screen** — toggle scenarios without leaving the DT app
+7. **If data looks stale** — check `kubectl get pods -n healthcare-gen`; generator pods may have restarted
+8. **If the hex grid is all green** — that's normal baseline; activate Core Switch Failure to see a red tile
+9. **After disabling a scenario** — Core Switch Failure recovers in ~2-3 min; Ransomware takes ~50 min due to failed login events persisting in the DQL query window
 
 ---
 
-## Appendix: Verified Scenario Test Results (April 2026)
+## App Navigation Reference
 
-Comprehensive testing of all 8 scenarios via WebUI API with DQL health indicator verification.
-
-### Impact Summary
-
-| Scenario | Epic Login Impact | Failed Logins Impact | FHIR/ETL Impact | Network Impact | Recovery Time |
-|----------|------------------|---------------------|-----------------|----------------|---------------|
-| ED Surge | Minimal shift | No change | No change | Volume increase | ~5 min |
-| Ransomware | 83% → 44% RED | 120 → 1449 RED | No change | No change | ~50 min |
-| MyChart Credential Stuffing | No attack patterns | No change | No change | No change | ~5 min |
-| HL7 Interface Failure | No change | No change | No change | Syslog events | ~5 min |
-| Epic Outage (Network) | No change | No change | No change | CPU 27→32% | ~5 min |
-| IoMT Device Compromise | No change | No change | No change | Minimal | ~5 min |
-| Insider Threat | No change | No change | No change | No change | ~10 min |
-| Normal Day Shift | Baseline | Baseline | Baseline | Baseline | N/A |
-
-### Scenario Categories
-
-**High-impact (shifts Epic health indicators):**
-- Ransomware Attack — the only scenario that dramatically moves percentage metrics
-
-**Medium-impact (detectable through specific indicators):**
-- Insider Threat — generates BTG events (AC_BREAK_THE_GLASS_ACCESS + SECURE)
-- ED Surge — generates volume increase and ORDER_ENTRY events
-
-**Network-only (no Epic-side impact):**
-- HL7 Interface Failure, Epic Outage, IoMT Device Compromise — all map to `normal_shift` for Epic
-
-**Activity-based (no anomaly patterns):**
-- MyChart Credential Stuffing — generates normal peak MyChart activity, NOT attack patterns
-- Normal Day Shift — baseline behavior confirmation
-
-### Demo Recommendations
-
-1. **For maximum visual impact**: Use **Ransomware Attack** — it turns multiple health indicators RED within 60 seconds
-2. **For quick demos**: Use **Insider Threat** — BTG events appear quickly and recover in ~10 minutes
-3. **Avoid for short demos**: **Ransomware** — recovery takes ~50 minutes, making back-to-back demos difficult
-4. **Show the contrast**: Activate ED Surge first (shows volume increase), then Ransomware (shows percentage shift) — demonstrates two different anomaly detection patterns
+| Tab Label | Route | Page Component | Key Content |
+|-----------|-------|----------------|-------------|
+| **Overview** | `/` | Overview | Campus map, KPI cards, event distribution, correlation chart |
+| **Security** | `/security` | SecurityCompliance | BTG events, failed logins, after-hours access, workstations |
+| **Integration** | `/integration` | IntegrationHealth | Mirth Connect, HL7, FHIR API, ETL pipelines |
+| **Network** | `/network` | NetworkHealth | Device honeycomb, CPU/memory charts, traffic in/out |
+| **Epic Health** | `/epic` | EpicHealth | Login trends, clinical activity, audit events, sessions |
+| **MyChart** | `/mychart` | MyChartPortal | Patient portal logins, messaging, scheduling, devices |
+| **Sites** | `/sites` | SiteView | Per-site summary cards with drill-down |
+| **Explore** | `/explore` | Explore | Raw log viewer and DQL sandbox |
