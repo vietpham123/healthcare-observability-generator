@@ -1,9 +1,19 @@
 """Baseline traffic generator — produces normal-state logs, metrics, traps,
-and flow records each tick based on the loaded topology."""
+and flow records each tick based on the loaded topology.
+
+Scenario awareness:
+  When ``scenario_config`` is supplied (from a JSON scenario definition),
+  devices listed in ``network_correlation.events`` with action ``device_down``
+  are silenced — no heartbeats, no metrics, no flows.  Devices with
+  ``cpu_spike`` get elevated CPU/memory.  This lets the dashboard hex tiles
+  turn red for downed devices and keeps the section health honest.
+"""
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import random
 from datetime import datetime, timezone
 
@@ -85,7 +95,7 @@ _VENDOR_TEMPLATES = {
 class BaselineGenerator:
     """Generate steady-state network telemetry for every device in the topology."""
 
-    def __init__(self, topology, rng=None):
+    def __init__(self, topology, rng=None, scenario_config=None):
         self.topology = topology
         self.rng = rng or random
         self._tick_count = 0
@@ -94,6 +104,28 @@ class BaselineGenerator:
         if not isinstance(seed_rng, SeededRandom):
             seed_rng = SeededRandom(seed=42)
         self._flow_gen = NetFlowGenerator(rng=seed_rng, topology=topology)
+
+        # Parse scenario-driven device overrides
+        self._down_devices: set[str] = set()
+        self._cpu_spikes: dict[str, float] = {}  # hostname -> target cpu%
+        if scenario_config:
+            self._apply_scenario(scenario_config)
+
+    def _apply_scenario(self, cfg: dict) -> None:
+        """Extract network_correlation events from a scenario config."""
+        net = cfg.get("network_correlation", {})
+        if not net.get("enabled"):
+            return
+        for evt in net.get("events", []):
+            device = evt.get("device", "")
+            etype = evt.get("event_type", "")
+            if etype == "device_down":
+                self._down_devices.add(device)
+                logger.info("Scenario: device %s marked DOWN", device)
+            elif etype == "cpu_spike":
+                cpu = evt.get("params", {}).get("cpu_percent", 85)
+                self._cpu_spikes[device] = float(cpu)
+                logger.info("Scenario: device %s CPU spike to %.0f%%", device, cpu)
 
     # ── helpers ──────────────────────────────────────────────────────
 
@@ -141,8 +173,13 @@ class BaselineGenerator:
         metrics: list[MetricEvent] = []
 
         for device in self.topology.devices:
+            hostname = device.hostname
             vendor = device.vendor
             site = device.site
+
+            # ── Scenario: skip downed devices entirely ──
+            if hostname in self._down_devices:
+                continue
 
             # 1) Heartbeat syslog (always)
             logs.append(LogEvent(
@@ -210,24 +247,33 @@ class BaselineGenerator:
                     dimensions=dims,
                 ))
 
-            # 4) CPU / memory metrics
+            # 4) CPU / memory metrics (with scenario spikes)
             common_dims = {"site": site, "device": device.hostname, "vendor": vendor.value}
+            if hostname in self._cpu_spikes:
+                target_cpu = self._cpu_spikes[hostname]
+                cpu_val = target_cpu + self.rng.uniform(-3, 3)
+                mem_val = min(95, 60 + target_cpu * 0.3 + self.rng.uniform(-2, 2))
+            else:
+                cpu_val = self.rng.uniform(10, 45)
+                mem_val = self.rng.uniform(30, 65)
             metrics.append(MetricEvent(
                 timestamp=now, device=device.hostname, site=site,
                 metric_key="device.cpu.utilization",
-                value=self.rng.uniform(10, 45),
+                value=cpu_val,
                 dimensions=common_dims,
             ))
             metrics.append(MetricEvent(
                 timestamp=now, device=device.hostname, site=site,
                 metric_key="device.memory.utilization",
-                value=self.rng.uniform(30, 65),
+                value=mem_val,
                 dimensions=common_dims,
             ))
 
-        # 5) Netflow records per device
+        # 5) Netflow records per device (skip downed devices)
         flows: list[FlowRecord] = []
         for device in self.topology.devices:
+            if device.hostname in self._down_devices:
+                continue
             device_flows = self._flow_gen.generate_flows(
                 device=device,
                 timestamp=now,

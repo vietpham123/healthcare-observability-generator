@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import signal
 import sys
 import time
@@ -134,7 +135,34 @@ def generate(
 
     # Initialize components
     rng = SeededRandom(seed)
-    baseline = BaselineGenerator(topology, rng) if not no_baseline else None
+
+    # Load scenario config from NETWORK_SCENARIO env var (matches epic's EPIC_SCENARIO pattern)
+    scenario_config = None
+    net_scenario = os.environ.get("NETWORK_SCENARIO")
+    if net_scenario:
+        # Try both underscore and hyphen variants of the name
+        name_variants = [net_scenario, net_scenario.replace("_", "-"), net_scenario.replace("-", "_")]
+        search_dirs = [
+            Path(config).parent.parent / "scenarios",   # config/scenarios/ relative to topology
+            Path("/app/config/scenarios"),                # container path
+        ]
+        for sdir in search_dirs:
+            for variant in name_variants:
+                sp = sdir / f"{variant}.json"
+                if sp.is_file():
+                    try:
+                        import json as _json
+                        scenario_config = _json.loads(sp.read_text())
+                        logger.info("Loaded network scenario config: %s from %s", net_scenario, sp)
+                    except Exception as exc:
+                        logger.warning("Failed to load scenario config %s: %s", sp, exc)
+                    break
+            if scenario_config is not None:
+                break
+        if scenario_config is None:
+            logger.warning("NETWORK_SCENARIO=%s set but no config file found", net_scenario)
+
+    baseline = BaselineGenerator(topology, rng, scenario_config=scenario_config) if not no_baseline else None
     scenario_engine = ScenarioEngine(topology, rng)
 
     # Load scenario playbooks
