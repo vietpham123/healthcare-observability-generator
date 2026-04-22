@@ -381,6 +381,12 @@ export const queries = {
 
   mirthErrorRate: `timeseries errors=avg(healthcare.mirth.channel.messages.errors), by:{channel.name}, interval:1m`,
 
+  mirthProcessingTime: `timeseries pt=avg(healthcare.mirth.channel.messages.processing_time), by:{channel.name}, interval:1m`,
+
+  mirthSendAttempts: `timeseries attempts=avg(healthcare.mirth.channel.messages.send_attempts), by:{channel.name}, interval:1m`,
+
+  mirthConnectionState: `timeseries state=avg(healthcare.mirth.channel.connection.state), by:{channel.name}, interval:1m`,
+
   /** Mirth channel health — considers status flag, error rate, AND queue depth.
    *  A channel is healthy only if: running (status>0.5), error rate <10%, and queue <50. */
   mirthChannelHealth: `timeseries status=avg(healthcare.mirth.channel.status), errors=sum(healthcare.mirth.channel.messages.errors), received=sum(healthcare.mirth.channel.messages.received), queue=avg(healthcare.mirth.channel.queue.depth), by:{channel.name}, interval:5m
@@ -393,11 +399,14 @@ export const queries = {
     | summarize channels_total = count(), channels_up = countIf(is_healthy)
     | fieldsAdd health_pct = if(channels_total > 0, toDouble(channels_up) / toDouble(channels_total) * 100.0, else: 0.0)`,
 
-  mirthChannelSummary: `timeseries received=sum(healthcare.mirth.channel.messages.received), errors=sum(healthcare.mirth.channel.messages.errors), queue=avg(healthcare.mirth.channel.queue.depth), by:{channel.name}, interval:5m
+  mirthChannelSummary: `timeseries received=sum(healthcare.mirth.channel.messages.received), errors=sum(healthcare.mirth.channel.messages.errors), queue=avg(healthcare.mirth.channel.queue.depth), pt=avg(healthcare.mirth.channel.messages.processing_time), attempts=sum(healthcare.mirth.channel.messages.send_attempts), state=avg(healthcare.mirth.channel.connection.state), by:{channel.name}, interval:5m
     | fieldsAdd last_received = arrayLast(arrayRemoveNulls(received))
     | fieldsAdd last_errors = arrayLast(arrayRemoveNulls(errors))
     | fieldsAdd last_queue = arrayLast(arrayRemoveNulls(queue))
-    | fields channel.name, last_received, last_errors, last_queue`,
+    | fieldsAdd last_pt = arrayLast(arrayRemoveNulls(pt))
+    | fieldsAdd last_attempts = arrayLast(arrayRemoveNulls(attempts))
+    | fieldsAdd last_state = arrayLast(arrayRemoveNulls(state))
+    | fields channel.name, last_state, last_received, last_errors, last_queue, last_pt, last_attempts`,
 
   // ─── Correlation ──────────────────────────────────────────────────
   epicNetworkCorrelation: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1

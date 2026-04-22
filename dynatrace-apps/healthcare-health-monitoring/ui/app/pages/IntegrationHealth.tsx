@@ -33,7 +33,7 @@ export const IntegrationHealth = () => {
     {/* Mirth Connect Section */}
     <Surface style={{ padding: 16, borderRadius: 12 }}>
       <Flex alignItems="center">
-        <TitleBar><TitleBar.Title>Mirth Connect</TitleBar.Title><TitleBar.Subtitle>Integration engine channel health, queue depths, and message throughput</TitleBar.Subtitle></TitleBar>
+        <TitleBar><TitleBar.Title>Mirth Connect</TitleBar.Title><TitleBar.Subtitle>Integration engine — queue depths, message latency, connector states, and retry storms</TitleBar.Subtitle></TitleBar>
         <SectionHealth query={queries.mirthChannelHealth} field="health_pct" green={100} amber={90} description="Percentage of Mirth Connect channels actively processing messages. Drops when HL7 VLAN network issues cause channel queues to back up and channels to stop." />
       </Flex>
       <Flex gap={16} style={{ marginTop: 12 }}>
@@ -44,6 +44,16 @@ export const IntegrationHealth = () => {
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Error Rate</Text>
           <TsChart query={queries.mirthErrorRate} />
+        </div>
+      </Flex>
+      <Flex gap={16} style={{ marginTop: 12 }}>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Processing Time (ms)</Text>
+          <TsChart query={queries.mirthProcessingTime} thresholds={[{ label: "SLA 500ms", value: 500 }, { label: "Critical 2s", value: 2000 }]} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>Send Attempts (retries)</Text>
+          <TsChart query={queries.mirthSendAttempts} />
         </div>
       </Flex>
       <MirthTable />
@@ -169,6 +179,16 @@ const ETLFailedTable = ({ site }: { site: string | null }) => {
   );
 };
 
+const CONNECTION_STATES: Record<number, { label: string; color?: string }> = {
+  0: { label: "Idle" },
+  1: { label: "Connected" },
+  2: { label: "Sending" },
+  3: { label: "Waiting" },
+  4: { label: "Connecting", color: "#ffc107" },
+  5: { label: "Disconnected", color: "#dc3545" },
+  6: { label: "Failure", color: "#dc3545" },
+};
+
 const MirthTable = () => {
   const { data, isLoading } = useDql({ query: queries.mirthChannelSummary });
   if (isLoading) return <ProgressCircle />;
@@ -177,16 +197,24 @@ const MirthTable = () => {
   return (
     <div style={{ maxHeight: 250, overflow: "auto", fontSize: 12, marginTop: 12 }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead><tr><th style={TH}>Channel</th><th style={TH}>Received/5m</th><th style={TH}>Errors/5m</th><th style={TH}>Queue Depth</th></tr></thead>
+        <thead><tr><th style={TH}>Channel</th><th style={TH}>State</th><th style={TH}>Recv/5m</th><th style={TH}>Err/5m</th><th style={TH}>Queue</th><th style={TH}>Latency</th><th style={TH}>Retries/5m</th></tr></thead>
         <tbody>
-          {records.map((r: any, i: number) => (
+          {records.map((r: any, i: number) => {
+            const stateNum = r.last_state != null ? Math.round(r.last_state) : null;
+            const stateInfo = stateNum != null ? (CONNECTION_STATES[stateNum] ?? { label: `Unknown(${stateNum})` }) : null;
+            const pt = r.last_pt != null ? Math.round(r.last_pt) : null;
+            return (
             <tr key={i}>
               <td style={TD}>{r["channel.name"]}</td>
+              <td style={{ ...TD, color: stateInfo?.color }}>{stateInfo?.label ?? "—"}</td>
               <td style={TD}>{r.last_received != null ? Math.round(r.last_received) : "—"}</td>
               <td style={{ ...TD, color: (r.last_errors ?? 0) > 5 ? "#dc3545" : undefined }}>{r.last_errors != null ? Math.round(r.last_errors) : "—"}</td>
               <td style={{ ...TD, color: (r.last_queue ?? 0) > 100 ? "#dc3545" : (r.last_queue ?? 0) > 20 ? "#ffc107" : undefined }}>{r.last_queue != null ? Math.round(r.last_queue) : "—"}</td>
+              <td style={{ ...TD, color: pt != null && pt > 500 ? "#dc3545" : pt != null && pt > 200 ? "#ffc107" : undefined }}>{pt != null ? `${pt}ms` : "—"}</td>
+              <td style={TD}>{r.last_attempts != null ? Math.round(r.last_attempts) : "—"}</td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

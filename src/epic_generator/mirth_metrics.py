@@ -11,12 +11,19 @@ Channels simulated:
   SCHEDULING-OUT    FHIR  outbound  - FHIR scheduling notifications
 
 Metrics per channel per tick:
-  healthcare.mirth.channel.messages.received  count,delta
-  healthcare.mirth.channel.messages.sent      count,delta
-  healthcare.mirth.channel.messages.errors    count,delta
-  healthcare.mirth.channel.messages.filtered  count,delta
-  healthcare.mirth.channel.queue.depth        gauge
-  healthcare.mirth.channel.status             gauge (1=running, 0=stopped)
+  healthcare.mirth.channel.messages.received       count,delta
+  healthcare.mirth.channel.messages.sent           count,delta
+  healthcare.mirth.channel.messages.errors         count,delta
+  healthcare.mirth.channel.messages.filtered       count,delta
+  healthcare.mirth.channel.messages.processing_time gauge (ms) — per-message latency
+  healthcare.mirth.channel.messages.send_attempts  count,delta — retries per tick
+  healthcare.mirth.channel.connection.state        gauge (enum int) — connector state
+  healthcare.mirth.channel.queue.depth             gauge
+  healthcare.mirth.channel.status                  gauge (1=running, 0=stopped)
+
+Connection state values (from Mirth ConnectionStatusEventType):
+  0=IDLE  1=CONNECTED  2=SENDING  3=WAITING_FOR_RESPONSE
+  4=CONNECTING  5=DISCONNECTED  6=FAILURE
 """
 
 import logging
@@ -75,11 +82,18 @@ class MirthMetricsEmitter:
             filtered = random.randint(0, 3)
             queue = max(0, self._queue_depths[name] + random.randint(-2, 2))
             self._queue_depths[name] = min(queue, 5)
+            # New metrics from Mirth source analysis
+            processing_time = random.randint(45, 160)          # ms — normal message latency
+            connection_state = random.choice([0, 1, 2, 2, 2])  # mostly SENDING(2)
+            send_attempts = received                            # 1 attempt per message
             dims = self._dims(ch)
             lines.append(f"healthcare.mirth.channel.messages.received,{dims} count,delta={received}")
             lines.append(f"healthcare.mirth.channel.messages.sent,{dims} count,delta={sent}")
             lines.append(f"healthcare.mirth.channel.messages.errors,{dims} count,delta={errors}")
             lines.append(f"healthcare.mirth.channel.messages.filtered,{dims} count,delta={filtered}")
+            lines.append(f"healthcare.mirth.channel.messages.processing_time,{dims} gauge,{processing_time}")
+            lines.append(f"healthcare.mirth.channel.messages.send_attempts,{dims} count,delta={send_attempts}")
+            lines.append(f"healthcare.mirth.channel.connection.state,{dims} gauge,{connection_state}")
             lines.append(f"healthcare.mirth.channel.queue.depth,{dims} gauge,{self._queue_depths[name]}")
             lines.append(f"healthcare.mirth.channel.status,{dims} gauge,1")
         return "\n".join(lines)
@@ -100,6 +114,19 @@ class MirthMetricsEmitter:
                     self._queue_depths[name] + queue_delta, 5000
                 )
                 status = 0 if severity > 0.8 else 1
+                # Processing time spikes as connections time out
+                processing_time = int(150 + severity * 4850) + random.randint(-50, 100)
+                # Connection state degrades: SENDING → CONNECTING → DISCONNECTED → FAILURE
+                if severity < 0.3:
+                    connection_state = random.choice([2, 3, 4])
+                elif severity < 0.6:
+                    connection_state = random.choice([4, 4, 5])
+                elif severity < 0.8:
+                    connection_state = random.choice([5, 5, 6])
+                else:
+                    connection_state = 6
+                # Retry storms: up to 5x the received count
+                send_attempts = int(received * (1 + severity * 4)) + random.randint(0, 3)
             else:
                 received = random.randint(10, 30)
                 sent = received - random.randint(0, int(3 * severity + 1))
@@ -109,10 +136,17 @@ class MirthMetricsEmitter:
                     500
                 )
                 status = 1
+                # FHIR channels: mild latency increase
+                processing_time = random.randint(80, int(160 + severity * 200))
+                connection_state = random.choice([1, 2])
+                send_attempts = received + random.randint(0, int(severity * 5))
             lines.append(f"healthcare.mirth.channel.messages.received,{dims} count,delta={received}")
             lines.append(f"healthcare.mirth.channel.messages.sent,{dims} count,delta={sent}")
             lines.append(f"healthcare.mirth.channel.messages.errors,{dims} count,delta={errors}")
             lines.append(f"healthcare.mirth.channel.messages.filtered,{dims} count,delta=0")
+            lines.append(f"healthcare.mirth.channel.messages.processing_time,{dims} gauge,{processing_time}")
+            lines.append(f"healthcare.mirth.channel.messages.send_attempts,{dims} count,delta={send_attempts}")
+            lines.append(f"healthcare.mirth.channel.connection.state,{dims} gauge,{connection_state}")
             lines.append(f"healthcare.mirth.channel.queue.depth,{dims} gauge,{self._queue_depths[name]}")
             lines.append(f"healthcare.mirth.channel.status,{dims} gauge,{status}")
         return "\n".join(lines)
