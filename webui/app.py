@@ -166,6 +166,16 @@ async def walkthrough(request: Request):
     return templates.TemplateResponse(request, "walkthrough.html")
 
 
+@app.get("/pricing", response_class=HTMLResponse)
+async def pricing(request: Request):
+    return templates.TemplateResponse(request, "pricing.html")
+
+
+@app.get("/discovery", response_class=HTMLResponse)
+async def discovery(request: Request):
+    return templates.TemplateResponse(request, "discovery.html")
+
+
 @app.get("/api/status")
 async def api_status():
     """Overall system status."""
@@ -195,9 +205,15 @@ async def activate_scenario(key: str):
     # Map to epic generator scenario key
     epic_key = SCENARIO_KEY_MAP.get(key, key)
 
-    # Single ConfigMap patch + single restart (no race condition)
-    cm_ok = await _k8s_patch_configmap({"EPIC_SCENARIO": epic_key})
-    restart_ok = await _k8s_restart_deployment("epic-generator")
+    # Patch both EPIC_SCENARIO and NETWORK_SCENARIO in a single ConfigMap update
+    cm_ok = await _k8s_patch_configmap({
+        "EPIC_SCENARIO": epic_key,
+        "NETWORK_SCENARIO": epic_key,
+    })
+
+    # Restart both generators so they pick up the new scenario
+    epic_ok = await _k8s_restart_deployment("epic-generator")
+    net_ok = await _k8s_restart_deployment("network-generator")
 
     return {
         "status": "activated",
@@ -205,7 +221,8 @@ async def activate_scenario(key: str):
         "epic_scenario": epic_key,
         "previously_active": previously_active,
         "configmap_patched": cm_ok,
-        "generator_restarted": restart_ok,
+        "epic_restarted": epic_ok,
+        "network_restarted": net_ok,
     }
 
 
@@ -214,27 +231,37 @@ async def deactivate_scenario(key: str):
     if not coordinator.deactivate(key):
         raise HTTPException(status_code=404, detail=f"Scenario not active: {key}")
 
-    # Always fall back to normal_shift when deactivating
-    cm_ok = await _k8s_patch_configmap({"EPIC_SCENARIO": "normal_shift"})
-    restart_ok = await _k8s_restart_deployment("epic-generator")
+    # Fall back to normal_shift when deactivating; clear network scenario
+    cm_ok = await _k8s_patch_configmap({
+        "EPIC_SCENARIO": "normal_shift",
+        "NETWORK_SCENARIO": "",
+    })
+    epic_ok = await _k8s_restart_deployment("epic-generator")
+    net_ok = await _k8s_restart_deployment("network-generator")
 
     return {
         "status": "deactivated",
         "key": key,
         "configmap_patched": cm_ok,
-        "generator_restarted": restart_ok,
+        "epic_restarted": epic_ok,
+        "network_restarted": net_ok,
     }
 
 
 @app.post("/api/scenarios/deactivate-all")
 async def deactivate_all():
     coordinator.deactivate_all()
-    cm_ok = await _k8s_patch_configmap({"EPIC_SCENARIO": "normal_shift"})
-    restart_ok = await _k8s_restart_deployment("epic-generator")
+    cm_ok = await _k8s_patch_configmap({
+        "EPIC_SCENARIO": "normal_shift",
+        "NETWORK_SCENARIO": "",
+    })
+    epic_ok = await _k8s_restart_deployment("epic-generator")
+    net_ok = await _k8s_restart_deployment("network-generator")
     return {
         "status": "all_deactivated",
         "configmap_patched": cm_ok,
-        "generator_restarted": restart_ok,
+        "epic_restarted": epic_ok,
+        "network_restarted": net_ok,
     }
 
 

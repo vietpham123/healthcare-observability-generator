@@ -1,23 +1,26 @@
 {
   "name": "healthcare-health-monitoring",
-  "version": "1.0.2",
+  "version": "1.25.0",
   "description": "Healthcare operational health monitoring — Epic EHR + Network infrastructure correlation",
   "scripts": {
     "build": "dt-app build",
     "start": "dt-app dev",
     "deploy": "dt-app deploy",
     "uninstall": "dt-app uninstall",
-    "info": "dt-app info"
+    "info": "dt-app info",
+    "lint": "eslint ui/",
+    "format": "prettier --write ui/",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "engines": {
-    "node": ">=16.13.0"
+    "node": ">=18.0.0"
   },
   "license": "ISC",
   "dependencies": {
     "@dynatrace-sdk/app-environment": "^1.1.4",
     "@dynatrace-sdk/client-query": "^1.21.2",
     "@dynatrace-sdk/error-handlers": "^1.3.1",
-    "@dynatrace-sdk/navigation": "^2.2.0",
     "@dynatrace-sdk/react-hooks": "^1.6.0",
     "@dynatrace-sdk/user-preferences": "^1.1.3",
     "@dynatrace/strato-components": "^3.0.1",
@@ -33,6 +36,11 @@
     "dt-app": "1.8.1",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.1.1",
+    "eslint": "^9.25.0",
+    "@eslint/js": "^9.25.0",
+    "typescript-eslint": "^8.30.1",
+    "prettier": "^3.5.3"
   }
 }
