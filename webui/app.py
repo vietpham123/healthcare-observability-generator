@@ -166,16 +166,6 @@ async def walkthrough(request: Request):
     return templates.TemplateResponse(request, "walkthrough.html")
 
 
-@app.get("/pricing", response_class=HTMLResponse)
-async def pricing(request: Request):
-    return templates.TemplateResponse(request, "pricing.html")
-
-
-@app.get("/discovery", response_class=HTMLResponse)
-async def discovery(request: Request):
-    return templates.TemplateResponse(request, "discovery.html")
-
-
 @app.get("/api/status")
 async def api_status():
     """Overall system status."""
