@@ -72,7 +72,7 @@ export const queries = {
         total = count()
     | fieldsAdd success_rate = if(total > 0, toDouble(ok) / toDouble(total) * 100.0, else: 0.0)`,
 
-  networkDeviceUpRatio: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  networkDeviceUpRatio: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1, from: now()-2h
     | filter ${NETWORK_FILTER}
     | summarize last_seen = max(timestamp), by: { hostname = network.device.hostname }
     | fieldsAdd minutes_ago = toDouble(now() - last_seen) / 60000000000.0
@@ -158,12 +158,12 @@ export const queries = {
     | sort site, device`,
 
   /** Per-device health grid — up/down status + CPU for hex tile visualization */
-  deviceHealthGrid: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1
+  deviceHealthGrid: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1, from: now()-2h
     | filter ${NETWORK_FILTER}
     | summarize last_seen = max(timestamp), by: { device = network.device.hostname, site = network.device.site, vendor = network.device.vendor, role = network.device.role }
     | fieldsAdd minutes_ago = toDouble(now() - last_seen) / 60000000000.0
     | fieldsAdd status = if(minutes_ago < 5, "up", else: "down")
-    | sort site, device`,
+    | sort status asc, site, device`,
 
   // ─── Epic Health — Login & Auth ───────────────────────────────────
   loginVolumeOverTime: `fetch logs, scanLimitGBytes: 500, samplingRatio: 1

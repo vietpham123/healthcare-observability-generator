@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Flex, Surface, TitleBar } from "@dynatrace/strato-components/layouts";
 import { Text } from "@dynatrace/strato-components/typography";
 import { ProgressCircle } from "@dynatrace/strato-components/content";
-import { TimeseriesChart, CategoricalBarChart, DonutChart, HoneycombChart } from "@dynatrace/strato-components/charts";
+import { TimeseriesChart, CategoricalBarChart, DonutChart } from "@dynatrace/strato-components/charts";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { queries } from "../queries";
 import { KpiCard } from "../components/KpiCard";
@@ -37,7 +37,7 @@ export const NetworkHealth = () => {
         <TitleBar><TitleBar.Title>Device Fleet Health</TitleBar.Title><TitleBar.Subtitle>CPU, memory, and traffic across all network devices</TitleBar.Subtitle></TitleBar>
         <SectionHealth query={fn(queries.peakDeviceCpu)} field="peak_cpu" green={50} amber={70} invert description="Peak CPU utilization across any single network device over the last 15 minutes. Even one device spiking above 70% signals potential overload from ransomware lateral movement, DDoS, or cascading failure after a core switch loss." />
       </Flex>
-      <DeviceHoneycomb site={site} />
+      <DeviceStatusBar site={site} />
       <Flex gap={16} style={{ marginTop: 16 }}>
         <div style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: "block" }}>CPU by Device</Text>
@@ -135,31 +135,52 @@ const ProtocolDonut = ({ site }: { site: string | null }) => {
   return <DonutChart data={toDonutData(data?.records ?? [])} />;
 };
 
-const DeviceHoneycomb = ({ site }: { site: string | null }) => {
+const DeviceStatusBar = ({ site }: { site: string | null }) => {
+  const [expanded, setExpanded] = useState(false);
   const { data, isLoading } = useDql({ query: withSiteFilter(queries.deviceHealthGrid, site, "network") });
-  if (isLoading) return <Flex justifyContent="center" style={{ height: 200 }}><ProgressCircle /></Flex>;
+  if (isLoading) return <ProgressCircle />;
   const records = data?.records ?? [];
   if (records.length === 0) return <Text>No device data</Text>;
 
-  const tiles = records.map((r: any) => ({
-    name: String(r.device ?? "").replace(/^kcrmc-/, ""),
-    value: r.status === "down" ? "DOWN" : "UP",
-    device: r.device,
-    vendor: r.vendor,
-    role: r.role,
-    site: r.site,
-    minutes_ago: Number(r.minutes_ago).toFixed(1),
-  }));
+  const total = records.length;
+  const downDevices = records.filter((r: any) => r.status === "down");
+  const upCount = total - downDevices.length;
+  const pct = total > 0 ? (upCount / total) * 100 : 0;
+  const allUp = downDevices.length === 0;
+  const barColor = allUp ? "#2ab050" : "#dc3545";
 
   return (
-    <div style={{ padding: "12px 0" }}>
-      <HoneycombChart
-        data={tiles}
-        shape="hexagon"
-        showLabels
-        colorScheme={{ UP: "#2ab050", DOWN: "#dc3545" }}
-        height={280}
-      />
+    <div style={{ padding: "8px 0" }}>
+      {/* Summary line */}
+      <Flex alignItems="center" gap={12}>
+        <Text style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+          {allUp ? "\u2705" : "\ud83d\udea8"} {upCount}/{total} devices UP
+        </Text>
+        <div style={{ flex: 1, height: 10, background: "var(--dt-colors-surface-neutral-default, #333)", borderRadius: 5, overflow: "hidden" }}>
+          <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 5, transition: "width 0.5s" }} />
+        </div>
+        {!allUp && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{ background: "none", border: "1px solid var(--dt-colors-border-neutral-default)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 11, color: "inherit" }}
+          >
+            {expanded ? "Hide" : "Show"} {downDevices.length} down
+          </button>
+        )}
+      </Flex>
+      {/* Expandable detail — only shown when devices are down */}
+      {expanded && downDevices.length > 0 && (
+        <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(220,53,69,0.08)", borderRadius: 6, fontSize: 12 }}>
+          {downDevices.map((r: any, i: number) => (
+            <Flex key={i} gap={8} alignItems="center" style={{ padding: "3px 0" }}>
+              <span style={{ color: "#dc3545", fontWeight: 700 }}>\u25cf</span>
+              <Text style={{ fontWeight: 600, fontSize: 12 }}>{r.device}</Text>
+              <Text style={{ opacity: 0.6, fontSize: 11 }}>{r.vendor} \u2022 {r.role} \u2022 {r.site}</Text>
+              <Text style={{ opacity: 0.5, fontSize: 11, marginLeft: "auto" }}>last seen {Number(r.minutes_ago).toFixed(0)}m ago</Text>
+            </Flex>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
